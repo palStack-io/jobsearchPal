@@ -169,7 +169,7 @@ def _ask_codex(prompt: str, model: str) -> str:
 
 def _post(url: str, body: dict, key: str | None, timeout: int = 120) -> dict:
     headers = {"content-type": "application/json", "x-title": "jobsearchPal",
-               "http-referer": "https://github.com/harung1993/jobsearchPal"}
+               "http-referer": "https://github.com/palStack-io/jobsearchPal"}
     if key:
         headers["authorization"] = f"Bearer {key}"
     req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)

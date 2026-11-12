@@ -3,7 +3,7 @@ name = "autoapply"
 version = "1.0.0"
 description = "Self-hosted job application assistant: find, rank, tailor, fill, then you review and submit."
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "AGPL-3.0-or-later"}
 requires-python = ">=3.11"
 dependencies = [
   "playwright>=1.45",

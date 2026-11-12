@@ -1,9 +1,10 @@
 # jobsearchPal with Docker. From the repo folder:
 #   docker compose up -d --build
 # If your user id isn't 1000 (check with: id -u), add APP_UID and APP_GID to .env first.
-# Sign in to your agent once (either or both):
-#   docker compose run --rm web claude        (then /login, and trust the /app folder)
-#   docker compose run --rm web codex login   (or copy ~/.codex/auth.json from a machine where you're signed in)
+# Sign in to your agent once (either or both; details in docs/setup.md, "Signing in to your AI subscription"):
+#   docker compose run --rm web claude                     (then /login, and trust the /app folder)
+#   docker compose run --rm web claude setup-token         (or this: put the token in .env as CLAUDE_CODE_OAUTH_TOKEN)
+#   docker compose run --rm web codex login --device-auth  (or copy ~/.codex/auth.json from a signed-in machine)
 # Your config.yaml, profile.yaml, .env, CLAUDE.local.md, materials/ and data/ stay in this folder.
 x-app: &app
   build: .

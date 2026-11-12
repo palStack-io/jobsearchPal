@@ -189,3 +189,15 @@ def test_pick_state_for_work_search(fresh, tmp_path):
     c.post("/setup/interests", data={"titles": "data engineer", "ws_state": "XX", "ws_min": "2"})
     cfg = yaml.safe_load((tmp_path / "config.yaml").read_text())
     assert "state" not in cfg["work_search"] and cfg["work_search"]["weekly_minimum"] == 2
+
+
+def test_agent_ready_counts_setup_token(tmp_path, monkeypatch):
+    """A server signed in with `claude setup-token` has no login files, only CLAUDE_CODE_OAUTH_TOKEN in .env."""
+    from autoapply import setup as su
+    monkeypatch.setattr(su.Path, "home", staticmethod(lambda: tmp_path))
+    monkeypatch.setattr(su, "find_cli", lambda name: "/usr/bin/claude" if name == "claude" else None)
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
+    assert su.agent_ready()["done"] is False
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "test-token")
+    r = su.agent_ready()
+    assert r["done"] is True and r["who"] == ["Claude Code"]

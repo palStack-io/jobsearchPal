@@ -364,7 +364,7 @@ def status(prefs: Prefs) -> dict[str, dict]:
     signed = Path("~/.codex/auth.json").expanduser().exists() or bool(os.environ.get("CODEX_API_KEY"))
     out["codex"] = {"ready": bool(codex and signed),
                     "note": "not installed: npm i -g @openai/codex, then codex login" if not codex else
-                    ("Codex CLI signed in" if signed else "installed; run codex login on the server")}
+                    ("Codex CLI signed in" if signed else "installed; run codex login --device-auth on the server")}
     key = prefs.key_hint("OPENROUTER_API_KEY")
     out["jev"] = {"ready": key != "not set", "note": f"OpenRouter key {key}"}
     out["openrouter"] = dict(out["jev"])

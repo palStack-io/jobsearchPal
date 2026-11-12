@@ -105,7 +105,9 @@ def agent_ready(prefs=None) -> dict:
                 "note": ("runs on your OpenRouter key" if has_cli and key else
                          "OpenRouter picked, but no key yet" if has_cli else f"{cli} not installed")}
     home = Path.home()
-    claude_in = (home / ".claude" / ".credentials.json").exists() or (home / ".claude.json").exists()
+    # A long-lived token from `claude setup-token` in .env (CLAUDE_CODE_OAUTH_TOKEN) counts as signed in too.
+    claude_in = (bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")) or (home / ".claude" / ".credentials.json").exists()
+                 or (home / ".claude.json").exists())
     codex_in = (home / ".codex" / "auth.json").exists()
     who = [n for n, ok in (("Claude Code", claude and claude_in), ("Codex", codex and codex_in)) if ok]
     return {"done": bool(who), "claude": bool(claude), "codex": bool(codex), "who": who,

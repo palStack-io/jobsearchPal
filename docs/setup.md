@@ -56,7 +56,7 @@ installed on the host. Your files stay in the repo folder, which is mounted into
 ```
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
 docker compose up -d --build                # dashboard + the daily scheduler
-docker compose run --rm web claude          # sign in to Claude Code and trust /app (or: codex login)
+docker compose run --rm web claude          # sign in to Claude Code and trust /app (or: codex login --device-auth)
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
@@ -70,7 +70,8 @@ which walks through everything in a browser:
    Greenhouse, Lever, Ashby, Workable or SmartRecruiters) and job sites, saved to `config.yaml`.
 4. **About you** (optional, recommended): roles and level, pay ask, where you'll work, work authorization,
    what to emphasize and avoid, saved to `materials/context/setup.md`.
-5. **Agent sign-in**: the command above; the page shows when it worked.
+5. **Agent sign-in**: see [Signing in to your AI subscription](#signing-in-to-your-ai-subscription) below; the
+   page shows when it worked.
 6. **Email** (optional): Gmail, iCloud or Yahoo with an app password, tested before it's saved, for job alerts, replies
    and the brief. Best is one address for the whole search. Other addresses you apply from: list them under
    **Other addresses** and forward them to the main inbox (steps shown per provider), or connect up to three as extra
@@ -88,6 +89,28 @@ by hand, so either way works; keys it saves go to `data/secrets.json` (owner-onl
 - **Your user id:** the containers run as uid 1000 so files in the folder stay yours. If `id -u`
   says otherwise, add `APP_UID` and `APP_GID` to `.env`.
 - **Logins** live in the `agent-home` volume, so a rebuild keeps them.
+
+### Signing in to your AI subscription
+
+The daily run uses the Claude or ChatGPT plan you already pay for, through Claude Code or Codex inside the
+container. You sign in once; the dashboard and the morning scheduler share the login. Your server does not need a
+screen or a browser: every way below gives you a link to open on your laptop or phone.
+
+**Claude (Pro or Max), either way:**
+
+- **Sign in inside the container.** `docker compose run --rm web claude`, type `/login`, open the link it prints,
+  sign in, paste the code back, then trust the `/app` folder and quit. The login is kept in the `agent-home` volume.
+- **Or a long-lived token in `.env` (good for servers).** Run `docker compose run --rm web claude setup-token`,
+  open the link, sign in, and copy the token it prints into `.env` as `CLAUDE_CODE_OAUTH_TOKEN=...`. Then
+  `docker compose up -d` so both containers pick it up. Nothing depends on the volume, and the Setup page counts it
+  as signed in. Treat the token like a password.
+
+**ChatGPT (Codex):** `docker compose run --rm web codex login --device-auth`, open the link it prints on any device
+and enter the code. (Plain `codex login` waits for a browser on the server itself, which a container doesn't have.)
+Copying `~/.codex/auth.json` from a machine where you're signed in also works.
+
+**Pay-per-use or local instead:** an OpenRouter key on the Settings page, or a local Ollama model, needs no
+sign-in at all.
 - **Updating:** `git pull && docker compose restart`. Code runs from the mounted folder; rebuild
   (`docker compose up -d --build`) only when dependencies change.
 - Codex sign-in on a headless box: sign in on a laptop and copy `~/.codex/auth.json` in with

@@ -107,6 +107,10 @@ phone, is in [docs/setup.md](docs/setup.md).
 
 ## Status and limits
 
+> **Rather not run a server?** We're looking into a hosted jobsearchPal, if there's interest. Tell us at
+> [support@palstack.io](mailto:support@palstack.io?subject=jobsearchPal%20hosting) or on
+> [Discord](https://discord.gg/mcgcp7RdYs).
+
 jobsearchPal is young: it's used daily by its author and has been tested from a clean Docker install, but expect
 rough edges. Known limits today:
 

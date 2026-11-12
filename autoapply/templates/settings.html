@@ -92,7 +92,7 @@
     light model. Last, one session per application on the main model. It needs an agent that can run commands and write files, so it
     runs on a subscription CLI. Both agents follow the same rules (AGENTS.md).</p></details></div>
 
- <div class="srow"><div class="sl"><b>Agent</b><p>Which command-line agent does the work.</p></div>
+ <div class="srow"><div class="sl"><b>Agent</b><p>Which command-line agent does the work. <a href="#agent">Sign in</a></p></div>
   <div class="sc wide"><div class="choice">
   {% for key, label in daily_agents.items() %}{% set st = status[key] %}
    <label><input type="radio" onchange="this.form.requestSubmit()" name="daily_agent" value="{{ key }}" {% if p.daily_agent == key %}checked{% endif %}>
@@ -223,6 +223,13 @@
 <div class="savebar" role="region" aria-label="Unsaved changes"><span>You have unsaved changes.</span>
  <button type="button" class="btn ghost" data-undo>Undo</button><button class="btn primary" name="action" value="save">Save changes</button></div>
 </form>
+{% if tab == 'daily' %}
+<section class="card mt set" id="agent">
+ <h2>Sign in to your agent</h2>
+ <div class="lead">The daily run uses the Claude or ChatGPT plan you already pay for. Sign in once, here.</div>
+ {% set back = "settings" %}{% include "_agent_signin.html" %}
+</section>
+{% endif %}
 
 <style>
 .pending{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--warn-soft);border-radius:10px;padding:8px 8px 8px 14px;margin:6px 0 12px;font-size:14.5px}

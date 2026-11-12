@@ -30,7 +30,7 @@ class Settings:
 # Saved from the dashboard (Setup and Settings pages) into data/secrets.json. The environment wins.
 SECRET_KEYS = ("AUTOAPPLY_TOKEN", "GMAIL_USER", "GMAIL_APP_PASSWORD", "BRIEF_TO", "OPENROUTER_API_KEY", "NTFY_TOPIC",
                "ADZUNA_APP_ID", "ADZUNA_APP_KEY", "USAJOBS_API_KEY", "USAJOBS_EMAIL",
-               "EMAIL_PROVIDER", "EXTRA_INBOXES", "OWN_ADDRESSES")
+               "EMAIL_PROVIDER", "EXTRA_INBOXES", "OWN_ADDRESSES", "CLAUDE_CODE_OAUTH_TOKEN")
 FROM_SECRETS: set[str] = set()
 
 

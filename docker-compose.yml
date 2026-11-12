@@ -1,5 +1,7 @@
 # jobsearchPal with Docker. From the repo folder:
-#   docker compose up -d --build
+#   docker compose up -d            (pulls the published image, ghcr.io/palstack-io/jobsearchpal)
+#   docker compose up -d --build    (or builds it here from the Dockerfile)
+# Pin a version with JSP_VERSION in .env (e.g. JSP_VERSION=1.0.0); the default is the latest release.
 # If your user id isn't 1000 (check with: id -u), add APP_UID and APP_GID to .env first.
 # Sign in to your agent once (either or both; details in docs/setup.md, "Signing in to your AI subscription"):
 #   docker compose run --rm web claude                     (then /login, and trust the /app folder)
@@ -8,7 +10,7 @@
 # Your config.yaml, profile.yaml, .env, CLAUDE.local.md, materials/ and data/ stay in this folder.
 x-app: &app
   build: .
-  image: jobsearchpal
+  image: ghcr.io/palstack-io/jobsearchpal:${JSP_VERSION:-latest}
   user: "${APP_UID:-1000}:${APP_GID:-1000}"
   env_file: [{path: .env, required: false}]
   environment:

@@ -1019,7 +1019,7 @@ def make_app(settings, db: DB) -> FastAPI:
                  "sort_cost": sum(v.get("cost") or 0 for v in sorting) + (daily.get("cost") or 0),
                  "month_spend": db.spend_this_month(), "by_day": db.usage_by_day(14), "by_stage": db.usage_by_stage(30)}
         from . import skills as sk
-        return page("settings.html", skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
+        return page("settings.html", agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
                     skills_usage=db.conn.execute("select count(*), coalesce(sum(tokens),0), coalesce(sum(cost),0), coalesce(sum(emails),0)"
                                                  " from usage where source = 'skills' and at >= date('now', '-30 day')").fetchone(),
                     p=pr.data, prefs=pr, providers=PROVIDERS, status=st, usage=u30, costs=costs,
@@ -1177,7 +1177,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     feeds_on=cfg.get("feeds", list(FEEDS)) if cfg else [*FEEDS, "themuse", "himalayas", "jobicy"], ws=cfg.get("work_search") or {}, states=state_rules(),
                     about=setup.load_about(settings.data_dir), about_fields=setup.ABOUT_FIELDS,
                     resume=setup.base_resume(settings.root), gmail_user=os.environ.get("GMAIL_USER", ""),
-                    gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(),
+                    gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
                     msg=msg, err=err)
 
     @app.post("/setup/profile")
@@ -1242,6 +1242,14 @@ def make_app(settings, db: DB) -> FastAPI:
         setup.save_about(settings.root, settings.data_dir, dict(await request.form()))
         return _back("Saved to materials/context/setup.md. The agent reads it before every application.", "gmail")
 
+    def _agent_login_ctx() -> dict:
+        from . import agentlogin
+        from .prefs import Prefs, find_cli
+        pr = Prefs(settings.data_dir, settings.raw)
+        return {"claude": bool(find_cli("claude")), "codex": bool(find_cli("codex")),
+                "token": pr.key_hint(agentlogin.TOKEN_KEY), "token_saved": bool(pr.key(agentlogin.TOKEN_KEY)),
+                "token_env": pr.from_env(agentlogin.TOKEN_KEY), "codex_in": agentlogin.codex_signed_in()}
+
     def _mail_ctx() -> dict:
         """The Email step: providers, the main inbox's provider, forwarded addresses with their steps, extra inboxes."""
         from . import mailboxes as mb
@@ -1300,6 +1308,45 @@ def make_app(settings, db: DB) -> FastAPI:
         fwd = [a for a in mb.forwarded() if a != user.lower()]
         pr.set_key("OWN_ADDRESSES", ",".join(fwd))  # connected now, so no longer a forwarded one
         return _back(f"Connected {user}. The next email sync reads it too (read-only).", "other-emails")
+
+    @app.post("/setup/claude-token")
+    async def setup_claude_token(request: Request):
+        from . import agentlogin, classify
+        from .prefs import Prefs
+        f = await request.form()
+        pr = Prefs(settings.data_dir, settings.raw)
+        back = str(f.get("back") or "setup")
+        go = (lambda m: RedirectResponse(f"/settings?tab=daily&msg={quote(m)}#agent", status_code=303)) if back == "settings" \
+            else (lambda m: _back(m, "agent"))
+        if pr.from_env(agentlogin.TOKEN_KEY):
+            return go("Your Claude token is set in .env; change it there.")
+        if f.get("action") == "forget":
+            pr.set_key(agentlogin.TOKEN_KEY, "")
+            return go("Removed the saved Claude token.")
+        tok, problem = agentlogin.clean_token(str(f.get("token") or ""))
+        if problem:
+            return go(f"Not saved: {problem}")
+        old = pr.key(agentlogin.TOKEN_KEY) or ""
+        pr.set_key(agentlogin.TOKEN_KEY, tok)
+        res = await run_in_threadpool(classify.test_source, "claude", pr)
+        if not res.get("ok") and res.get("kind") is None:
+            pr.set_key(agentlogin.TOKEN_KEY, old)
+            return go(f"Not saved: Claude Code couldn't sign in with that token ({res.get('error') or 'no answer'}).")
+        return go("Claude is signed in. Every run uses your subscription.")
+
+    @app.post("/setup/codex-login")
+    async def setup_codex_login(request: Request):
+        from . import agentlogin
+        f = await request.form()
+        if f.get("action") == "cancel":
+            agentlogin.cancel_codex()
+            return JSONResponse(agentlogin.codex_state())
+        return JSONResponse(await run_in_threadpool(agentlogin.start_codex))
+
+    @app.get("/setup/codex-login")
+    def setup_codex_state():
+        from . import agentlogin
+        return JSONResponse(agentlogin.codex_state())
 
     @app.post("/setup/gmail")
     async def setup_gmail(request: Request):

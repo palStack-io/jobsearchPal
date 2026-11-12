@@ -1,6 +1,6 @@
 [project]
 name = "autoapply"
-version = "0.2.0"
+version = "1.0.0"
 description = "Self-hosted job application assistant: find, rank, tailor, fill, then you review and submit."
 readme = "README.md"
 license = {text = "MIT"}

@@ -113,6 +113,7 @@ def main(argv=None):
     a = sub.add_parser("log-daily"); a.add_argument("agent"); a.add_argument("model", nargs="?", default="")
     a.add_argument("via", nargs="?", default="subscription"); a.add_argument("--stage", default="")
     sub.add_parser("daily-env")
+    sub.add_parser("agent-env")
     a = sub.add_parser("emails"); a.add_argument("action", nargs="?", choices=["set"]); a.add_argument("event_id", nargs="?")
     a.add_argument("kind", nargs="?"); a.add_argument("--job", default=""); a.add_argument("--pending", action="store_true")
     a = sub.add_parser("import-history"); a.add_argument("file")
@@ -347,6 +348,13 @@ def main(argv=None):
     elif args.cmd == "candidates":
         from . import rank
         _out(rank.candidates(db, s, args.limit))
+    elif args.cmd == "agent-env":
+        # A Claude token saved on the Setup page (data/secrets.json): daily.sh evals this so the agent sees it.
+        # Prints nothing when .env sets it (daily.sh has it already) or nothing is saved.
+        import shlex
+        from .config import FROM_SECRETS
+        if "CLAUDE_CODE_OAUTH_TOKEN" in FROM_SECRETS and os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+            print(f"export CLAUDE_CODE_OAUTH_TOKEN={shlex.quote(os.environ['CLAUDE_CODE_OAUTH_TOKEN'])}")
     elif args.cmd == "daily-env":
         # Environment for running the daily agent on an OpenRouter key; daily.sh evals it. Prints nothing otherwise.
         import shlex

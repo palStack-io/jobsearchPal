@@ -129,4 +129,8 @@ Please keep personal data out of issues, tests and screenshots; use `scripts/dem
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+**AGPL-3.0** (version 3 or later), from version 1.0. Use it, change it, run it for yourself. If you run a modified
+version as a service for other people, share your changes under the same license. See [LICENSE](LICENSE).
+
+Copyright (C) 2026 Harun Gunasekaran. Releases before 1.0 (v0.1.0 and earlier) were published under the MIT license
+and stay available under it.

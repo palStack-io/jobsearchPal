@@ -339,7 +339,7 @@ def test_follow_up_reminders(tmp_path):
     assert not any("Alex" in t for _, t in kinds)
     # Brightline is rejected, Fernwood (10/27) too recent: only the tracker's own follow-ups would show.
     assert all(n["kind"] != "application" or n["job"]["company"] not in ("Brightline", "Cobalt Labs") for n in out)
-    agent = nudges.for_agent(db, tmp_path)
+    agent = nudges.for_agent(db, tmp_path, now=now)
     assert {a["kind"] for a in agent} == {"reply", "chase"} and agent[0]["draft_path"].startswith(str(tmp_path / "drafts"))
     dana = next(n for n in out if "Dana" in n["title"])
     Path(dana["draft_path"]).parent.mkdir(parents=True, exist_ok=True)

@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 [ -f .venv/bin/activate ] && source .venv/bin/activate  # Docker has it on PATH already
 [ -f .env ] && set -a && source .env && set +a
+eval "$(autoapply agent-env 2>/dev/null)"  # a Claude token saved on the Setup page
 mkdir -p data/daily
 # One run at a time: the 6:30 cron run and "Run now" on the dashboard share this lock.
 exec 9>data/daily/.lock

@@ -125,10 +125,10 @@ def compute(db: DB, data_dir: Path | None = None, now: datetime | None = None, i
     return out if include_hidden else [n for n in out if n["state"] == "open"]
 
 
-def for_agent(db: DB, data_dir: Path, limit: int | None = None) -> list[dict]:
+def for_agent(db: DB, data_dir: Path, limit: int | None = None, now: datetime | None = None) -> list[dict]:
     """Open reminders without a draft yet, with what the agent needs to write one (at most `limit`)."""
     rows = []
-    for n in compute(db, data_dir):
+    for n in compute(db, data_dir, now=now):
         if n["draft"] or n["kind"] not in ("reply", "chase", "application", "interview") or n["kind"] == "interview" and not n["to"]:
             continue  # booking links need you, not a draft
         e, j = n["event"] or {}, n["job"] or {}

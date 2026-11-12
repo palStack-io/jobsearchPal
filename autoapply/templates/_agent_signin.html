@@ -1,0 +1,61 @@
+{# Sign in to the agent CLIs from the browser. Needs agent_login (web._agent_login_ctx) and `back` ('setup' or 'settings'). #}
+<div class="grid g11 agent-signin">
+ <div class="opt"><div><b>Claude subscription</b> (Pro or Max)</div>
+  {% if not agent_login.claude %}<small class="muted">Claude Code isn't installed here.</small>
+  {% elif agent_login.token_env %}<small class="muted">Signed in with a token from <code>.env</code> ({{ agent_login.token }}).</small>
+  {% else %}
+  <form method="post" action="/setup/claude-token">
+   <input type="hidden" name="back" value="{{ back }}">
+   <ol class="muted" style="font-size:14px;padding-left:18px;margin:6px 0">
+    <li>On any computer with Claude Code (your laptop is fine), run <code>claude setup-token</code> and sign in.</li>
+    <li>Paste the token it prints here. It's checked with one tiny call, then every run uses it.</li></ol>
+   <label class="fld"><span>Token{% if agent_login.token_saved %} ({{ agent_login.token }}){% endif %}</span>
+    <input type="password" name="token" autocomplete="off" spellcheck="false" placeholder="sk-ant-..."></label>
+   <div class="row"><button type="submit">{{ 'Replace token' if agent_login.token_saved else 'Save and check' }}</button>
+    {% if agent_login.token_saved %}<button type="submit" name="action" value="forget" class="ghost">Remove</button>{% endif %}</div>
+  </form>
+  <small class="muted">Or in a terminal on the server: <code>docker compose run --rm web claude</code>, then <code>/login</code>.</small>
+  {% endif %}</div>
+ <div class="opt"><div><b>ChatGPT subscription</b> (Plus or Pro)</div>
+  {% if not agent_login.codex %}<small class="muted">Codex CLI isn't installed here.</small>
+  {% else %}
+  <div id="codex-login" data-signed="{{ 1 if agent_login.codex_in else 0 }}">
+   <p class="muted" style="font-size:14px;margin:6px 0">{% if agent_login.codex_in %}Codex is signed in. Sign in again to switch accounts.{% else %}Start, open the link on any device, and enter the code.{% endif %}</p>
+   <div class="cx-show" hidden><p style="margin:6px 0"><a class="cx-url" target="_blank" rel="noopener"></a></p>
+    <p style="margin:6px 0">Code: <b class="cx-code" style="font-size:20px;letter-spacing:.08em"></b></p>
+    <small class="muted cx-note">Waiting for you to finish in the browser...</small></div>
+   <pre class="cx-lines muted" hidden style="font-size:12px;white-space:pre-wrap"></pre>
+   <div class="row"><button type="button" class="cx-start">{{ 'Sign in again' if agent_login.codex_in else 'Sign in with ChatGPT' }}</button>
+    <button type="button" class="cx-cancel ghost" hidden>Cancel</button></div>
+  </div>
+  <script>
+  (() => {
+    const box = document.getElementById('codex-login'); if (!box) return;
+    const q = (s) => box.querySelector(s); let timer = null;
+    const show = (st) => {
+      if (st.error) { q('.cx-lines').hidden = false; q('.cx-lines').textContent = st.error; return; }
+      const waiting = st.running;
+      q('.cx-show').hidden = !(st.url || st.code);
+      if (st.url) { q('.cx-url').href = st.url; q('.cx-url').textContent = st.url; }
+      if (st.code) q('.cx-code').textContent = st.code;
+      q('.cx-cancel').hidden = !waiting; q('.cx-start').disabled = waiting;
+      const raw = !st.url && (st.lines || []).length;
+      q('.cx-lines').hidden = !raw; if (raw) q('.cx-lines').textContent = st.lines.join('\n');
+      if (!waiting && timer) { clearInterval(timer); timer = null;
+        q('.cx-note').textContent = st.signed_in && st.exit === 0 ? 'Signed in. Reload this page.' : 'Stopped before sign-in finished. Try again.'; }
+    };
+    const call = async (method, body) => {
+      const r = await fetch('/setup/codex-login', {method, body, credentials: 'same-origin'});
+      return r.ok ? r.json() : {error: 'The dashboard answered ' + r.status};
+    };
+    q('.cx-start').addEventListener('click', async () => {
+      show(await call('POST', new FormData()));
+      if (!timer) timer = setInterval(async () => show(await call('GET')), 2000);
+    });
+    q('.cx-cancel').addEventListener('click', async () => {
+      const fd = new FormData(); fd.append('action', 'cancel'); show(await call('POST', fd));
+    });
+  })();
+  </script>
+  {% endif %}</div>
+</div>

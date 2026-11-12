@@ -192,19 +192,9 @@
 
 <section class="card mt step" id="agent">
  <h2><span><span class="n {{ 'done' if s.agent.done }}">{{ "✓" if s.agent.done else "5" }}</span> Sign in to an AI agent</span><span class="count">{{ s.agent.note }}</span></h2>
- <p class="lead">Sign in once, in a terminal on the server. No subscription? Choose <b>OpenRouter key</b> on the
+ <p class="lead">Sign in once, right here. No subscription? Choose <b>OpenRouter key</b> on the
   <a href="/settings?tab=daily">Daily run</a> tab and skip this.</p>
- <div class="grid g11">
-  <div class="opt"><div><b>Claude subscription</b> (Pro or Max)</div>
-   <pre>docker compose run --rm web claude</pre>
-   <small class="muted">Then type <code>/login</code>, open the link it prints on any device, and say yes when it asks to trust <code>/app</code>.
-    Or run <code>docker compose run --rm web claude setup-token</code> and put the token in <code>.env</code> as
-    <code>CLAUDE_CODE_OAUTH_TOKEN</code>. Without Docker, run <code>claude</code> in the folder.</small></div>
-  <div class="opt"><div><b>ChatGPT subscription</b> (Plus or Pro)</div>
-   <pre>docker compose run --rm web codex login --device-auth</pre>
-   <small class="muted">Open the link it prints on any device and enter the code. Or sign in on your laptop and copy
-    <code>~/.codex/auth.json</code> over. Then pick Codex on the <a href="/settings?tab=daily">Daily run</a> tab.</small></div>
- </div>
+ {% set back = "setup" %}{% include "_agent_signin.html" %}
  <p class="muted" style="font-size:14px">Reload this page after signing in.</p>
 </section>
 

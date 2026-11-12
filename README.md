@@ -84,8 +84,8 @@ ChatGPT subscription (for the Codex CLI). With Docker:
 
 ```
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
-docker compose up -d --build                # dashboard + the daily scheduler
-docker compose run --rm web claude          # sign in to Claude Code and trust /app (or: codex login --device-auth)
+docker compose up -d                        # dashboard + the daily scheduler (pulls the published image)
+# then sign in to Claude or ChatGPT on the dashboard's Setup page (or: docker compose run --rm web claude)
 ```
 
 Open `http://localhost:8787/`, create your account, and the **Setup** page walks you through the rest (resume, job

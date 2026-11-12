@@ -55,8 +55,8 @@ installed on the host. Your files stay in the repo folder, which is mounted into
 
 ```
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
-docker compose up -d --build                # dashboard + the daily scheduler
-docker compose run --rm web claude          # sign in to Claude Code and trust /app (or: codex login --device-auth)
+docker compose up -d                        # dashboard + the daily scheduler (pulls the published image)
+# then sign in to Claude or ChatGPT on the dashboard's Setup page (or: docker compose run --rm web claude)
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
@@ -70,8 +70,8 @@ which walks through everything in a browser:
    Greenhouse, Lever, Ashby, Workable or SmartRecruiters) and job sites, saved to `config.yaml`.
 4. **About you** (optional, recommended): roles and level, pay ask, where you'll work, work authorization,
    what to emphasize and avoid, saved to `materials/context/setup.md`.
-5. **Agent sign-in**: see [Signing in to your AI subscription](#signing-in-to-your-ai-subscription) below; the
-   page shows when it worked.
+5. **Agent sign-in**: right on the page (paste a Claude token, or sign in with ChatGPT through a link and code); see
+   [Signing in to your AI subscription](#signing-in-to-your-ai-subscription) below.
 6. **Email** (optional): Gmail, iCloud or Yahoo with an app password, tested before it's saved, for job alerts, replies
    and the brief. Best is one address for the whole search. Other addresses you apply from: list them under
    **Other addresses** and forward them to the main inbox (steps shown per provider), or connect up to three as extra
@@ -88,6 +88,9 @@ by hand, so either way works; keys it saves go to `data/secrets.json` (owner-onl
   the defaults). Output goes to `data/cron.log` as before.
 - **Your user id:** the containers run as uid 1000 so files in the folder stay yours. If `id -u`
   says otherwise, add `APP_UID` and `APP_GID` to `.env`.
+- **Updating:** `git pull && docker compose pull && docker compose up -d`. The image is published for amd64 and
+  arm64 (Raspberry Pi 5, Apple silicon and ARM cloud machines) at `ghcr.io/palstack-io/jobsearchpal`; set
+  `JSP_VERSION=1.0.0` in `.env` to stay on one release, or build your own with `docker compose up -d --build`.
 - **Logins** live in the `agent-home` volume, so a rebuild keeps them.
 
 ### Signing in to your AI subscription
@@ -95,6 +98,16 @@ by hand, so either way works; keys it saves go to `data/secrets.json` (owner-onl
 The daily run uses the Claude or ChatGPT plan you already pay for, through Claude Code or Codex inside the
 container. You sign in once; the dashboard and the morning scheduler share the login. Your server does not need a
 screen or a browser: every way below gives you a link to open on your laptop or phone.
+
+**Easiest: on the dashboard.** The Setup page (step 5) and **Settings > Daily run** have a sign-in card:
+
+- **Claude:** on any computer with Claude Code (your laptop is fine), run `claude setup-token`, sign in, and paste
+  the token into the card. It's checked with one tiny call, saved in `data/secrets.json` (owner-only) and used by
+  every run, the scheduler included.
+- **ChatGPT:** press **Sign in with ChatGPT**. The card shows a link and a code; open the link on any device and enter
+  the code. Codex keeps the login in the `agent-home` volume.
+
+Or from a terminal on the server:
 
 **Claude (Pro or Max), either way:**
 

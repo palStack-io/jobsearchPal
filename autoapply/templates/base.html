@@ -378,6 +378,12 @@ if(ask)document.addEventListener("submit",async e=>{const f=e.target;
   f.applied_on.value=t;f.applied_on.max=t;f.back.value=location.pathname+location.search;
   for(const k of ["company","title","url"])if(b.dataset[k])f[k].value=b.dataset[k];
   d.showModal();(f.company.value?f.via:f.company).focus()})})();
+// Put-away panels: any [data-open="<dialog id>"] opens that dialog; [data-close] or a click on the backdrop closes it.
+document.addEventListener("click",e=>{const o=e.target.closest("[data-open]");
+ if(o){const d=document.getElementById(o.dataset.open);if(d&&d.showModal){e.preventDefault();d.showModal()}return}
+ const c=e.target.closest("dialog [data-close]");if(c){c.closest("dialog").close();return}
+ if(e.target.matches&&e.target.matches("dialog.g-lookback[open]")){const r=e.target.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()}});
 // After an action that reports back (?done=...), say so in the dialog, then tidy the address bar.
 (()=>{const u=new URL(location.href),m=u.searchParams.get("done");if(!m||!ask)return;
  u.searchParams.delete("done");history.replaceState(null,"",u.pathname+u.search+u.hash);

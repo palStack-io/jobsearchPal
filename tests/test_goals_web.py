@@ -90,10 +90,25 @@ def test_lookback_and_note(tmp_path, db):
     c = _client(tmp_path, db)
     html = c.get("/").text
     assert "Your week, looking back" in html and "did" in _visible(html)
+    assert '<dialog id="lookback"' in html and 'data-open="lookback"' in html and "Last week:" in html
     r = c.post("/plan/note", data={"week": last.isoformat(), "text": "mornings worked better"}, follow_redirects=False)
     assert r.status_code == 303
     assert goals.week_view(db, last)["note"] == "mornings worked better"
     assert c.post("/plan/note", data={"week": "nope", "text": "x"}).status_code == 400
+
+
+def test_last_week_stays_reachable_after_planning(tmp_path, db):
+    last = stats.week_start(date.today()) - timedelta(days=7)
+    goals.save_week(db, last, {"apps": 5, "reach": 60, "prep": 0, "learn": 0}, ALL_DAYS, "", "", last)
+    c = _client(tmp_path, db)
+    c.post("/plan", data={"apps": "10", "days": ALL_DAYS})
+    html = c.get("/").text
+    assert "Your plan this week" in html and "Plan this week</h2>" not in html
+    assert '<dialog id="lookback"' in html and 'data-open="lookback"' in html
+
+
+def test_no_look_back_button_without_a_last_week(tmp_path, db):
+    assert 'data-open="lookback"' not in _client(tmp_path, db).get("/").text
 
 
 def test_stats_shows_planned_weeks(tmp_path, db):

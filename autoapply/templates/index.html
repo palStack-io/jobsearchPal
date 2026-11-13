@@ -149,11 +149,12 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
  {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
  {% elif plan %}<div class="plan-row"><div><h2 id="plan-h">Your plan this week</h2>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
    {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>
-  <details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div>
+  <div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div></div>
  {% elif plan_open and not back %}<h2 id="plan-h">Your week, in your words</h2>
   <p class="ink2 plan-why">Set a few totals and pick your days; we'll spread them out. Change any day. It's yours; nothing reminds you of it.</p>
   {{ g.goals_form(None, goal_totals, plan_days) }}
- {% else %}<div class="plan-row"><h2 id="plan-h" class="plan-quiet">No plan this week. That's fine.</h2><details class="plan-edit"><summary class="btn ghost sm">Write one</summary>{{ g.goals_form(None, goal_totals, plan_days, skip=False) }}</details></div>{% endif %}
+ {% else %}<div class="plan-row"><h2 id="plan-h" class="plan-quiet">No plan this week. That's fine.</h2><div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Write one</summary>{{ g.goals_form(None, goal_totals, plan_days, skip=False) }}</details></div></div>{% endif %}
+ {% if last_wk %}{{ g.lookback_dialog(last_wk, last_wk_summary) }}{% endif %}
 </section>
 
 
@@ -180,7 +181,8 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
 </section>{% endif %}
 <style>.plan,.offer{margin:22px 0 0}.plan h2,.offer h2{margin:0 0 6px}.plan-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .plan-line{margin:0;font-size:16px}.plan-why{margin:0 0 10px;max-width:64ch}.plan-quiet{font-size:15.5px;color:var(--ink-2);font-weight:500}
-.plan-edit{flex:1 1 100%}.plan-edit summary{list-style:none;display:inline-flex}.plan-edit summary::-webkit-details-marker{display:none}.plan-row>.plan-edit{flex:0 0 auto}.plan-edit[open]{flex:1 1 100%}
+.plan-edit{flex:1 1 100%}.plan-edit summary{list-style:none;display:inline-flex}.plan-edit summary::-webkit-details-marker{display:none}.plan-row>.plan-edit,.plan-acts>.plan-edit{flex:0 0 auto}.plan-edit[open]{flex:1 1 100%}
+.plan-acts{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}.plan-acts:has(.plan-edit[open]){flex:1 1 100%;justify-content:flex-start}
 .plan-form,.offer-form{display:grid;gap:10px;max-width:640px;margin-top:8px}.plan-form .acts,.offer .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
 .days{border:0;padding:0;margin:0;display:flex;gap:6px;flex-wrap:wrap}.days legend{padding:0;margin-bottom:6px;font-size:14px;color:var(--ink-2)}
 .day{position:relative}.day input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}.day span{display:inline-block;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line-2);font-size:14.5px}

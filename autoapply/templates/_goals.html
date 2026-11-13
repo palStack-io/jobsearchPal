@@ -38,6 +38,11 @@
 .g-back .n span{color:var(--ink-3);font-size:13.5px;display:block}
 .g-note{display:flex;gap:8px;flex-wrap:wrap;align-items:end;max-width:640px;margin:12px 0 0}.g-note .fld{flex:1 1 280px}
 .g-sep{border:0;border-top:1px solid var(--line);margin:18px 0}
+.g-lb-peek{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 16px;border-radius:var(--radius);background:var(--g-pool);border:1px solid var(--line-2)}
+.g-lb-peek p{margin:0;flex:1 1 220px;font-size:14.5px}.g-lb-peek .ink2{font-size:13.5px}
+.g-lookback{width:min(640px,calc(100vw - 32px))}.g-lb-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.g-lookback h2{margin:0}.g-lookback .g-strip{margin-top:16px}
+.g-lookback[open]{animation:offer-up .35s ease-out 1}
 .just-met .g-ring{animation:g-glow .9s ease-out 1}.g-today.just-met-day{animation:g-card .9s ease-out 1}
 @keyframes g-glow{0%{transform:scale(1);filter:drop-shadow(0 0 0 transparent)}45%{transform:scale(1.14);filter:drop-shadow(0 0 7px var(--sun))}100%{transform:scale(1);filter:drop-shadow(0 0 0 transparent)}}
 @keyframes g-card{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--sun) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
@@ -48,7 +53,7 @@
 @media (max-width:620px){.g-totals,.g-back{grid-template-columns:repeat(2,minmax(0,1fr))}
  .g-row{grid-template-columns:44px minmax(0,1fr);row-gap:6px}.g-acts{grid-column:2/-1;justify-content:flex-start}
  .g-weeks li{grid-template-columns:repeat(2,minmax(0,1fr))}.g-weeks li>b{grid-column:1/-1}}
-@media (prefers-reduced-motion:reduce){.g-ring .fl,.g-col .w,.just-met .g-ring,.g-today.just-met-day,.g-saved{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.g-ring .fl,.g-col .w,.just-met .g-ring,.g-today.just-met-day,.g-saved,.g-lookback[open]{animation:none!important}}
 </style>{% endmacro %}
 
 {% macro ring(frac, met=False, size=44) %}{% set c = 113.1 %}
@@ -122,19 +127,30 @@
  {{ strip(v.strip) }}
 </section>{% endmacro %}
 
-{% macro lookback_card(lb, summary, plan_days, totals, saved) %}
- <h2 id="plan-h">Your week, looking back</h2>
- <div class="sub ink2">{{ lb.week.strftime("%b %-d") }} to {{ (lb.strip[-1].date).strftime("%b %-d") }}</div>
+{# Last week sits in a dialog, put away until you open it: the card keeps one line and a Look back button. #}
+{% macro lookback_open(label='Look back', cls='btn ghost sm') %}<button type="button" class="{{ cls }}" data-open="lookback" aria-haspopup="dialog">{{ label }}</button>{% endmacro %}
+
+{% macro lookback_dialog(lb, summary) %}
+<dialog id="lookback" class="ask g-lookback" aria-labelledby="lookback-t">
+ <div class="g-lb-head"><div><h2 id="lookback-t">Your week, looking back</h2>
+  <div class="sub ink2">{{ lb.week.strftime("%b %-d") }} to {{ (lb.strip[-1].date).strftime("%b %-d") }}</div></div>
+  <button type="button" class="btn ghost sm" data-close aria-label="Close">Close</button></div>
  <div class="g-back">{% for r in lb.rows %}{% if r.did or r.planned %}<div>{{ ring(r.frac if lb.planned else (1 if r.did else 0), lb.planned and r.planned and r.did >= r.planned) }}
   <p class="n" style="margin:0"><b>{{ amount(r.goal, r.did) }}</b> {{ r.label|lower }}{% if lb.planned %}<span>did · planned {{ amount(r.goal, r.planned) }}</span>{% else %}<span>did</span>{% endif %}</p></div>{% endif %}{% endfor %}</div>
+ {{ strip(lb.strip) }}
  {% if not summary %}<p class="g-line">A quiet week. That happens, and this one is a fresh start.</p>
  {% elif lb.planned %}<p class="g-line">You had a plan and you worked to it: {{ summary }}. Planning your week is one of the things that helps a search stay on track. Next week builds on this one.</p>
  {% else %}<p class="g-line">Last week: {{ summary }}. That all counts. A short plan for this week can help keep the days steady.</p>{% endif %}
  <form method="post" action="/plan/note" class="g-note"><input type="hidden" name="back" value="/#plan"><input type="hidden" name="week" value="{{ lb.week.isoformat() }}">
   <label class="fld"><span>What helped, or what got in the way?</span><small>Optional, just for you.</small><input type="text" name="text" maxlength="300" value="{{ lb.note }}" placeholder="e.g. mornings worked better than afternoons"></label>
   <button class="btn sm">Save note</button></form>
- <hr class="g-sep">
- <h2>Plan this week</h2>
+</dialog>{% endmacro %}
+
+{% macro lookback_card(lb, summary, plan_days, totals, saved) %}
+ <div class="g-lb-peek">{{ ring(1 if summary else 0, lb.planned and lb.met, 30) }}
+  <p><b>Last week:</b> {{ summary or 'a quiet week' }}.{% if lb.note %} <span class="ink2">Your note: {{ lb.note|truncate(60) }}</span>{% endif %}</p>
+  {{ lookback_open() }}</div>
+ <h2 id="plan-h">Plan this week</h2>
  <p class="ink2 plan-why">{% if totals %}Started from your last plan's numbers. Change anything.{% else %}Set a few totals and pick your days; we'll spread them out. Change any day.{% endif %}</p>
  {{ goals_form(None, totals, plan_days, saved) }}
 {% endmacro %}

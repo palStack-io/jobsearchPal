@@ -118,8 +118,9 @@ of what you did.
   prep and learning) and pick your days; they're spread across those days, and you can change any day. Each day a
   *Today* card shows your share: applications and people you got in touch with count themselves, and the rest get a
   Done button. A short day is credit, never a red mark; what's left can move to your next day or simply go. Next
-  Sunday a look-back shows what you did next to what you planned, with an optional note, and flows into planning the
-  new week. No streaks and no reminders; the plan never changes the daily run or your work-search count.
+  Sunday the plan card shows one line about last week and a *Look back* button; the look-back itself (what you did
+  next to what you planned, the days, and an optional note) opens in a pop-up you can close. After you plan the new
+  week, a *Last week* button next to Edit keeps it one click away until the week ends. No streaks and no reminders; the plan never changes the daily run or your work-search count.
 - **People you know.** Every ready role has an *Anyone you know there?* link. People you get in touch with go on
   the Work search page and are listed in your log as networking contacts. They count toward your weekly number
   only if you turn that on, because not every state accepts networking.

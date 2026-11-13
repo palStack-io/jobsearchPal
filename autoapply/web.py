@@ -277,7 +277,8 @@ def make_app(settings, db: DB) -> FastAPI:
         back = greet["state"] == "back"
         from . import goals
         today_goals = goals.today_view(db, now.date())
-        lookback = None if back else goals.lookback(db, now.date())
+        last_wk = None if back else goals.last_week(db, now.date())
+        lookback = last_wk and goals.lookback(db, now.date())
         met = goals.new_met(db, now.date())
         week_met = next((m for m in met if m["scope"] == "week"), None)
         if week_met and not cel:  # the whole weekly plan met: the horizon's light spreads, once
@@ -295,6 +296,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     week_iso=s["this_week_start"].isoformat(),
                     g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
                     so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
+                    last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
                     lookback_summary=goals.summary(lookback["did"]) if lookback else "")
         if request.headers.get("x-in-page"):
             return resp  # an in-page form post following its redirect: the page the person sees comes next, so keep these

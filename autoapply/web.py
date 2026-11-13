@@ -93,11 +93,32 @@ def make_app(settings, db: DB) -> FastAPI:
             return RedirectResponse(to, status_code=303)
         return HTMLResponse("sign in first", status_code=401)
 
+    from . import demo
+    demo_limit = demo.Limiter()
+
     @app.middleware("http")
     async def gate(request: Request, call_next):
         # Sign-in is required everywhere once the account exists, and the account is created first.
         from urllib.parse import quote
         path = request.url.path
+        if demo.ON:  # public demo: no sign-in, and only the posts that stay inside the demo's own database
+            if path in demo.NO_PAGES:
+                return RedirectResponse("/", status_code=303)
+            if request.method not in ("GET", "HEAD"):
+                try:
+                    size = int(request.headers.get("content-length") or 0)
+                except ValueError:
+                    size = demo.MAX_BODY + 1
+                if size > demo.MAX_BODY:
+                    return HTMLResponse("too large for the demo", status_code=413)
+                if not demo_limit.take(demo.visitor(request.headers, request.client.host if request.client else None)):
+                    return HTMLResponse("slow down a little: the demo allows a few changes a minute", status_code=429)
+                if not demo.post_allowed(path):
+                    if request.headers.get("x-in-page"):
+                        return JSONResponse(demo.off_json(), status_code=403)
+                    back = demo.back_from_referer(request.headers.get("referer", ""), request.url.netloc)
+                    return HTMLResponse(demo.off_page(back), status_code=403)
+            return await call_next(request)
         if path.startswith(("/bundle/", "/file/", "/finished/")) and auth.token_ok(request.query_params.get("t")):
             return await call_next(request)  # `autoapply finish` on the laptop: machine key, no cookie
         if path in ("/login", "/logout", "/account"):
@@ -243,7 +264,8 @@ def make_app(settings, db: DB) -> FastAPI:
 
     def page(name: str, **ctx) -> HTMLResponse:  # noqa: F811  every page shows the waiting-email badge
         from . import setup
-        return HTMLResponse(env.get_template(name).render(pending_count=len(db.pending_events()),
+        from . import demo
+        return HTMLResponse(env.get_template(name).render(demo=demo.ON, pending_count=len(db.pending_events()),
                                                           setup_left=len(setup.status(settings, os.environ)["left"]), **ctx))
 
     @app.get("/")
@@ -383,7 +405,8 @@ def make_app(settings, db: DB) -> FastAPI:
     def start_run(**extra) -> bool:
         """Starts scripts/daily.sh in the background (manual trigger). False when a run is already going."""
         import subprocess
-        if run_state():
+        from . import demo
+        if demo.ON or run_state():  # the demo never starts the agent
             return False
         script = Path(__file__).resolve().parent.parent / "scripts" / "daily.sh"
         log = open(settings.data_dir / "cron.log", "a")
@@ -698,7 +721,8 @@ def make_app(settings, db: DB) -> FastAPI:
         from . import paste
         text = text[:200000]
         if paste.is_link(text):
-            fields = paste.from_link(text.strip())
+            from . import demo
+            fields = None if demo.ON else paste.from_link(text.strip())  # the demo never fetches a URL
             if not fields:
                 return page("lead.html", nav="leads", mode="confirm", fields={"url": text.strip()}, problem=NEEDS_TEXT, pasted="")
         else:
@@ -1470,6 +1494,11 @@ def make_app(settings, db: DB) -> FastAPI:
         new_plan["held_reviewed"] = True  # from now on a blank consent stays blank: no standing answer fills it
         new_plan["approved_by_user"] = False
 
+        from . import demo
+        if demo.ON and action not in demo.ALLOWED_JOB_ACTIONS:  # refill and submit open a real browser
+            if request.headers.get("x-in-page"):
+                return JSONResponse(demo.off_json(), status_code=403)
+            return HTMLResponse(demo.off_page("/job/" + quote(job_id, safe=":")), status_code=403)
         before = {"status": job["status"], "lead": _lead_status(job_id)}  # what a command mark's Undo goes back to
         if action == "unsend":
             from . import finish

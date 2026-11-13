@@ -243,6 +243,7 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s cubic-b
 .hbars .conv{font-size:13px;color:var(--ink-3);font-weight:500}
 @media (max-width:640px){.hbars .row{grid-template-columns:minmax(0,110px) minmax(0,1fr) 36px}}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13.5px;font-weight:550;padding:6px 10px;border-radius:8px;opacity:0;transition:opacity .1s;z-index:9;max-width:260px}
+.demo-note{margin:0 0 18px;padding:10px 14px;border-radius:10px;background:#fdf3d8;color:#4a3b12;font-size:14px;line-height:1.5}.demo-note a{color:inherit;font-weight:650}
 </style></head><body>
 {% from "_palstack.html" import palstack_mark, credit, credit_css %}{{ credit_css() }}{% set nav = nav|default('') %}
 <div class="app">
@@ -259,13 +260,13 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s cubic-b
  </nav>
  <div class="foot">
   <button type="button" class="btn sm primary applied-open" style="width:100%;justify-content:center" title="Log an application you sent on LinkedIn, a company site or by email"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="sync-lbl">Applied elsewhere</span></button>
-  <form method="post" action="/sync" style="margin:0"><button class="btn sm" style="width:100%;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg><span class="sync-lbl">Sync email</span></button></form>
-  <form method="post" action="/logout" style="margin:0"><button class="btn sm" title="Sign out" aria-label="Sign out" style="width:100%;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span class="sync-lbl">Sign out</span></button></form>
+  {% if not demo %}<form method="post" action="/sync" style="margin:0"><button class="btn sm" style="width:100%;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg><span class="sync-lbl">Sync email</span></button></form>{% endif %}
+  {% if not demo %}<form method="post" action="/logout" style="margin:0"><button class="btn sm" title="Sign out" aria-label="Sign out" style="width:100%;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span class="sync-lbl">Sign out</span></button></form>{% endif %}
   <div class="seg" role="group" aria-label="Theme"><button data-t="">Auto</button><button data-t="light">Light</button><button data-t="dark">Dark</button></div>
   {{ credit("by") }}
  </div>
 </aside>
-<main class="main">{% block body %}{% endblock %}</main>
+<main class="main">{% if demo %}<p class="demo-note" role="note">Demo with fictional data. Click around freely: it resets every hour, and nothing here runs the agent, opens a job site or sends email. <a href="https://github.com/palStack-io/jobsearchPal">Get your own copy</a></p>{% endif %}{% block body %}{% endblock %}</main>
 <nav class="tabbar" aria-label="Main (phone)">
   <a href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="lbl">Dashboard</span></a>
   <a href="/leads" {% if nav == 'leads' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="lbl">Leads</span></a>

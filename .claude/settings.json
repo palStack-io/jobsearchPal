@@ -6,6 +6,7 @@
       "Bash(autoapply alerts:*)",
       "Bash(autoapply board:*)",
       "Bash(autoapply add:*)",
+      "Bash(autoapply careers:*)",
       "Bash(autoapply list:*)",
       "Bash(autoapply show:*)",
       "Bash(autoapply skip:*)",

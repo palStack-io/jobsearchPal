@@ -9,6 +9,9 @@ Already done before you started: email sync and `autoapply find` (new roles from
 3. `autoapply alerts` gives yesterday's job-alert emails (LinkedIn, Indeed, HigherEdJobs...). Pull out only roles
    that clearly fit. For each, find the same posting on the company's own careers page (ATS URL); if it's gone
    there, skip it. Track live ones with `autoapply add <ats url> --company <name> --title <title>`.
+   If WebFetch shows the careers page with no jobs listed (many load the list with a script, often an embedded
+   Paycom, iCIMS or UKG board), run `autoapply careers <careers page url> --title "<title>"` before calling it
+   gone: it opens the page in a real browser and lists the job links, best title match first.
    Feed roles (ats "feed") you want to pick need the same hop to the real posting first.
 {{DISCOVER}}
 4. Pick the best N by fit (against materials/ and CLAUDE.local.md), then freshness, then pay; at most one role per company.

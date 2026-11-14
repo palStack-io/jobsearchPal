@@ -25,6 +25,8 @@ autoapply emails [--pending]           filed emails as JSON;  emails set ID KIND
 autoapply import-history FILE          load past applications from your old tracker (.csv or JSON rows)
 autoapply export-applications          every application as CSV
 autoapply add URL / list / show ID / skip ID
+autoapply careers URL [--title T]      job links on a careers page, read in a real browser (finds lists a
+                                       script draws, e.g. an embedded Paycom or iCIMS board, that WebFetch misses)
 autoapply list --prep                  interviews that need a prep pack
 autoapply list --nudges / --limits     follow-ups that need a draft; today's caps
 autoapply scan URL                     a form's questions as JSON

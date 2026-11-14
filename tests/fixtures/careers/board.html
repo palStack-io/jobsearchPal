@@ -1,0 +1,10 @@
+<!doctype html><html><body><div id="list">Loading...</div>
+<script>
+// Like a Paycom board: the job list is drawn by a script after the page loads.
+setTimeout(function () {
+  document.getElementById("list").innerHTML =
+    '<a href="/careers/jobs/101"><h3>Senior Analytics Engineer</h3><p>Full Time</p><p>Fully Remote</p></a>' +
+    '<a href="jobs/102">Director of Engineering</a>' +
+    '<a href="https://example.com/privacy">Privacy Policy</a>';
+}, 300);
+</script></body></html>

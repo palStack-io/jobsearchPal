@@ -675,7 +675,9 @@ def make_app(settings, db: DB) -> FastAPI:
         from . import jobsources
         src = jobsources.overview(settings, db)
         cap = 2000 if more else 150  # 500 rows made the page 1.2-1.4 MB (11/10)
-        return page("leads.html", rows=groups[show][:cap], total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show, nav="leads",
+        shown = groups[show][:cap]
+        leads.explain_scores(shown, settings)  # what each score is made of, for the hover on the Score column
+        return page("leads.html", rows=shown, total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show, nav="leads",
                     running=run_state(), src=src, src_open=src["on"] < src["total"] // 2 or not every)
 
     @app.post("/leads/apply")

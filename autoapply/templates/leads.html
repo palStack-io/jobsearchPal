@@ -5,7 +5,7 @@
  <div class="sub">Roles from your job-alert emails, best fit first. Star the ones that feel right; you don't have to look at all of them.</div>
  <details class="how"><summary>How leads work</summary><p>After each email sync, the top leads are looked up on the company's own job board
   (Greenhouse, Lever, Ashby, Workable; no AI). Matches join the roles the daily run can tailor. <b>Star</b> a lead and the next run searches the web for it;
-  <b>Auto apply</b> does that for one role right away and uses credits. <b>Score</b> is a rough fit from your titles and resume.</p></details></div>
+  <b>Auto apply</b> does that for one role right away and uses credits. <b>Score</b> is a rough fit from your titles and resume; point at a score to see what made it up.</p></details></div>
  <details class="addmenu"><summary class="btn primary" aria-haspopup="menu">+ Add job</summary><div class="addmenu-list" role="menu">
   <button type="button" class="btn ghost" role="menuitem" data-open-paste><b>Paste a job post</b><span>A LinkedIn page, a careers page, an email or a link</span></button>
   <button type="button" class="btn ghost applied-open" role="menuitem" title="Log an application you sent on LinkedIn, a company site or by email"><b>Applied elsewhere</b><span>Log one you already sent</span></button>
@@ -63,7 +63,10 @@ You can follow it on the Run log page.{% endset %}<template id="confirm-auto">{{
    {% if r.job_id %}<div><a class="pill {{ 'submitted' if r.status == 'applied' else 'filled' }}" href="/job/{{ r.job_id|urlencode }}">{{ r.status }}</a></div>{% endif %}</td>
   <td class="ink2 hide-sm">{{ r.location or "" }}</td>
   <td class="ink2 hide-sm">{{ r.source }}{% if r.seen > 1 %} · {{ r.seen }}×{% endif %}</td>
-  <td class="num">{{ '%.1f'|format(r.score or 0) }}</td>
+  <td class="num">{% if r.score_why %}<button type="button" class="score-why" aria-describedby="sw-{{ loop.index }}">{{ '%.1f'|format(r.score or 0) }}</button>
+   <span class="tip" role="tooltip" id="sw-{{ loop.index }}"><b>Why {{ '%.1f'|format(r.score or 0) }}</b>
+   {% for label, pts in r.score_why %}<span class="tip-row"><span>{{ label }}</span><span class="pts">{{ '%+.1f'|format(pts) }}</span></span>{% endfor %}
+   {% if r.score_note %}<span class="tip-note">{{ r.score_note }}</span>{% endif %}</span>{% else %}{{ '%.1f'|format(r.score or 0) }}{% endif %}</td>
   <td class="ink2 hide-sm" style="white-space:nowrap">{{ r.last_seen[5:10]|replace('-', '/') }}</td>
   <td><div class="lead-acts">
    {% if not running and (not r.job_id or r.status in ('tracked', 'starred')) and r.status != 'dismissed' %}<form method="post" action="/leads/apply" style="margin:0" data-confirm-title="Auto apply: {{ r.company }} · {{ r.title }}" data-confirm-ok="Auto apply"
@@ -90,6 +93,15 @@ table.leads th button{font:inherit;font-weight:600;color:inherit;background:none
 table.leads th button::after{content:"";margin-left:4px}table.leads th button[data-dir="asc"]::after{content:"↑"}table.leads th button[data-dir="desc"]::after{content:"↓"}
 .tried{font-size:14px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:6px 10px;margin-top:4px;max-width:62ch}
 .tried b{font-weight:600;color:var(--ink)}.tried.found{background:var(--good-soft)}
+td.num{position:relative}.score-why{font:inherit;color:inherit;background:none;border:0;padding:2px 4px;margin:-2px -4px;border-radius:6px;
+ cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}.score-why:hover,.score-why:focus-visible{background:var(--surface-2)}
+td.num .tip{display:none;position:absolute;right:0;top:calc(100% - 4px);z-index:5;width:max-content;max-width:min(340px,80vw);text-align:left;
+ font-size:14px;font-weight:400;line-height:1.4;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+ box-shadow:var(--shadow-lg);padding:10px 12px;white-space:normal}
+td.num:hover .tip,td.num:focus-within .tip{display:grid;gap:4px}.tip b{font-weight:600}
+.tip-row{display:flex;gap:12px;justify-content:space-between}.tip-row .pts{font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+.tip-note{color:var(--ink-3);font-size:13px;border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+@media (max-width:640px){td.num .tip{position:fixed;left:16px;right:16px;top:auto;bottom:16px;max-width:none;width:auto}}
 .lead-acts{display:flex;gap:4px;justify-content:flex-end;align-items:center;margin:0}.btn.star{width:30px;padding:0;font-size:16px}.btn.star.on{color:var(--warn-dot);border-color:color-mix(in srgb,var(--warn-dot) 50%,var(--line))}
 </style>
 <script>

@@ -283,3 +283,29 @@ def test_prepped_is_ready_and_never_repeated(tmp_path):
     assert rank.Applied(db, 90).same_role("Acme", "Senior Analytics Engineer", "u")
     assert "gh:a:1" in [j["id"] for j in stats.compute(db)["ready"]]
     assert "gh:a:1" not in [j["id"] for j in rank.shortlist(db, s, 5)]
+
+
+# ---------- Why a score (11/14) ----------
+
+
+def test_score_parts_add_up_to_the_score():
+    """Each part of a score has a plain label; the parts sum to the score itself."""
+    from autoapply.rank import score, score_parts
+    search = {"title_keywords": ["analytics engineer", "data"], "levels": ["mid"]}
+    job = {"title": "Senior Analytics Engineer", "description": "dbt sql python looker modeling",
+           "found_at": "2026-11-10 09:00", "ats": "feed"}
+    terms = {"dbt", "sql", "python", "airflow"}
+    now = datetime(2026, 11, 12, 9)
+    parts = score_parts(job, search, terms, now=now)
+    assert round(sum(p for _, p in parts), 2) == score(job, search, terms, now=now)
+    text = " | ".join(label for label, _ in parts)
+    assert "analytics engineer" in text and "dbt" in text and "2 days ago" in text and "not a level you picked" in text
+    no_text = score_parts({"title": "Data Engineer", "description": "", "found_at": "2026-11-12 09:00"}, search, terms, now=now)
+    assert any("no posting text" in label.lower() for label, _ in no_text)
+
+
+def test_leads_page_explains_each_score(tmp_path):
+    s, db, cfg = make(tmp_path)
+    leads.save(db, leads.parse(LINKEDIN), "Linkedin", datetime(2026, 11, 3, 9), {"title_keywords": ["analytics engineer"]}, set())
+    html = client(s, db).get("/leads").text
+    assert 'class="score-why"' in html and "Title has" in html and "New when scored" in html

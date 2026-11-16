@@ -517,7 +517,8 @@ def main(argv=None):
             spec_path = spec_path / "docs.json"
         try:
             r = docs.build(base, json.loads(spec_path.read_text()), spec_path.parent,
-                           last_name=s.profile.get("last_name", ""))
+                           last_name=s.profile.get("last_name", ""),
+                           look=s.profile.get("resume_look"), accent=s.profile.get("resume_accent"))
         except (OSError, ValueError) as e:  # SpecError and bad JSON alike: say what to fix
             sys.exit(f"build-docs: {e}")
         _out(r)

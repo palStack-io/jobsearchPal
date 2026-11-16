@@ -30,7 +30,8 @@ agent you are (the file keeps that name for both).
   Prep-only runs end with `autoapply fill <plan.json> --job <id> --prep-only`, which saves the files and answers
   for the person's kit without opening the form.
 - Answers are short, first person, plain and specific, with real numbers from `materials/`.
-  Never invent metrics, titles or dates.
+  Never invent metrics, titles or dates. On the resume, lead bullets with real figures and mark the key ones with
+  **two stars** (see prompts/stages/apply.md); the look (colours) comes from the person's Setup choice, not from you.
 
 ## Where things are
 - `materials/` holds the base resume (.docx and .pdf), context notes and past applications'

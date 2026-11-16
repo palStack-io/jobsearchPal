@@ -201,3 +201,45 @@ def test_agent_ready_counts_setup_token(tmp_path, monkeypatch):
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "test-token")
     r = su.agent_ready()
     assert r["done"] is True and r["who"] == ["Claude Code"]
+
+
+def _shaped_resume() -> bytes:
+    d = Document()
+    for text, style, bold in [("Ada Lovelace", None, True), ("London | ada@example.org", None, None),
+                              ("DATA ENGINEER", None, True), ("Summary.", None, None), ("CORE SKILLS", None, True),
+                              ("PROFESSIONAL EXPERIENCE", None, True), ("Built **things**.", "List Bullet", None),
+                              ("EDUCATION", None, True)]:
+        d.add_paragraph(style=style).add_run(text).bold = bold
+    b = io.BytesIO()
+    d.save(b)
+    return b.getvalue()
+
+
+def test_pick_a_resume_look_and_preview_it(fresh, tmp_path, monkeypatch):
+    s, c = fresh
+    monkeypatch.setattr(setup.shutil, "which", lambda n: None)
+    from autoapply import docs
+    monkeypatch.setattr(docs.shutil, "which", lambda n: None)
+    c.post("/setup/resume", files={"docx": ("cv.docx", _shaped_resume())})
+    page = c.get("/setup").text
+    assert 'value="navy" checked' in page and "Teal band" in page and "applicant tracking" in page
+    assert "contact details first" in c.post("/setup/look", data={"look": "teal"}).text
+    c.post("/setup/profile", data={"first_name": "Ada", "last_name": "Lovelace", "email": "ada@example.org"})
+    assert "Teal band look" in c.post("/setup/look", data={"look": "teal", "accent": "#7c2d12"}).text
+    prof = yaml.safe_load((tmp_path / "profile.yaml").read_text())
+    assert prof["resume_look"] == "teal" and prof["resume_accent"] == "7C2D12" and prof["first_name"] == "Ada"
+    page = c.get("/setup").text
+    assert 'value="teal" checked' in page
+    assert "Resume look" in page and "Teal band, your own colour #7C2D12" in page and 'data-open="look"' in page
+    assert "not a colour" in c.post("/setup/look", data={"look": "teal", "accent": "red"}).text
+    c.post("/setup/look", data={"look": "navy", "accent": ""})
+    p = yaml.safe_load((tmp_path / "profile.yaml").read_text())
+    (tmp_path / "profile.yaml").write_text(yaml.safe_dump(dict(p, resume_look="neon")))
+    assert 'value="navy" checked' in c.get("/setup").text  # a hand-edited unknown look falls back to navy
+    (tmp_path / "profile.yaml").write_text(yaml.safe_dump(p))
+    assert "resume_accent" not in yaml.safe_load((tmp_path / "profile.yaml").read_text())
+    r = c.post("/setup/look/preview", data={"look": "slate"})
+    assert r.status_code == 200 and r.content[:2] == b"PK"  # the Word file when LibreOffice is missing
+    built = Document(io.BytesIO(r.content))
+    assert str(built.paragraphs[0].runs[0].font.color.rgb) == "334155"
+    assert yaml.safe_load((tmp_path / "profile.yaml").read_text())["resume_look"] == "navy"  # preview saves nothing

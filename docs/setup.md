@@ -48,6 +48,13 @@ the key's usage before and after, and the run is skipped once the month's budget
 
 Updating later: `git pull && .venv/bin/pip install -e . && systemctl --user restart autoapply-review`.
 
+Resume PDFs set in a wider, plainer font than your Word file? Most resumes use Calibri or Cambria, which Linux
+doesn't have. Installs from before December 2026 need their free stand-ins (same letter widths, so lines and page breaks match):
+`sudo apt-get install -y fonts-crosextra-carlito fonts-crosextra-caladea`. The Docker image has them.
+
+Pick how your tailored resumes look (Navy, Teal band, Slate or your own layout, plus your own colour if you like) on
+the Setup page under **Base resume**; **Preview with my resume** shows your resume in that look before you save it.
+
 ## Docker (alternative to steps 1, 4 and 6)
 
 One image has Python, Playwright's Chromium, LibreOffice and both agent CLIs, so nothing else gets

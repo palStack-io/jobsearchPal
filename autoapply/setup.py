@@ -198,6 +198,34 @@ def save_profile(settings, form: dict) -> dict:
     return prof
 
 
+def save_look(settings, look: str, accent: str) -> str | None:
+    """Saves the resume look (and an optional own colour) to profile.yaml. Returns an error to show, or None."""
+    from .docs import LOOKS, SpecError, accent_color
+    look = str(look or "").strip().lower()
+    if look not in LOOKS:
+        return "Pick one of the looks."
+    accent = str(accent or "").strip()
+    if accent:
+        try:
+            accent = str(accent_color(accent))
+        except SpecError:
+            return f'"{accent[:20]}" is not a colour like #1F4E79.'
+    root = settings.root
+    if not (root / "profile.yaml").exists():
+        return "Save your contact details first; the look is kept with them in profile.yaml."
+    prof = _yaml(root / "profile.yaml")
+    prof["resume_look"] = look
+    if accent:
+        prof["resume_accent"] = accent
+    else:
+        prof.pop("resume_accent", None)
+    head = "# Written by the dashboard's Setup page. Edit here or there.\n"
+    (root / "profile.yaml").write_text(head + yaml.safe_dump(prof, sort_keys=False, allow_unicode=True))
+    settings.profile.clear()
+    settings.profile.update(prof)
+    return None
+
+
 # ---- config.yaml ----------------------------------------------------------------------------------
 
 def parse_board(line: str) -> tuple[str, str] | None:

@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 # Broken third-party apt repos (old Coral, speedtest) fail update; the Ubuntu lists still refresh.
 sudo apt-get update || true
-sudo apt-get install -y python3-venv libreoffice-writer-nogui fonts-liberation curl
+sudo apt-get install -y python3-venv libreoffice-writer-nogui fonts-liberation fonts-crosextra-carlito fonts-crosextra-caladea curl
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip

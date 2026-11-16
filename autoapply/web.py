@@ -1186,7 +1186,9 @@ def make_app(settings, db: DB) -> FastAPI:
                     keys={k: pr.key_hint(k) for k in ("ADZUNA_APP_ID", "ADZUNA_APP_KEY", "USAJOBS_API_KEY", "USAJOBS_EMAIL")}, feeds=setup.FEED_LABELS,
                     feeds_on=cfg.get("feeds", list(FEEDS)) if cfg else [*FEEDS, "themuse", "himalayas", "jobicy"], ws=cfg.get("work_search") or {}, states=state_rules(),
                     about=setup.load_about(settings.data_dir), about_fields=setup.ABOUT_FIELDS,
-                    resume=setup.base_resume(settings.root), gmail_user=os.environ.get("GMAIL_USER", ""),
+                    resume=setup.base_resume(settings.root), looks=__import__("autoapply.docs", fromlist=["x"]).LOOKS,
+                    look=(lambda v: v if v in __import__("autoapply.docs", fromlist=["x"]).LOOKS else "navy")(str(prof.get("resume_look") or "").lower()), accent=str(prof.get("resume_accent") or "").lstrip("#"),
+                    gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
                     msg=msg, err=err)
 
@@ -1245,6 +1247,38 @@ def make_app(settings, db: DB) -> FastAPI:
         made = " and ".join(x for x in (r["docx"], r["pdf"]) if x)
         return _back(f"Saved {made} in materials/." + ("" if r["pdf"] or p else
                      " No PDF was made (LibreOffice isn't installed here), so upload one too."), "profile")
+
+    @app.post("/setup/look")
+    async def setup_look(request: Request):
+        from . import setup
+        f = dict(await request.form())
+        err = setup.save_look(settings, str(f.get("look") or ""), str(f.get("accent") or ""))
+        if err:
+            return _back(err, "look")
+        from .docs import LOOKS
+        return _back(f"Saved. New tailored resumes and letters use the {LOOKS[settings.profile['resume_look']]['label']} look.", "look")
+
+    @app.post("/setup/look/preview")
+    async def setup_look_preview(request: Request):
+        """Your base resume in the chosen look, as a PDF, without saving the choice."""
+        from . import docs, setup
+        f = dict(await request.form())
+        base = setup.base_resume(settings.root)
+        if base is None:
+            return _back("Upload your resume first.", "resume")
+        out = settings.data_dir / "look-preview"
+        shutil.rmtree(out, ignore_errors=True)
+        try:
+            r = await run_in_threadpool(docs.build, base, {"company": "Preview"}, out,
+                                        settings.profile.get("last_name", ""), True, None,
+                                        str(f.get("look") or ""), str(f.get("accent") or "").strip())
+        except docs.SpecError as e:
+            return _back(str(e), "look")
+        pdf = (r.get("pdf") or {}).get("resume")
+        if pdf:
+            return FileResponse(pdf, media_type="application/pdf", content_disposition_type="inline",
+                                filename=Path(pdf).name)
+        return FileResponse(r["resume"], filename=Path(r["resume"]).name)  # no LibreOffice here: the Word file
 
     @app.post("/setup/about")
     async def setup_about(request: Request):

@@ -1,6 +1,6 @@
 """The staged daily run: pre-ranking, stage list, picks, prompts, quick pick and the per-stage cost table."""
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 import yaml
@@ -153,7 +153,8 @@ def test_todo_line_for_phone_push(tmp_path, capsys):
     s, db, cfg = make(tmp_path)
     cli.main(["--config", str(cfg), "todo-line"])
     assert capsys.readouterr().out == ""  # nothing open, no line
-    db.add_event({"id": "<r@x>", "job_id": None, "kind": "recruiter", "at": "2026-10-01 09:00",
+    db.add_event({"id": "<r@x>", "job_id": None, "kind": "recruiter",
+                  "at": f"{(datetime.now() - timedelta(days=2)):%Y-%m-%d} 09:00",  # recent: old ones age out
                   "sender": "Pat Lee <pat@agency.example>", "subject": "Data role", "reviewed": 1})
     cli.main(["--config", str(cfg), "todo-line"])
     out = capsys.readouterr().out

@@ -97,7 +97,7 @@ by hand, so either way works; keys it saves go to `data/secrets.json` (owner-onl
   says otherwise, add `APP_UID` and `APP_GID` to `.env`.
 - **Updating:** `git pull && docker compose pull && docker compose up -d`. The image is published for amd64 and
   arm64 (Raspberry Pi 5, Apple silicon and ARM cloud machines) at `ghcr.io/palstack-io/jobsearchpal`; set
-  `JSP_VERSION=1.0.0` in `.env` to stay on one release, or build your own with `docker compose up -d --build`.
+  `JSP_VERSION=1.1.0` in `.env` to stay on one release, or build your own with `docker compose up -d --build`.
 - **Logins** live in the `agent-home` volume, so a rebuild keeps them.
 
 ### Signing in to your AI subscription

@@ -145,17 +145,12 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
  {% if not s.ready and not shortlist %}<div class="empty-state"><b>You're all caught up.</b><span>The next daily run looks for more. Resting counts too.</span></div>{% endif %}
 </section>
 
-<section class="card plan{{ ' g-saved' if planned }}" id="plan" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
- {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
- {% elif plan %}<div class="plan-row"><div><h2 id="plan-h">Your plan this week</h2>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
-   {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>
-  <div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div></div>
- {% elif plan_open and not back %}<h2 id="plan-h">Your week, in your words</h2>
-  <p class="ink2 plan-why">Set a few totals and pick your days; we'll spread them out. Change any day. It's yours; nothing reminds you of it.</p>
-  {{ g.goals_form(None, goal_totals, plan_days) }}
- {% else %}<div class="plan-row"><h2 id="plan-h" class="plan-quiet">No plan this week. That's fine.</h2><div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Write one</summary>{{ g.goals_form(None, goal_totals, plan_days, skip=False) }}</details></div></div>{% endif %}
- {% if last_wk %}{{ g.lookback_dialog(last_wk, last_wk_summary) }}{% endif %}
-</section>
+{% if plan_popup %}<dialog id="plan-pop" class="ask plan-pop" aria-labelledby="plan-pop-h">
+ <h2 id="plan-pop-h">Want to plan your week?</h2>
+ <p class="ink2">A few totals and the days you'll search; we spread them out. It's yours, and nothing reminds you of it. You'll find it under Your week.</p>
+ <div class="plan-pop-acts"><a class="btn" href="/plan">Plan my week</a><form method="dialog"><button class="btn ghost">Not now</button></form></div>
+</dialog>
+<script>(()=>{const d=document.getElementById("plan-pop");if(d&&d.showModal)d.showModal()})()</script>{% endif %}
 
 
 {% if offer %}<section class="card offer offer-{{ offer.kind }}" aria-labelledby="offer-h">

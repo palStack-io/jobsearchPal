@@ -19,7 +19,7 @@
 
 <section class="card mt beyond" aria-labelledby="beyond-h"><h2 id="beyond-h">Beyond applications</h2>
  <div class="grid g3">
-  <div><div class="num" data-count="{{ s.planned_weeks }}">{{ s.planned_weeks }}</div><div class="sub">week{{ '' if s.planned_weeks == 1 else 's' }} with a plan you wrote · <a href="/#plan">this week's</a></div></div>
+  <div><div class="num" data-count="{{ s.planned_weeks }}">{{ s.planned_weeks }}</div><div class="sub">week{{ '' if s.planned_weeks == 1 else 's' }} with a plan you wrote · <a href="/plan">this week's</a></div></div>
   <div><div class="num" data-count="{{ s.contacts_total }}">{{ s.contacts_total }}</div><div class="sub">{{ 'person' if s.contacts_total == 1 else 'people' }} you got in touch with{% if s.contact_interviews %} · {{ s.contact_interviews }} interview{{ '' if s.contact_interviews == 1 else 's' }} at their companies{% endif %} · <a href="/dua#people">add</a></div></div>
   <div><div class="num" data-count="{{ s.reflections }}">{{ s.reflections }}</div><div class="sub">reflection{{ '' if s.reflections == 1 else 's' }} on what matters to you · <a href="/reflect">write one</a></div></div>
  </div>

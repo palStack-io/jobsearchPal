@@ -908,23 +908,27 @@ def make_app(settings, db: DB) -> FastAPI:
         job, _, _ = load(job_id)
         return {"status": job["status"], "submitted_at": job.get("submitted_at")}
 
-    @app.post("/finished/{job_id:path}")
-    async def finished(job_id: str, request: Request):
-        """`autoapply finish` saw the site's confirmation page: mark it sent with the command. Undo is on the job page."""
+    def _mark_finished(job_id: str, confirmation: str) -> dict:
+        """The site's confirmation page showed (`autoapply finish`, or Finish it here): mark it sent with the command.
+        Undo is on the job page."""
         from . import finish
         job, _, _ = load(job_id)
-        try:
-            conf = str((await request.json()).get("confirmation") or "")[:200]
-        except ValueError:
-            conf = ""
         if job["status"] == "submitted":
             return {"ok": True, "already": True}
         before = {"status": job["status"], "lead": _lead_status(job_id)}
         db.update(job_id, status="submitted", error=None, submitted_at=time.strftime("%Y-%m-%d %H:%M"))
         _set_lead(job_id, "applied" if before["lead"] is not None else None)
-        finish.mark(db, job_id, "auto", before, conf)
+        finish.mark(db, job_id, "auto", before, (confirmation or "")[:200])
         _record_applied(job, None)
         return {"ok": True}
+
+    @app.post("/finished/{job_id:path}")
+    async def finished(job_id: str, request: Request):
+        try:
+            conf = str((await request.json()).get("confirmation") or "")
+        except ValueError:
+            conf = ""
+        return _mark_finished(job_id, conf)
 
     @app.get("/bundle/{job_id:path}")
     def bundle(job_id: str):
@@ -946,6 +950,50 @@ def make_app(settings, db: DB) -> FastAPI:
         if not p or not _servable(p):
             raise HTTPException(404)
         return FileResponse(p)
+
+    # ---- Finish it here: the form filled in the browser on this server, finished from any browser ----
+    from . import finish_here
+    _box = finish_here.box_from(settings)
+    app.state.finish_sessions = finish_here.Sessions(_box) if _box else None
+
+    def _sessions():
+        if not finish_here.box_from(settings) or app.state.finish_sessions is None:
+            raise HTTPException(404)
+        return app.state.finish_sessions
+
+    @app.get("/finish-here/status")
+    def finish_here_status():
+        return _sessions().status()
+
+    @app.post("/finish-here/paste")
+    def finish_here_paste(text: str = Form("")):
+        return {"ok": _sessions().paste(text)}
+
+    @app.post("/finish-here/close")
+    def finish_here_close():
+        ss = _sessions()
+        job_id = ss.status()["job_id"]
+        ss.close()
+        return RedirectResponse(f"/job/{quote(job_id, safe=':/')}" if job_id else "/", status_code=303)
+
+    @app.post("/finish-here/{job_id:path}")
+    def finish_here_start(job_id: str):
+        ss = _sessions()
+        from . import finish
+        job, plan, _ = load(job_id)
+        plan = {**plan, "approved_by_user": False,
+                "files": {k: p for k, p in (plan.get("files") or {}).items() if _servable(p)}}
+        r = ss.start(job_id, plan, settings.profile, mark_sent=_mark_finished)
+        if "busy" in r:
+            return RedirectResponse(f"/finish-here/{quote(r['busy'], safe=':/')}?busy=1", status_code=303)
+        finish.record_run(db, job_id)  # counted like a run of the laptop command
+        return RedirectResponse(f"/finish-here/{quote(job_id, safe=':/')}", status_code=303)
+
+    @app.get("/finish-here/{job_id:path}")
+    def finish_here_page(job_id: str, busy: int = 0):
+        st = _sessions().status()
+        job, _, _ = load(job_id)
+        return page("finish_here.html", job=job, st=st, busy=bool(busy), here=st["job_id"] == job_id)
 
     proof_root = settings.data_dir / "proof"
 

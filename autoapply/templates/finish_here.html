@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "macros.html" import co %}
+{% block title %}Finish it here · {{ job.company }}{% endblock %}
+{% block body %}
+{% set state = st.state if here else 'closed' %}
+{% set live = state in ('starting', 'filling', 'ready', 'sent') %}
+<p class="crumb"><a href="/job/{{ job.id|urlencode }}">← {{ co(job.company) }} · {{ job.title }}</a></p>
+<div class="ph"><div><h1>Finish it here</h1>
+ <div class="sub">{{ co(job.company) }} · {{ job.title }}</div></div></div>
+
+{% if busy %}
+<section class="card mt fh-note" role="status">
+ <p><b>Another application is open in the browser.</b> Only one can be open at a time.</p>
+ <form method="post" action="/finish-here/close"><button class="btn primary">Close it</button></form>
+</section>
+{% else %}
+<section class="card mt fh" data-state="{{ state }}" data-live="{{ 1 if live else 0 }}">
+ <div class="fh-bar">
+  <p class="fh-status" id="fh-status" role="status" aria-live="polite">
+   {%- if state in ('starting', 'filling') %}Filling in the form…
+   {%- elif state == 'ready' %}It's filled in. Answer the captcha or code, check it, and press Submit on the site.
+   {%- elif state == 'sent' %}Sent. That's one more door you knocked on.
+   {%- elif state == 'error' %}{{ st.error or "We lost the browser. Try again in a moment." }}
+   {%- else %}Closed. Nothing was sent from here.{% endif -%}
+  </p>
+  <div class="fh-actions">
+   {% if live %}
+   <form method="post" action="/finish-here/close"><button class="btn {{ 'primary' if state in ('ready', 'sent', 'starting', 'filling') else '' }}">{{ 'Done' if state in ('ready', 'sent') else 'Stop' }}</button></form>
+   {% elif state == 'error' %}
+   <form method="post" action="/finish-here/{{ job.id|urlencode }}"><button class="btn primary">Try again</button></form>
+   <a class="btn ghost" href="/job/{{ job.id|urlencode }}">Back to the job</a>
+   {% else %}
+   <form method="post" action="/finish-here/{{ job.id|urlencode }}"><button class="btn primary">Open it again</button></form>
+   <a class="btn ghost" href="/job/{{ job.id|urlencode }}">Back to the job</a>
+   {% endif %}
+  </div>
+ </div>
+ {% if live %}
+ <div class="fh-screen" id="fh-screen" aria-label="The application form, in the browser on your server"></div>
+ <form class="fh-paste" id="fh-paste" autocomplete="off">
+  <label for="fh-text">Paste text</label>
+  <input id="fh-text" name="text" placeholder="A code from your email, or an answer" autocomplete="off">
+  <button class="btn" type="submit">Type it in</button>
+  <small>Click the field on the form first. It types into whichever field is selected.</small>
+ </form>
+ {% if here and st.unanswered %}
+ <div class="fh-left"><h2>It couldn't answer these</h2>
+  <ul>{% for q in st.unanswered %}<li>{{ q }}</li>{% endfor %}</ul></div>
+ {% endif %}
+ {% endif %}
+</section>
+{% endif %}
+
+<style>
+.fh-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.fh-status{margin:0;font-weight:600;flex:1 1 280px}
+.fh-actions{display:flex;gap:8px;align-items:center}
+.fh-actions form{margin:0}
+.fh-screen{margin-top:12px;width:100%;aspect-ratio:1280/900;background:var(--surface-2,#111);border-radius:12px;overflow:hidden;border:1px solid var(--line-2)}
+.fh-paste{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.fh-paste label{font-weight:600}
+.fh-paste input{flex:1 1 220px;min-width:0}
+.fh-paste small{flex-basis:100%;color:var(--ink-2)}
+.fh-left h2{font-size:16px;margin:16px 0 6px}
+.fh-left ul{margin:0;padding-left:20px}
+</style>
+{% if live %}
+<script type="module">
+import RFB from "/static/novnc/core/rfb.js";
+const card = document.querySelector(".fh"), status = document.getElementById("fh-status");
+let rfb = null, last = card.dataset.state;
+function connect() {
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  rfb = new RFB(document.getElementById("fh-screen"), `${proto}//${location.host}/finish-here/vnc`);
+  rfb.scaleViewport = true;
+  rfb.resizeSession = false;
+  rfb.addEventListener("disconnect", () => { if (card.dataset.state !== "closed") setTimeout(poll, 500); });
+}
+async function poll() {
+  try {
+    const st = await (await fetch("/finish-here/status", {headers: {accept: "application/json"}})).json();
+    if (st.state !== last) { location.reload(); return; }
+    if (!rfb && st.state === "ready") connect();
+  } catch (e) { /* the next poll tries again */ }
+}
+if (last === "ready" || last === "sent") connect();
+setInterval(poll, 2000);
+document.getElementById("fh-paste").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const box = document.getElementById("fh-text");
+  const r = await fetch("/finish-here/paste", {method: "POST", body: new URLSearchParams({text: box.value})});
+  if (r.ok && (await r.json()).ok) box.value = "";
+});
+</script>
+{% endif %}
+{% endblock %}

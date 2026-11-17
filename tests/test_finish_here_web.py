@@ -227,3 +227,32 @@ def test_settings_running_line(tmp_path, monkeypatch):
     _health(monkeypatch, version="1.1.0")
     _, c, _ = _setup(tmp_path, ON)
     assert "running (version 1.1.0)" in c.get("/settings").text
+
+
+def test_finish_here_button_is_not_in_a_nested_form(tmp_path, monkeypatch):
+    """The finish card sits inside the job page's main form, and browsers drop a <form> nested in another one, so the
+    button would submit the job form instead. Found driving it end to end (2026-11-17)."""
+    from html.parser import HTMLParser
+    _health(monkeypatch)
+    _, c, _ = _setup(tmp_path, ON)
+    html = c.get("/job/manual:gh").text
+
+    class P(HTMLParser):
+        depth, nested, owner = 0, [], None
+        def handle_starttag(self, tag, attrs):
+            a = dict(attrs)
+            if tag == "form":
+                if self.depth:
+                    self.nested.append(a.get("action"))
+                self.depth += 1
+            if tag == "button" and "data-finish-here" in a:
+                self.owner = (a.get("form"), self.depth)
+        def handle_endtag(self, tag):
+            if tag == "form":
+                self.depth -= 1
+    p = P()
+    p.feed(html)
+    assert not [n for n in p.nested if n and "finish-here" in n]
+    assert p.owner is not None, "Finish it here button not found"
+    form_id, depth = p.owner
+    assert form_id and f'<form id="{form_id}" method="post" action="/finish-here/manual%3Agh"' in html

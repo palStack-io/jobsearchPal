@@ -59,13 +59,13 @@
   <form method="post" action="/titles/add" class="inline"><input type="hidden" name="title" value="{{ r.title }}"><button class="btn sm">Add to my search</button></form></li>{% endfor %}</ul>
  <p class="muted" style="margin:8px 0 0;font-size:14px">Remove titles any time on <a href="/setup#interests">Setup</a>.</p></section>{% endif %}
 
-<p class="muted mt" style="font-size:14px">{% if g.read_by_ai %}Roles read by Skill matching use the model's list; the rest are{% else %}Counted from job descriptions{% endif %} matched against a fixed list of about 80 skills, so a skill that isn't on it won't show for those. "Your resume" means your skills list from Skill matching, your base resume, CLAUDE.local.md and notes about you.</p>
+<p class="muted mt" style="font-size:14px">{% if g.read_by_ai %}Roles read by Skill matching use the model's list; the rest are{% else %}Counted from job descriptions{% endif %} matched against a fixed list of about 80 skills, so a skill that isn't on it won't show for those. "Your resume" means your skills list from Skill matching, your base resume and the notes you keep about yourself.</p>
 
 <style>
 .lead-p{margin:0 0 6px}.inline{display:inline;margin:0}.chips{display:flex;flex-wrap:wrap;gap:6px}.chips .pill{text-transform:none}
 ul.sk-list{list-style:none;margin:0;padding:0}
 .sk{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
-.sk:last-child{border-bottom:0}.sk-t b{font-size:16.5px}.sk .m{font-size:14px;color:var(--ink-3)}
+.sk:last-child{border-bottom:0}.sk-t b{font-size: 16px}.sk .m{font-size:14px;color:var(--ink-3)}
 .sk-bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}.sk-bar span{display:block;height:100%;background:var(--sun);border-radius:4px}
 .sk .acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:640px){.sk{grid-template-columns:minmax(0,1fr)}.sk-bar{width:120px}.sk .acts{justify-content:flex-start}}

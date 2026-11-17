@@ -53,10 +53,10 @@
 .hero-stats .tile{padding:18px 22px 20px;min-width:0}.hero-stats .tile+.tile{border-left:1px solid var(--line)}
 .hero-stats .tile .lbl{font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:.01em}
 .hero-stats .tile.key .lbl{color:var(--warn)}
-html.intro .hero-stats .tile{animation:hero-up .7s cubic-bezier(.2,.8,.2,1) backwards}
+html.intro .hero-stats .tile{animation:hero-up .7s var(--ease-out) backwards}
 html.intro .hero-stats .tile:nth-child(1){animation-delay:.55s}html.intro .hero-stats .tile:nth-child(2){animation-delay:.63s}
 html.intro .hero-stats .tile:nth-child(3){animation-delay:.71s}html.intro .hero-stats .tile:nth-child(4){animation-delay:.79s}
-html.intro .welcome-t{animation:hero-up .8s cubic-bezier(.2,.8,.2,1) backwards}
+html.intro .welcome-t{animation:hero-up .8s var(--ease-out) backwards}
 html.intro .wdots i.on{animation:dot-pop .4s cubic-bezier(.3,1.6,.5,1) backwards}
 html.intro .wdots i.on:nth-child(1){animation-delay:1s}html.intro .wdots i.on:nth-child(2){animation-delay:1.1s}html.intro .wdots i.on:nth-child(3){animation-delay:1.2s}
 html.intro .wdots i.on:nth-child(4){animation-delay:1.3s}html.intro .wdots i.on:nth-child(5){animation-delay:1.4s}html.intro .wdots i.on:nth-child(n+6){animation-delay:1.5s}
@@ -67,9 +67,9 @@ html.intro .wdots i.on:nth-child(4){animation-delay:1.3s}html.intro .wdots i.on:
  .hero-stats .tile:nth-child(n+3){border-top:1px solid var(--line)}}
 .welcome-t{min-width:0;display:grid;gap:8px}
 .welcome-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
-.welcome h1{font-size:34px;line-height:1.15;margin:0;letter-spacing:-.03em;font-weight:800;text-wrap:balance}
-.hello-line{margin:0;color:var(--ink-2);font-size:16.5px;max-width:64ch}
-.welcome .sub{color:var(--ink-3);font-size:14.5px}
+.welcome h1{font-size:34px;line-height:1.15;margin:0;letter-spacing:-.03em;font-weight: 700;text-wrap:balance}
+.hello-line{margin:0;color:var(--ink-2);font-size: 16px;max-width:64ch}
+.welcome .sub{color:var(--ink-3);font-size: 14px}
 .market{margin:0;color:var(--ink-3);font-size:14px;max-width:72ch}.market a{color:var(--ink-3);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
 .cel{display:grid;gap:2px;background:var(--sun-soft);border-radius:10px;padding:10px 12px;margin-bottom:4px}.cel b{font-size:16px}.cel span{color:var(--ink-2);font-size:15px}
 .palnote{margin:16px 22px 20px;padding:12px 16px;border-radius:12px;background:var(--accent-soft);display:grid;gap:8px}
@@ -78,16 +78,16 @@ html.intro .wdots i.on:nth-child(4){animation-delay:1.3s}html.intro .wdots i.on:
  .hero-stats .tile{padding:14px 16px 16px}.ph-acts{flex-wrap:wrap}}</style>
 <style>.wdots{display:flex;gap:6px;margin-top:8px}.wdots i{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2)}.wdots i.on{background:var(--sun);border-color:var(--sun)}
 .ph-acts{display:flex;gap:8px;align-items:center}.runnow{display:flex;gap:6px;align-items:center;margin:0}.runnow select{width:auto;min-width:60px}
-.running{text-decoration:none!important;display:inline-flex;gap:8px;align-items:center;font-size:14.5px;color:var(--ink-2);background:var(--accent-soft);border-radius:999px;padding:6px 12px}
+.running{text-decoration:none!important;display:inline-flex;gap:8px;align-items:center;font-size: 14px;color:var(--ink-2);background:var(--accent-soft);border-radius:999px;padding:6px 12px}
 .running i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.running i{animation:none}}
 .ready .acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.ready .acts form{margin:0}
 .decline{position:relative}.decline summary{list-style:none;cursor:pointer}.decline summary::-webkit-details-marker{display:none}
 .decline .pop{position:absolute;right:0;top:calc(100% + 6px);z-index:5;display:flex;flex-direction:column;align-items:stretch;gap:4px;
  background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:150px}
-.decline .pop span{font-size:13.5px;padding:0 4px 2px}.decline .pop .btn{justify-content:flex-start;text-align:left}
+.decline .pop span{font-size: 14px;padding:0 4px 2px}.decline .pop .btn{justify-content:flex-start;text-align:left}
 .skillm{color:var(--accent-ink)}.avatar.todo-av{opacity:.55}.group-h{display:flex;flex-direction:column;gap:2px;margin:14px 0 2px;padding-top:10px;border-top:1px solid var(--line)}.group-h:first-of-type{border-top:0;padding-top:0;margin-top:4px}
-.group-h b{font-size:15.5px;color:var(--ink)}.group-h span{font-size:14px;color:var(--ink-3)}@media (max-width:600px){.ready{flex-wrap:wrap}.ready .acts{width:100%;justify-content:flex-start;padding-left:50px}.decline .pop{right:auto;left:0}}</style>
+.group-h b{font-size: 16px;color:var(--ink)}.group-h span{font-size:14px;color:var(--ink-3)}@media (max-width:600px){.ready{flex-wrap:wrap}.ready .acts{width:100%;justify-content:flex-start;padding-left:50px}.decline .pop{right:auto;left:0}}</style>
 <script>document.addEventListener("click",e=>{document.querySelectorAll("details.decline[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})});</script>
 
 {% if setup_left %}<div class="notice" style="margin:0 0 20px"><span class="grow">Setup isn't finished: {{ setup_left }} required step{{ '' if setup_left == 1 else 's' }} left. The daily run needs them.</span><a class="btn sm" href="/setup">Finish setup</a></div>{% endif %}
@@ -116,7 +116,7 @@ html.intro .wdots i.on:nth-child(4){animation-delay:1.3s}html.intro .wdots i.on:
  {% for j in prepped_ready %}<div class="ready"><div class="avatar" style="--h:{{ j.company|hue }}" aria-hidden="true">{{ (j.company or '?')[:1]|upper }}</div>
   <div class="body"><div class="t">{{ co(j.company) }} · {{ j.title }}</div>
    <div class="m">{{ j.location or "Location not listed" }}{% if j.pay %} · {{ j.pay }}{% endif %}</div></div>
-  <div class="acts">{{ decline(j) }}<a class="btn primary sm" href="/job/{{ j.id|urlencode }}#kit">Open the kit</a></div></div>
+  <div class="acts">{{ decline(j) }}<a class="btn sm" href="/job/{{ j.id|urlencode }}#kit">Open the kit</a></div></div>
  {% endfor %}{% endif %}
  {% if filled_ready %}<div class="group-h"><b>Ready to submit</b><span>Filled in and waiting for your review. Nothing is sent until you press Submit.</span></div>
  {% for j in filled_ready %}<div class="ready"><div class="avatar" style="--h:{{ j.company|hue }}" aria-hidden="true">{{ (j.company or '?')[:1]|upper }}</div>
@@ -124,7 +124,7 @@ html.intro .wdots i.on:nth-child(4){animation-delay:1.3s}html.intro .wdots i.on:
    <div class="m">{{ j.location or "Location not listed" }}{% if j.pay %} · {{ j.pay }}{% endif %}{% if j.error %} · <span style="color:var(--bad)">{{ j.error|truncate(80) }}</span>{% endif %}</div>
    {% if j.skill_line %}<div class="m skillm">{{ j.skill_line }}</div>{% endif %}
    <div class="m"><a class="know" href="/dua?company={{ co(j.company)|striptags|trim|urlencode }}#people">Anyone you know there?</a></div></div>
-  <div class="acts">{{ decline(j) }}{{ applied_btn(j.company, j.title, j.apply_url or j.url, "/#ready-h") }}<a class="btn primary sm" href="/job/{{ j.id|urlencode }}">Review</a></div></div>
+  <div class="acts">{{ decline(j) }}{{ applied_btn(j.company, j.title, j.apply_url or j.url, "/#ready-h") }}<a class="btn sm" href="/job/{{ j.id|urlencode }}">Review</a></div></div>
  {% endfor %}{% endif %}
  {% if shortlist %}<div class="group-h"><b>Shortlist</b><span>Good matches from today's search, not tailored yet. Prepare the ones you want, decline the rest.</span></div>
  {% for j in shortlist %}<div class="ready short"><div class="avatar todo-av" style="--h:{{ j.company|hue }}" aria-hidden="true">{{ (j.company or '?')[:1]|upper }}</div>
@@ -168,7 +168,7 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
   <p>On a hard day: do one small thing (one application, or one message to someone you know), stop when it's done, and talk to someone you trust.</p>
   <form method="post" action="/setback" class="offer-form"><input type="hidden" name="key" value="{{ offer.key }}">
    <label class="fld"><span>When a hard day comes, I will…</span><input type="text" name="if_then" maxlength="200" value="{{ offer.if_then }}" placeholder="e.g. send one message, then go for a walk"></label>
-   <div class="acts"><button class="btn sm primary">Save it</button><button class="btn sm ghost" formaction="/pal/seen" name="back" value="/">Put it away</button></div></form>
+   <div class="acts"><button class="btn sm">Save it</button><button class="btn sm ghost" formaction="/pal/seen" name="back" value="/">Put it away</button></div></form>
  {% elif offer.kind == 'values' %}<h2 id="offer-h">Fifteen minutes on what matters to you</h2>
   <p>{% if offer.why == 'interview' %}Before your first interview, {% else %}Early in a search, {% endif %}pick a value or two that matter to you and write a few lines about why. Some people find it steadying. It's private and stays on this server.</p>
   <form method="post" action="/pal/seen" class="acts"><input type="hidden" name="key" value="{{ offer.key }}"><a class="btn sm primary" href="/reflect?back=/">Start</a><button class="btn sm ghost" name="back" value="/">Put it away</button></form>
@@ -180,12 +180,12 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
  {% endif %}
 </section>{% endif %}
 <style>.plan,.offer{margin:22px 0 0}.plan h2,.offer h2{margin:0 0 6px}.plan-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-.plan-line{margin:0;font-size:16px}.plan-why{margin:0 0 10px;max-width:64ch}.plan-quiet{font-size:15.5px;color:var(--ink-2);font-weight:500}
+.plan-line{margin:0;font-size:16px}.plan-why{margin:0 0 10px;max-width:64ch}.plan-quiet{font-size: 16px;color:var(--ink-2);font-weight:500}
 .plan-edit{flex:1 1 100%}.plan-edit summary{list-style:none;display:inline-flex}.plan-edit summary::-webkit-details-marker{display:none}.plan-row>.plan-edit,.plan-acts>.plan-edit{flex:0 0 auto}.plan-edit[open]{flex:1 1 100%}
 .plan-acts{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}.plan-acts:has(.plan-edit[open]){flex:1 1 100%;justify-content:flex-start}
 .plan-form,.offer-form{display:grid;gap:10px;max-width:640px;margin-top:8px}.plan-form .acts,.offer .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
 .days{border:0;padding:0;margin:0;display:flex;gap:6px;flex-wrap:wrap}.days legend{padding:0;margin-bottom:6px;font-size:14px;color:var(--ink-2)}
-.day{position:relative}.day input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}.day span{display:inline-block;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line-2);font-size:14.5px}
+.day{position:relative}.day input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}.day span{display:inline-block;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line-2);font-size: 14px}
 .day input:checked+span{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}.day input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
 .offer{background:linear-gradient(180deg,var(--sun-soft),var(--surface) 70%);animation:offer-up .5s ease-out 1}.offer p{margin:0 0 8px;max-width:66ch}.offer-wave{display:block;margin-bottom:6px}
 .titles{list-style:none;padding:0;margin:4px 0 10px;display:grid;gap:6px}.titles li{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.titles form{margin:0}
@@ -209,10 +209,10 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
  {% if todo|length > top %}<details class="more"><summary>{% if back %}{{ todo|length - top }} more, when you're ready{% else %}Show {{ todo|length - top }} more{% endif %}</summary>{% for n in todo[top:] %}{{ todo_row(n) }}{% endfor %}</details>{% endif %}
 </section>
 <style>.todo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.todo:last-child,.todo:last-of-type{border-bottom:0}
-.todo .t{font-weight:600;display:flex;align-items:center;gap:10px;min-width:0}.todo .t .pill{flex:none;font-size:12.5px;padding:1px 8px 1px 7px}
+.todo .t{font-weight:600;display:flex;align-items:center;gap:10px;min-width:0}.todo .t .pill{flex:none;font-size: 13px;padding:1px 8px 1px 7px}
 .todo .m{font-size:14px;color:var(--ink-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.todo .acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;align-items:center}.todo form{display:flex;gap:2px;margin:0}
 details.more{border-top:1px solid var(--line);padding-top:10px}details.more[open] summary{margin-bottom:4px}
-pre.draft{white-space:pre-wrap;font:inherit;font-size:14.5px;background:var(--surface-2);border-radius:var(--r-ctl);padding:10px 12px;margin:6px 0}
+pre.draft{white-space:pre-wrap;font:inherit;font-size: 14px;background:var(--surface-2);border-radius:var(--r-ctl);padding:10px 12px;margin:6px 0}
 @media (max-width:640px){.todo{grid-template-columns:minmax(0,1fr)}.todo .m{white-space:normal}.todo .t{flex-wrap:wrap}.todo .acts{justify-content:flex-start}}</style>{% endif %}
 
 <section class="grid g2 mt">
@@ -248,7 +248,7 @@ pre.draft{white-space:pre-wrap;font:inherit;font-size:14.5px;background:var(--su
    <label class="fld"><span>Link to the posting <i class="muted">(optional)</i></span><input type="url" name="url" maxlength="500" placeholder="https://"></label>
    <label class="fld"><span>Where you applied <i class="muted">(optional)</i></span><input type="text" name="via" maxlength="60" placeholder="e.g. LinkedIn, Workday, email"></label>
    <label class="fld"><span>Pay range <i class="muted">(optional)</i></span><input type="text" name="pay" maxlength="60" placeholder="e.g. $150K–$170K"></label>
-   <div class="acts"><button class="btn primary sm">Add to my applications</button></div>
+   <div class="acts"><button class="btn sm">Add to my applications</button></div>
   </form></details>
  <details class="app-tool"><summary class="btn sm ghost">Bring in your old tracker</summary>
   <p class="muted">Keep a spreadsheet already? In Google Sheets use File, Download, Comma-separated values (.csv); in Excel, Save As CSV. Columns are found by name (Position, Company, Date Applied, Salary, Applied via, Notes, Link). Rows without a date applied are left out, and importing the same file twice adds nothing.</p>
@@ -261,9 +261,9 @@ pre.draft{white-space:pre-wrap;font:inherit;font-size:14.5px;background:var(--su
   <td>{% if j.plan_json %}<a href="/job/{{ j.id|urlencode }}">{{ j.title }}</a>{% elif (j.apply_url or j.url or '').lower().startswith(('http://', 'https://')) %}<a href="{{ j.apply_url or j.url }}" target="_blank" rel="noopener">{{ j.title }}</a>{% else %}{{ j.title }}{% endif %}</td>
   <td class="ink2" style="white-space:nowrap">{{ j.applied_label }}</td><td class="ink2 hide-sm">{{ j.pay or "" }}</td>
   <td><span class="pill {{ j.state|pillcls }}">{{ j.state|label }}</span></td></tr>{% endmacro %}
- <table><thead><tr><th>Company</th><th>Role</th><th>Applied</th><th class="hide-sm">Pay</th><th>Status</th></tr></thead><tbody>
+ <table class="stack"><thead><tr><th>Company</th><th>Role</th><th>Applied</th><th class="hide-sm">Pay</th><th>Status</th></tr></thead><tbody>
  {% for j in s.applications[:10] %}{{ row(j) }}{% else %}<tr><td colspan="5" class="empty">Nothing sent yet. Your first one will show up here.</td></tr>{% endfor %}</tbody></table>
  {% if s.applications|length > 10 %}<details style="margin-top:10px"><summary>Show {{ s.applications|length - 10 }} older</summary>
-  <table><tbody>{% for j in s.applications[10:] %}{{ row(j) }}{% endfor %}</tbody></table></details>{% endif %}
+  <table class="stack"><tbody>{% for j in s.applications[10:] %}{{ row(j) }}{% endfor %}</tbody></table></details>{% endif %}
 </section>
 {% endblock %}

@@ -13,7 +13,7 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 from starlette.concurrency import run_in_threadpool
@@ -960,6 +960,22 @@ def make_app(settings, db: DB) -> FastAPI:
         if not finish_here.box_from(settings) or app.state.finish_sessions is None:
             raise HTTPException(404)
         return app.state.finish_sessions
+
+    @app.websocket("/finish-here/vnc")
+    async def finish_here_vnc(ws: WebSocket):
+        """The live picture. The HTTP sign-in middleware does not run for WebSockets, so this checks for itself:
+        signed in, opened by a page on this same site, and a session that is open."""
+        from urllib.parse import urlsplit
+        from . import vnc_relay
+        if not auth.valid_cookie(auth.load(settings.data_dir), ws.cookies.get(auth.COOKIE)):
+            return await ws.close(code=4401)
+        origin = urlsplit(ws.headers.get("origin") or "").netloc
+        if not origin or origin != ws.headers.get("host"):
+            return await ws.close(code=4403)
+        box, ss = finish_here.box_from(settings), app.state.finish_sessions
+        if not box or ss is None or ss.status()["state"] not in ("filling", "ready", "sent"):
+            return await ws.close(code=4404)
+        await vnc_relay.relay(ws, box.host, box.vnc_port, ss.touch)
 
     @app.get("/finish-here/status")
     def finish_here_status():

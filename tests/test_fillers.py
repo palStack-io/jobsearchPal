@@ -187,3 +187,26 @@ def test_same_label_choice_question_does_not_take_the_phone_number():
     sib = {norm(o["text"]) for o in consent["options"]}
     assert resolve(consent, plan, prof, sib)[1] == "plan"
     assert resolve(text, plan, prof, sib) == ("(978) 555-0100", "profile")
+
+
+def test_handoff_with_browser_keeps_browser_open(base_url, pdfs):
+    """Finish here hands handoff a browser it did not launch: only its own context is closed afterwards."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        handoff({"url": f"{base_url}/gh/", "ats": "greenhouse", "files": pdfs}, PROFILE, browser=b, tick=lambda: False)
+        assert b.is_connected() and len(b.contexts) == 0
+        b.close()
+
+
+def test_handoff_on_page_called_after_fill(base_url, pdfs):
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    seen = []
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        handoff({"url": f"{base_url}/gh/", "ats": "greenhouse", "files": pdfs}, PROFILE, browser=b, tick=lambda: False,
+                on_page=lambda pg: seen.append(pg.input_value("#first_name")))
+        b.close()
+    assert seen == ["Jane"]

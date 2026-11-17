@@ -18,6 +18,7 @@ page) and lists them on the review page for you to check.
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import time
@@ -374,7 +375,8 @@ def _sent_now(page: Page, a: ATS, start_url: str, text_before: bool) -> str:
     return ""
 
 
-def watch_for_sent(page: Page, a: ATS, on_sent=None, poll_ms: int = 1000, max_s: float | None = None) -> str:
+def watch_for_sent(page: Page, a: ATS, on_sent=None, poll_ms: int = 1000, max_s: float | None = None,
+                   tick=None) -> str:
     """Watches the tab you're finishing in until you close it. Returns the confirmation it saw ("" if none).
     on_sent(confirmation) runs once, as soon as the confirmation shows. Never clicks anything."""
     start_url = page.url
@@ -391,39 +393,52 @@ def watch_for_sent(page: Page, a: ATS, on_sent=None, poll_ms: int = 1000, max_s:
                 sent = _sent_now(page, a, start_url, text_before)
                 if sent and on_sent:
                     on_sent(sent)
+            if tick is not None and tick() is False:
+                break  # Finish here: Done, idle or closed, decided by the session in this same thread
             page.wait_for_timeout(poll_ms)
         except Exception:  # the tab or the whole browser was closed
             break
     return sent
 
 
-def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None) -> Report:
+def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None, browser=None, on_page=None, tick=None) -> Report:
     """Fills the form in a visible browser and leaves it open for you to finish and submit.
 
     Never clicks Submit. Uses the installed Google Chrome when there is one. While you finish, it watches for the
     site's confirmation page: report.submitted and report.confirmation say whether it saw one, and on_sent is
     called the moment it does.
+
+    Finish here passes `browser` (the server's browser box, already connected): then only this application's own
+    context is opened and closed, never the browser. `on_page(page)` runs once the form is filled; `tick()` runs on
+    every poll while watching and ends the watch by returning False.
     """
     a = detect(plan["url"], plan.get("ats"))
     url = a.form_url(plan["url"])
     report = Report(url=url)
-    with sync_playwright() as p:
+    with (contextlib.nullcontext() if browser is not None else sync_playwright()) as p:
+        own = browser is None
+        if own:
+            try:
+                browser = p.chromium.launch(headless=False, channel="chrome")
+            except Exception:
+                browser = p.chromium.launch(headless=False, executable_path=os.environ.get("AUTOAPPLY_CHROMIUM") or None)
+        ctx = browser.new_context(viewport=None)
         try:
-            browser = p.chromium.launch(headless=False, channel="chrome")
-        except Exception:
-            browser = p.chromium.launch(headless=False, executable_path=os.environ.get("AUTOAPPLY_CHROMIUM") or None)
-        page = browser.new_context(viewport=None).new_page()
-        page.set_default_timeout(8000)
-        page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        page.wait_for_timeout(2500)
-        _fill_page(page, plan, profile, report)
-        if wait:
-            report.confirmation = watch_for_sent(page, a, on_sent)  # you close the tab when done
-            report.submitted = bool(report.confirmation)
-        try:
-            browser.close()
-        except Exception:
-            pass  # already closed by you
+            page = ctx.new_page()
+            page.set_default_timeout(8000)
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(2500)
+            _fill_page(page, plan, profile, report)
+            if on_page:
+                on_page(page)
+            if wait:
+                report.confirmation = watch_for_sent(page, a, on_sent, tick=tick)  # you close the tab when done
+                report.submitted = bool(report.confirmation)
+        finally:
+            try:
+                (browser if own else ctx).close()
+            except Exception:
+                pass  # already closed by you
     return report
 
 

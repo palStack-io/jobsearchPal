@@ -6,7 +6,7 @@
 {% set step = [1, (top / 4)|round(0, 'ceil')|int]|max %}
 {% set top = ((top / step)|round(0, 'ceil')|int) * step %}
 {% set bw = (W - pad) / [n, 1]|max %}
-<svg class="chart" viewBox="0 -14 {{ W }} {{ H + 36 }}" role="img" aria-label="{{ label }}">
+<div class="chart-scroll"><svg class="chart" viewBox="0 -14 {{ W }} {{ H + 36 }}" role="img" aria-label="{{ label }}">
  {% for t in range(step, top + 1, step) %}{% set y = H - H * t / top %}
   <line class="grid" x1="{{ pad }}" x2="{{ W }}" y1="{{ y }}" y2="{{ y }}"/><text x="{{ pad - 8 }}" y="{{ y + 4 }}" text-anchor="end">{{ t }}</text>{% endfor %}
  <line class="base" x1="{{ pad }}" x2="{{ W }}" y1="{{ H }}" y2="{{ H }}"/><text x="{{ pad - 8 }}" y="{{ H + 4 }}" text-anchor="end">0</text>
@@ -17,7 +17,7 @@
   {% if (n - 1 - loop.index0) % every == 0 %}<text x="{{ x + w / 2 }}" y="{{ H + 18 }}" text-anchor="middle">{{ wk.strftime('%-m/%-d') }}</text>{% endif %}{% endfor %}
  {% if floor %}{% set fy = H - H * floor / top %}<line class="floor" x1="{{ pad }}" x2="{{ W }}" y1="{{ fy }}" y2="{{ fy }}"/>
   <text class="flabel" x="{{ W - 2 }}" y="{{ fy - 6 }}" text-anchor="end">{{ floor_label }}</text>{% endif %}
-</svg>
+</svg></div>
 <details style="margin-top:8px"><summary>Table view</summary><table><thead><tr><th>Week of</th><th class="num">{{ noun|capitalize }}s</th></tr></thead><tbody>
  {% for wk, c in series|reverse %}<tr><td>{{ wk.strftime('%b %-d, %Y') }}</td><td class="num">{{ c }}</td></tr>{% endfor %}</tbody></table></details>
 {% endmacro %}

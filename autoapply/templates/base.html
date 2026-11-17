@@ -76,7 +76,7 @@ code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surf
 .main{padding:32px 40px 80px;max-width:1220px;width:100%}
 .tabbar{display:none}
 @media (max-width:900px){
- .app{grid-template-columns:minmax(0,1fr);background:none}
+ .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;background:none}
  .side{position:sticky;z-index:6;height:auto;flex-direction:row;align-items:center;padding:10px 16px;border-right:0;border-bottom:1px solid var(--rail-line);
   background:color-mix(in srgb,var(--rail) 92%,transparent);backdrop-filter:blur(10px)}
  .brand{padding:0}.side .nav{display:none}
@@ -183,7 +183,9 @@ tbody tr:hover td{background:color-mix(in srgb,var(--surface-2) 60%,transparent)
 @media (max-width:640px){.tile .num{font-size:24px}.tile .sub{font-size: 14px}.tile{padding:14px}}
 
 /* buttons & forms: one height, one primary */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size: 16px;font-weight:700;height:40px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap;box-shadow:0 1px 2px rgba(18,18,10,.05);transition:background .15s,border-color .15s,box-shadow .15s,transform .12s}
+.ic{display:inline-block;vertical-align:-2px;flex:none}
+/* A wide chart keeps readable labels on a phone and scrolls in its card (2026-11-16: the axis text shrank to ~4px). */
+.chart-scroll{overflow-x:auto}@media (max-width:640px){.chart-scroll{display:flex;flex-direction:row-reverse}.chart-scroll .chart{min-width:560px;flex:none}.chart-scroll{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size: 16px;font-weight:700;height:40px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap;box-shadow:0 1px 2px rgba(18,18,10,.05);transition:background .15s,border-color .15s,box-shadow .15s,transform .12s}
 .btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .btn:hover{text-decoration:none;background:var(--surface-2)} .btn.sm{height:34px;padding:0 13px;font-size: 14px;border-radius:10px}
 .btn.primary,.btn.go{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(15,110,102,.2),0 6px 16px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
@@ -250,7 +252,7 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s var(--e
 .hbars .conv{font-size:13px;color:var(--ink-3);font-weight:500}
 @media (max-width:640px){.hbars .row{grid-template-columns:minmax(0,110px) minmax(0,1fr) 36px}}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size: 14px;font-weight: 500;padding:6px 10px;border-radius:8px;opacity:0;transition:opacity .1s var(--ease-out);z-index:9;max-width:260px}
-</style></head><body>
+</style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-ext" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M9 7h8v8"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol></svg>
 {% from "_palstack.html" import palstack_mark, credit, credit_css %}{{ credit_css() }}{% set nav = nav|default('') %}
 <div class="app">
 <aside class="side">

@@ -11,7 +11,7 @@
  <div class="sk-main"><div class="sk-t"><b>{{ i.name }}</b> <span class="muted">· {{ i.area }}</span></div>
   <div class="m">{% if i.count %}Asked for in {{ i.count }} role{{ '' if i.count == 1 else 's' }} ({{ i.pct }}%){% if i.required %}, required in {{ i.required }}{% endif %}{% if i.applied %}, {{ i.applied }} you applied to{% endif %}{% endif %}{% if i.notes %}{% if i.count %} · {% endif %}flagged as a gap in {{ i.notes }} tailoring note{{ '' if i.notes == 1 else 's' }}{% endif %}</div>
   {% if i.examples %}<div class="m">{% for e in i.examples %}<a href="/job/{{ e.id|urlencode }}">{{ e.label }}</a>{{ ", " if not loop.last }}{% endfor %}</div>{% endif %}</div>
- <div class="acts">{% if i.url %}<a class="btn sm" href="{{ i.url }}" target="_blank" rel="noopener noreferrer">Learn</a>{% endif %}{{ actions }}</div>
+ <div class="acts">{{ actions }}{% if i.url %}<a class="ext" href="{{ i.url }}" target="_blank" rel="noopener noreferrer">Where to learn it <svg class="ic" width="12" height="12" aria-hidden="true"><use href="#i-ext"/></svg></a>{% endif %}</div>
 </li>{% endmacro %}
 
 {% if not g.jobs %}
@@ -19,8 +19,8 @@
 {% else %}
 <section class="card hero" aria-labelledby="gap-h"><h2 id="gap-h">Not on your resume yet <span class="count">{{ g.gaps|length }}</span></h2>
  <p class="muted lead-p">Some of these you may already know: mark them <b>I have this</b> and add them to your resume, which helps more than any course. For the rest, start at the top.</p>
- {% if g.gaps %}<ul class="sk-list">{% for i in g.gaps[:12] %}{{ row(i, mark(i, "Learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul>
- {% if g.gaps|length > 12 %}<details class="more"><summary>Show {{ g.gaps|length - 12 }} more</summary><ul class="sk-list">{% for i in g.gaps[12:] %}{{ row(i, mark(i, "Learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul></details>{% endif %}
+ {% if g.gaps %}<ul class="sk-list">{% for i in g.gaps[:12] %}{{ row(i, mark(i, "Start learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul>
+ {% if g.gaps|length > 12 %}<details class="more"><summary>Show {{ g.gaps|length - 12 }} more</summary><ul class="sk-list">{% for i in g.gaps[12:] %}{{ row(i, mark(i, "Start learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul></details>{% endif %}
  {% else %}<div class="empty-state"><b>Nothing missing.</b><span>Your resume covers everything these roles ask for.</span></div>{% endif %}
 </section>
 
@@ -67,7 +67,7 @@ ul.sk-list{list-style:none;margin:0;padding:0}
 .sk{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
 .sk:last-child{border-bottom:0}.sk-t b{font-size: 16px}.sk .m{font-size:14px;color:var(--ink-3)}
 .sk-bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}.sk-bar span{display:block;height:100%;background:var(--sun);border-radius:4px}
-.sk .acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.sk .acts{display:flex;gap:4px 10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}.sk .acts .ext{font-size:14px;white-space:nowrap}
 @media (max-width:640px){.sk{grid-template-columns:minmax(0,1fr)}.sk-bar{width:120px}.sk .acts{justify-content:flex-start}}
 </style>
 {% endblock %}

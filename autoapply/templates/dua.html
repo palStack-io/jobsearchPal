@@ -49,11 +49,11 @@
 <section class="card" id="tasks"><h2><span>Appointments and deadlines</span><span class="count">{{ tasks|rejectattr('done')|list|length }} open</span></h2>
  {% macro task_row(t) %}<div class="task {{ 'done' if t.done }}">
   <form method="post" action="/dua/task"><input type="hidden" name="task_id" value="{{ t.id }}">
-   <button class="tick" name="action" value="{{ 'undo' if t.done else 'done' }}" aria-label="{{ 'Mark not done' if t.done else 'Mark done' }}">{{ '✓' if t.done else '' }}</button></form>
+   <button class="tick" name="action" value="{{ 'undo' if t.done else 'done' }}" aria-label="{{ 'Mark not done' if t.done else 'Mark done' }}">{% if t.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% endif %}</button></form>
   <div class="body"><div class="t">{% if t.kind == 'resea' %}<span class="pill rejected" style="text-transform:none">RESEA</span> {% endif %}{{ t.title }}</div>
    <form method="post" action="/dua/task" class="due"><input type="hidden" name="task_id" value="{{ t.id }}"><input type="hidden" name="action" value="due">
     <input type="date" name="due" value="{{ t.due or '' }}" aria-label="Due date" onchange="this.form.submit()">{% if not t.due and not t.done %}<span class="muted">add the date from your letter</span>{% endif %}</form></div>
-  <form method="post" action="/dua/task"><input type="hidden" name="task_id" value="{{ t.id }}"><button class="btn ghost sm" name="action" value="delete" aria-label="Remove">✕</button></form>
+  <form method="post" action="/dua/task"><input type="hidden" name="task_id" value="{{ t.id }}"><button class="btn ghost sm" name="action" value="delete" aria-label="Remove"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-x"/></svg></button></form>
  </div>{% endmacro %}
  {% set open_list = tasks|rejectattr('done')|list %}{% set done_list = tasks|selectattr('done')|list %}
  {% for t in open_list %}{{ task_row(t) }}{% else %}<p class="muted" style="margin:0 0 10px">{% if done_list %}Nothing open. {% endif %}Seminars, RESEA meetings, documents to send: anything with a date. They show on the dashboard's To do two weeks ahead.</p>{% endfor %}
@@ -86,7 +86,7 @@
  {% if people %}<ul class="feed people-list">{% for c in people %}<li><div style="min-width:0"><div class="who">{{ c.name }}{% if c.company %} <span class="muted">· {{ c.company }}</span>{% endif %}</div>
   <div class="ink2" style="font-size:14px">{{ c.how }}{% if c.note %} · {{ c.note }}{% endif %}</div></div>
   <span class="when">{{ c.at[5:10]|replace('-', '/') }}</span>
-  <form method="post" action="/contacts"><input type="hidden" name="action" value="delete"><input type="hidden" name="cid" value="{{ c.id }}"><button class="btn ghost sm" aria-label="Remove {{ c.name }}">✕</button></form></li>{% endfor %}</ul>
+  <form method="post" action="/contacts"><input type="hidden" name="action" value="delete"><input type="hidden" name="cid" value="{{ c.id }}"><button class="btn ghost sm" aria-label="Remove {{ c.name }}"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-x"/></svg></button></form></li>{% endfor %}</ul>
  {% else %}<p class="muted" style="margin:6px 0 0">No one yet. One message this week is a good start.</p>{% endif %}
  <form method="post" action="/contacts" class="counts-form"><input type="hidden" name="action" value="counts">
   <label><input type="checkbox" name="counts" value="yes" {% if contacts_count %}checked{% endif %} onchange="this.form.submit()"> Count these toward my {{ ws_label|lower }} each week</label>

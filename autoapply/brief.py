@@ -85,7 +85,7 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     from . import goals  # weekly goals: today's share, and on Sunday a look-back (no nagging when there's none)
     day = now.date()
     lb = goals.lookback(db, day)
-    lb_line = f"Last week: {goals.summary(lb['did'])}. Plan this week: {base}/#plan" if lb and goals.summary(lb["did"]) else ""
+    lb_line = f"Last week: {goals.summary(lb['did'])}. Plan this week: {base}/plan" if lb and goals.summary(lb["did"]) else ""
     today_line = "" if lb else goals.today_line(goals.today_view(db, day))
     t += [f"{label}: {dua}"] + ([f"Your plan this week: {my_plan}"] if my_plan else [])
     t += ([lb_line] if lb_line else []) + ([f"Today's plan: {today_line}"] if today_line else []) + [""]
@@ -134,7 +134,7 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
         h.append(f"<p style='font-size:15px;margin:0 0 6px'><b>Your plan this week:</b> {escape(my_plan)}</p>")
     if lb_line:
         h.append(f"<p style='font-size:15px;margin:0 0 6px'><b>Last week:</b> {escape(goals.summary(lb['did']))}. "
-                 f"<a href='{escape(base)}/#plan'>Plan this week</a></p>")
+                 f"<a href='{escape(base)}/plan'>Plan this week</a></p>")
     if today_line:
         h.append(f"<p style='font-size:15px;margin:0 0 6px'><b>Today's plan:</b> {escape(today_line)}</p>")
     h += [f"<p style='font-size:15px'><b>{escape(label)}:</b> {escape(dua)}</p>",

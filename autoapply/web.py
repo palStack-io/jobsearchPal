@@ -39,6 +39,15 @@ def page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(env.get_template(name).render(**ctx))
 
 
+def _app_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return version("autoapply")
+    except PackageNotFoundError:
+        return ""
+
+
+
 KIND_LABELS = [("confirmed", "Received (auto-reply)"), ("interview", "Interview"), ("rejected", "Rejection"), ("offer", "Offer"),
                ("recruiter", "Recruiter"), ("agency", "Unemployment agency"), ("ignored", "Not job-related")]
 
@@ -838,8 +847,18 @@ def make_app(settings, db: DB) -> FastAPI:
                     blocked=preflight.blocking(checks), letter=letter, lead=dict(lead) if lead else None,
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
-                    handoff=_handoff(job, report), command_ran=finish.ran(db, job_id),
+                    handoff=(h := _handoff(job, report)), command_ran=finish.ran(db, job_id),
+                    finish_box=_finish_box(health_check=bool(h), with_version=False),
                     sent_mark=finish.last_mark(db, job_id) if job["status"] == "submitted" else None)
+
+    def _finish_box(health_check: bool = True, with_version: bool = True) -> dict | None:
+        """Finish it here, for a page: None when it's off; else whether the browser box answers (and its version)."""
+        from . import finish_here
+        box = finish_here.box_from(settings)
+        if not box:
+            return None
+        h = finish_here.health(box, timeout=1.5, with_version=with_version) if health_check else {"ok": False, "version": "", "error": ""}
+        return {**h, "app_version": _app_version()}
 
     def _web_link(u: str) -> str:
         from .history import _web
@@ -1117,7 +1136,7 @@ def make_app(settings, db: DB) -> FastAPI:
                  "sort_cost": sum(v.get("cost") or 0 for v in sorting) + (daily.get("cost") or 0),
                  "month_spend": db.spend_this_month(), "by_day": db.usage_by_day(14), "by_stage": db.usage_by_stage(30)}
         from . import skills as sk
-        return page("settings.html", agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
+        return page("settings.html", finish_box=_finish_box(), agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
                     skills_usage=db.conn.execute("select count(*), coalesce(sum(tokens),0), coalesce(sum(cost),0), coalesce(sum(emails),0)"
                                                  " from usage where source = 'skills' and at >= date('now', '-30 day')").fetchone(),
                     p=pr.data, prefs=pr, providers=PROVIDERS, status=st, usage=u30, costs=costs,
@@ -1266,7 +1285,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except (OSError, ValueError):
             src_stats = {}
         pr = Prefs(settings.data_dir, settings.raw)
-        return page("setup.html", nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
+        return page("setup.html", finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
                     stand=setup.standing_values(prof), prof=prof, fields=setup.PROFILE_FIELDS, yes_no=setup.YES_NO,
                     titles=", ".join(search.get("title_keywords") or []), exclude=", ".join(search.get("exclude_keywords") or []),
                     us_only=search.get("us_only", True), levels=search.get("levels") or [],
@@ -1279,6 +1298,26 @@ def make_app(settings, db: DB) -> FastAPI:
                     gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
                     msg=msg, err=err)
+
+    @app.post("/setup/finish")
+    def setup_finish():
+        """Finish it here: the person started the browser box; check it answers, then turn it on."""
+        from . import finish_here, setup
+        docker = Path("/.dockerenv").exists()
+        box = finish_here.Box("finish" if docker else "127.0.0.1",
+                              int(os.environ.get("FINISH_CDP_PORT") or 9222) if not docker else 9222,
+                              int(os.environ.get("FINISH_VNC_PORT") or 5900) if not docker else 5900)
+        try:
+            h = finish_here.health(box, timeout=3)
+        except OSError as e:  # the name `finish` doesn't resolve: the profile isn't on
+            h = {"ok": False, "error": str(e)}
+        if not h["ok"]:
+            return RedirectResponse("/setup?err=" + quote("The browser box isn't answering yet. Start it with the "
+                                    "command above, wait a few seconds, then check again.") + "#finish", status_code=303)
+        setup.set_finish(settings, box.host, box.cdp_port, box.vnc_port)
+        app.state.finish_sessions = finish_here.Sessions(box)
+        return RedirectResponse("/setup?msg=" + quote("Finish it here is on. It shows on any application that needs "
+                                "you to finish it.") + "#finish", status_code=303)
 
     @app.post("/setup/profile")
     async def setup_profile(request: Request):

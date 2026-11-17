@@ -143,3 +143,87 @@ def test_novnc_is_served(tmp_path):
     _, c, _ = _setup(tmp_path, ON)
     r = c.get("/static/novnc/core/rfb.js")
     assert r.status_code == 200 and "javascript" in r.headers["content-type"]
+
+
+# ---- Task 7: where you find it: the job page, the morning brief, Setup and Settings ----
+
+def _health(monkeypatch, ok=True, version="1.1.0"):
+    from autoapply import finish_here
+    monkeypatch.setattr(finish_here, "health", lambda box, timeout=2.0, with_version=True: {
+        "ok": ok, "version": version if ok else "", "error": "" if ok else "refused"})
+
+
+def test_job_card_offers_finish_here_when_healthy(tmp_path, monkeypatch):
+    _health(monkeypatch)
+    _, c, _ = _setup(tmp_path, ON)
+    html = c.get("/job/manual:gh").text
+    card = html[html.index('id="finish"'):]
+    assert 'action="/finish-here/manual%3Agh"' in card and "Finish it here" in card and "Or on your Mac" in card
+    assert card.index("Finish it here") < card.index("autoapply-finish")
+
+
+def test_job_card_unchanged_when_off(tmp_path):
+    _, c, _ = _setup(tmp_path)
+    html = c.get("/job/manual:gh").text
+    assert "On your Mac, open Terminal and run:" in html and "/finish-here/" not in html
+
+
+def test_job_card_box_down_line(tmp_path, monkeypatch):
+    _health(monkeypatch, ok=False)
+    _, c, _ = _setup(tmp_path, ON)
+    html = c.get("/job/manual:gh").text
+    assert "The browser on your server isn't answering, so use your Mac for now." in html
+    assert 'action="/finish-here/' not in html
+
+
+def test_brief_ready_line_on_and_off(tmp_path):
+    from autoapply import brief
+    db, _, _ = _setup(tmp_path)
+    off = Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data")}, profile=PROFILE)
+    on = Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data"), "finish": ON}, profile=PROFILE)
+    _, _, html_off = brief.compose(db, "https://jobs.example", settings=off)
+    _, _, html_on = brief.compose(db, "https://jobs.example", settings=on)
+    assert "autoapply-finish manual:gh" in html_off and "Finish it here" not in html_off
+    assert "https://jobs.example/job/manual:gh#finish" in html_on and "Finish it here" in html_on
+    assert "autoapply-finish" not in html_on
+
+
+def test_setup_check_turns_it_on(tmp_path, monkeypatch):
+    import yaml
+    _health(monkeypatch)
+    (tmp_path / "config.yaml").write_text("search: {title_keywords: [account executive]}\n")
+    _, c, _ = _setup(tmp_path)
+    r = c.post("/setup/finish", follow_redirects=False)
+    assert r.status_code == 303 and "#finish" in r.headers["location"]
+    cfg = yaml.safe_load((tmp_path / "config.yaml").read_text())
+    assert cfg["finish"]["on_server"] is True and cfg["finish"]["host"] == "127.0.0.1"
+    assert cfg["search"]["title_keywords"] == ["account executive"]
+    assert list(tmp_path.glob("config.yaml.bak-*"))
+
+
+def test_setup_check_box_down_changes_nothing(tmp_path, monkeypatch):
+    _health(monkeypatch, ok=False)
+    (tmp_path / "config.yaml").write_text("search: {}\n")
+    _, c, _ = _setup(tmp_path)
+    r = c.post("/setup/finish", follow_redirects=False)
+    assert "err=" in r.headers["location"] and (tmp_path / "config.yaml").read_text() == "search: {}\n"
+
+
+def test_setup_shows_the_command_for_this_install(tmp_path):
+    _, c, _ = _setup(tmp_path)
+    html = c.get("/setup").text
+    assert "Finish applications in the browser" in html
+    assert "docker compose -f docker-compose.finish.yml up -d" in html  # tests run outside Docker
+
+
+def test_settings_version_mismatch_line(tmp_path, monkeypatch):
+    _health(monkeypatch, version="0.9.0")
+    _, c, _ = _setup(tmp_path, ON)
+    html = c.get("/settings").text
+    assert "Browser on your server" in html and "0.9.0" in html and "1.1.0" in html and "pull" in html
+
+
+def test_settings_running_line(tmp_path, monkeypatch):
+    _health(monkeypatch, version="1.1.0")
+    _, c, _ = _setup(tmp_path, ON)
+    assert "running (version 1.1.0)" in c.get("/settings").text

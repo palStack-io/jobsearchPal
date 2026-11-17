@@ -291,6 +291,22 @@
   </details>
  </div>{% endif %}
 </section>
+
+<section class="card mt" id="finish" aria-labelledby="finish-h">
+ <h2 id="finish-h"><span>Finish applications in the browser</span><span class="count">{{ 'on' if finish_on else 'optional' }}</span></h2>
+ <p class="lead">When a site asks for a captcha or a code, jobsearchPal can open the filled-in form in a browser on this
+  server, and you finish it from the job page in whatever browser you're using, even on a phone. Nothing is installed
+  where you sit.</p>
+ <p class="muted" style="font-size:14px">That browser visits the job site through a proxy that can't reach your home
+  network, keeps nothing after it closes, and never presses Submit. It needs Docker on this server.</p>
+ {% if finish_on %}<p><b>It's on.</b> Check it again any time; Settings shows whether it's running.</p>{% endif %}
+ <ol class="steps">
+  <li>In the jobsearchPal folder on this server, run <code class="sel">{{ finish_cmd }}</code></li>
+  <li>Then check it here:
+   <form method="post" action="/setup/finish" style="display:inline"><button class="btn {{ '' if finish_on else 'primary' }} sm">Check and turn it on</button></form></li>
+ </ol>
+ <p class="muted" style="font-size:14px">No Docker? Use <code>autoapply-finish</code> on your Mac instead (the job page shows it).</p>
+</section>
 <style>.tip{background:var(--accent-soft);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:15px}
 .other-mail{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}.other-mail h3{margin:0 0 6px;font-size:17px}
 .fwd-form textarea{width:100%}.fwd-steps{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}

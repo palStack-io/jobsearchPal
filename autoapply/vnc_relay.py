@@ -7,6 +7,27 @@ import asyncio
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 
+def is_input(frame: bytes) -> bool:
+    """True when a frame from the viewer holds a key, pointer or paste message (RFB client messages 4, 5, 6).
+
+    The viewer also keeps asking for screen updates (message 3) while its tab is open; those are not you, so they must
+    not count against the idle close. Handshake frames (version, security type, ClientInit) start with bytes that are
+    not client message types, so they read as not input."""
+    sizes = {0: 20, 3: 10, 4: 8, 5: 6}
+    i = 0
+    while i < len(frame):
+        t = frame[i]
+        if t in (4, 5, 6):
+            return True
+        if t in sizes:
+            i += sizes[t]
+        elif t == 2 and i + 4 <= len(frame):  # SetEncodings: 4 bytes + 4 per encoding
+            i += 4 + 4 * int.from_bytes(frame[i + 2:i + 4], "big")
+        else:
+            return False
+    return False
+
+
 async def relay(ws: WebSocket, host: str, port: int, on_client_data) -> None:
     offered = ws.scope.get("subprotocols") or []
     await ws.accept(subprotocol="binary" if "binary" in offered else None)
@@ -24,7 +45,8 @@ async def relay(ws: WebSocket, host: str, port: int, on_client_data) -> None:
                     break
                 data = msg.get("bytes") or (msg.get("text") or "").encode()
                 if data:
-                    on_client_data()
+                    if is_input(data):
+                        on_client_data()  # you typed, clicked or pasted: the session is in use
                     writer.write(data)
                     await writer.drain()
         except (WebSocketDisconnect, ConnectionError):

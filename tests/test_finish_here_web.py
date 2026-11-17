@@ -256,3 +256,11 @@ def test_finish_here_button_is_not_in_a_nested_form(tmp_path, monkeypatch):
     assert p.owner is not None, "Finish it here button not found"
     form_id, depth = p.owner
     assert form_id and f'<form id="{form_id}" method="post" action="/finish-here/manual%3Agh"' in html
+
+
+def test_same_job_again_reopens_its_view(tmp_path):
+    """Pressing Finish it here on the job that is already open goes back to its view, not to 'another application'."""
+    _, c, fake = _setup(tmp_path, ON)
+    fake.busy, fake.st["job_id"] = True, "manual:gh"
+    r = c.post("/finish-here/manual:gh", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/finish-here/manual:gh"

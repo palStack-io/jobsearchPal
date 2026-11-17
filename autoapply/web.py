@@ -1019,8 +1019,9 @@ def make_app(settings, db: DB) -> FastAPI:
         plan = {**plan, "approved_by_user": False,
                 "files": {k: p for k, p in (plan.get("files") or {}).items() if _servable(p)}}
         r = ss.start(job_id, plan, settings.profile, mark_sent=_mark_finished)
-        if "busy" in r:
-            return RedirectResponse(f"/finish-here/{quote(r['busy'], safe=':/')}?busy=1", status_code=303)
+        if "busy" in r:  # the same job: back to its view; another job: say one is open
+            extra = "" if r["busy"] == job_id else "?busy=1"
+            return RedirectResponse(f"/finish-here/{quote(r['busy'], safe=':/')}{extra}", status_code=303)
         finish.record_run(db, job_id)  # counted like a run of the laptop command
         return RedirectResponse(f"/finish-here/{quote(job_id, safe=':/')}", status_code=303)
 

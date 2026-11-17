@@ -81,11 +81,30 @@ def test_off_closes_4404(tmp_path, echo):
     assert _close_code(c, ORIGIN) == 4404
 
 
-def test_client_frames_touch_session(tmp_path, echo):
+KEY = bytes([4, 1, 0, 0, 0, 0, 0, 0x61])                 # KeyEvent: "a" down
+POINTER = bytes([5, 1, 0, 10, 0, 20])                     # PointerEvent: button 1 at 10,20
+UPDATE = bytes([3, 1, 0, 0, 0, 0, 5, 0, 3, 132])          # FramebufferUpdateRequest: the viewer asks for pixels
+
+
+def _touches(tmp_path, echo, frames):
     c, fake = _client(tmp_path, echo)
     touched = []
     fake.touch = lambda: touched.append(1)
     with c.websocket_connect("/finish-here/vnc", headers=ORIGIN) as ws:
-        ws.send_bytes(b"x")
-        ws.receive_bytes()
-    assert touched
+        for f in frames:
+            ws.send_bytes(f)
+            ws.receive_bytes()
+    return len(touched)
+
+
+def test_input_touches_session(tmp_path, echo):
+    assert _touches(tmp_path, echo, [KEY]) == 1
+    assert _touches(tmp_path, echo, [POINTER]) == 1
+    assert _touches(tmp_path, echo, [UPDATE + KEY]) == 1     # an input message after a request in one frame
+
+
+def test_an_open_viewer_alone_is_not_input(tmp_path, echo):
+    """noVNC keeps asking for screen updates while the tab is open; that must not hold the session open forever.
+    Found end to end (2026-11-17): the 20-minute idle close never fired with a viewer tab left open."""
+    handshake = [b"RFB 003.008\n", b"\x01", b"\x01"]       # version, security type, ClientInit (shared)
+    assert _touches(tmp_path, echo, [*handshake, UPDATE, UPDATE]) == 0

@@ -207,6 +207,6 @@ def test_handoff_on_page_called_after_fill(base_url, pdfs):
     with sync_playwright() as p:
         b = p.chromium.launch()
         handoff({"url": f"{base_url}/gh/", "ats": "greenhouse", "files": pdfs}, PROFILE, browser=b, tick=lambda: False,
-                on_page=lambda pg: seen.append(pg.input_value("#first_name")))
+                on_page=lambda pg, rep: seen.append((pg.input_value("#first_name"), type(rep).__name__)))
         b.close()
-    assert seen == ["Jane"]
+    assert seen == [("Jane", "Report")]

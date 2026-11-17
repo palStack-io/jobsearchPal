@@ -409,7 +409,7 @@ def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None, browser=
     called the moment it does.
 
     Finish here passes `browser` (the server's browser box, already connected): then only this application's own
-    context is opened and closed, never the browser. `on_page(page)` runs once the form is filled; `tick()` runs on
+    context is opened and closed, never the browser. `on_page(page, report)` runs once the form is filled; `tick()` runs on
     every poll while watching and ends the watch by returning False.
     """
     a = detect(plan["url"], plan.get("ats"))
@@ -430,7 +430,7 @@ def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None, browser=
             page.wait_for_timeout(2500)
             _fill_page(page, plan, profile, report)
             if on_page:
-                on_page(page)
+                on_page(page, report)
             if wait:
                 report.confirmation = watch_for_sent(page, a, on_sent, tick=tick)  # you close the tab when done
                 report.submitted = bool(report.confirmation)

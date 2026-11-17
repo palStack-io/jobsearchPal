@@ -262,8 +262,8 @@ pre.draft{white-space:pre-wrap;font:inherit;font-size: 14px;background:var(--sur
   <td class="ink2" style="white-space:nowrap">{{ j.applied_label }}</td><td class="ink2 hide-sm">{{ j.pay or "" }}</td>
   <td><span class="pill {{ j.state|pillcls }}">{{ j.state|label }}</span></td></tr>{% endmacro %}
  <table class="stack"><thead><tr><th>Company</th><th>Role</th><th>Applied</th><th class="hide-sm">Pay</th><th>Status</th></tr></thead><tbody>
- {% for j in s.applications[:10] %}{{ row(j) }}{% else %}<tr><td colspan="5" class="empty">Nothing sent yet. Your first one will show up here.</td></tr>{% endfor %}</tbody></table>
- {% if s.applications|length > 10 %}<details style="margin-top:10px"><summary>Show {{ s.applications|length - 10 }} older</summary>
-  <table class="stack"><tbody>{% for j in s.applications[10:] %}{{ row(j) }}{% endfor %}</tbody></table></details>{% endif %}
+ {% for j in s.applications[:5] %}{{ row(j) }}{% else %}<tr><td colspan="5" class="empty">Nothing sent yet. Your first one will show up here.</td></tr>{% endfor %}</tbody></table>
+ {% if s.applications|length > 5 %}<details style="margin-top:10px"><summary>Show {{ s.applications|length - 5 }} older</summary>
+  <table class="stack"><tbody>{% for j in s.applications[5:] %}{{ row(j) }}{% endfor %}</tbody></table></details>{% endif %}
 </section>
 {% endblock %}

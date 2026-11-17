@@ -46,7 +46,7 @@ You can follow it on the Run log page.{% endset %}<template id="confirm-auto">{{
  {% for key, label, n in tabs %}<a href="/leads?show={{ key }}" {% if key == show %}aria-current="page"{% endif %}>{{ label }} <span class="count">{{ n }}</span></a>{% endfor %}
 </nav>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-star-on" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-star-on" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></symbol><symbol id="i-ext" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M9 7h8v8"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></symbol></svg>
 <section class="card mt" id="leads">
  {% if rows %}<div class="lead-tools"><input type="search" id="q" placeholder="Filter by company, title or place" aria-label="Filter leads"></div>
  <table class="leads stack"><thead><tr>
@@ -54,7 +54,7 @@ You can follow it on the Run log page.{% endset %}<template id="confirm-auto">{{
   <th class="hide-sm"><button type="button" data-k="2">Source</button></th><th class="num"><button type="button" data-k="3" data-num>Score</button></th>
   <th class="hide-sm"><button type="button" data-k="4">Seen</button></th><th></th></tr></thead><tbody>
  {% for r in rows %}<tr data-v='{{ [r.company ~ " " ~ r.title, r.location or "", r.source or "", r.score, r.last_seen]|tojson }}'>
-  <td><b style="font-weight:600">{{ r.company }}</b> · <a href="/lead/{{ r.key|urlencode }}">{{ r.title }}</a>{% if r.apply_url or r.url %} <a class="ext" href="{{ r.apply_url or r.url }}" target="_blank" rel="noopener" title="Open the posting" aria-label="Open the posting">↗</a>{% endif %}
+  <td><b style="font-weight:600">{{ r.company }}</b> · <a href="/lead/{{ r.key|urlencode }}">{{ r.title }}</a>{% if r.apply_url or r.url %} <a class="ext" href="{{ r.apply_url or r.url }}" target="_blank" rel="noopener" title="Open the posting" aria-label="Open the posting"><svg width="14" height="14" aria-hidden="true"><use href="#i-ext"/></svg></a>{% endif %}
    {% if r.description and 'pasted' in (r.source or '') %}<span class="pill" style="text-transform:none">pasted</span>{% endif %}
    {% if r.apply_url %}<div class="ink2" style="font-size:14px"><span class="pill submitted" style="text-transform:none">company site</span>{% if r.url %} · <a href="{{ r.url }}" target="_blank" rel="noopener">{{ (r.source or 'alert').split(', ')[0] }} link</a>{% endif %}</div>
    {% elif r.ats_checked and not r.job_id and not r.note %}<div class="ink2" style="font-size:14px">company page not found yet{% if r.status != 'starred' %}: star it to look further{% endif %}</div>{% endif %}

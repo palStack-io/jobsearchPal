@@ -26,6 +26,8 @@ agent you are (the file keeps that name for both).
 - Never edit the tool's own code (`autoapply/`, `scripts/`, `prompts/`, this file) or `.claude/`.
   If something in it is broken, say so in the daily summary.
 - Do not log in to sites, create ATS accounts, solve captchas or read verification codes.
+  Never start, drive or close a Finish it here session (`/finish-here/...`, the browser box on ports 9222 and 5900):
+  that browser is the person's.
   Workday and other account-based ATSs: prep materials only, and say "apply by hand" in the summary.
   Prep-only runs end with `autoapply fill <plan.json> --job <id> --prep-only`, which saves the files and answers
   for the person's kit without opening the form.

@@ -5,13 +5,16 @@
 <div class="ph"><div><h1>Stats</h1>
  <div class="sub">Everything you've done since your first tracked application. Every one of these took effort · weeks run Sunday to Saturday · <a href="/skills">Skills to learn</a></div></div></div>
 
-<section class="grid g6" aria-label="Key numbers">
- <div class="card tile"><div class="lbl">Applied</div><div class="num" data-count="{{ s.applied }}">{{ s.applied }}</div><div class="sub">{{ s.found_total }} roles found</div></div>
- <div class="card tile"><div class="lbl">Replies</div><div class="num" data-count="{{ s.responded }}">{{ s.responded }}</div><div class="sub">from {{ s.applied }} sent · {{ s.response_rate }}%</div></div>
- <div class="card tile"><div class="lbl">Interviews</div><div class="num" data-count="{{ s.interviews }}">{{ s.interviews }}</div><div class="sub">from {{ s.applied }} sent · {{ s.interview_rate }}%</div></div>
- <div class="card tile"><div class="lbl">Median reply</div><div class="num">{% if s.median_wait is not none %}{{ s.median_wait }}<small> days</small>{% else %}–{% endif %}</div><div class="sub">submit to first answer</div></div>
- <div class="card tile"><div class="lbl">Weeks covered</div><div class="num" data-count="{{ s.weeks_met }}">{{ s.weeks_met }}</div><div class="sub">weeks at your {{ ws_label }} minimum, last 12 active</div></div>
- <div class="card tile"><div class="lbl">Recruiters</div><div class="num" data-count="{{ s.recruiter_count }}">{{ s.recruiter_count }}</div><div class="sub">people who reached out</div></div>
+{# The funnel leads, the rest is quieter (JSP-07, 2026-11-17): six identical tiles gave nothing an order. #}
+<section class="grid g3 stat-row" aria-label="Key numbers">
+ <div class="card tile tile-lead"><div class="lbl">Applied</div><div class="num" data-count="{{ s.applied }}">{{ s.applied }}</div><div class="sub">{{ s.found_total }} roles found</div></div>
+ <div class="card tile tile-lead"><div class="lbl">Replies</div><div class="num" data-count="{{ s.responded }}">{{ s.responded }}</div><div class="sub">from {{ s.applied }} sent · {{ s.response_rate }}%</div></div>
+ <div class="card tile tile-lead"><div class="lbl">Interviews</div><div class="num" data-count="{{ s.interviews }}">{{ s.interviews }}</div><div class="sub">from {{ s.applied }} sent · {{ s.interview_rate }}%</div></div>
+</section>
+<section class="grid g3 stat-row mt-s" aria-label="More numbers">
+ <div class="card tile tile-quiet"><div class="lbl">Median reply</div><div class="num">{% if s.median_wait is not none %}{{ s.median_wait }}<small> days</small>{% else %}–{% endif %}</div><div class="sub">submit to first answer</div></div>
+ <div class="card tile tile-quiet"><div class="lbl">Weeks covered</div><div class="num" data-count="{{ s.weeks_met }}">{{ s.weeks_met }}</div><div class="sub">weeks at your {{ ws_label }} minimum, last 12 active</div></div>
+ <div class="card tile tile-quiet"><div class="lbl">Recruiters</div><div class="num" data-count="{{ s.recruiter_count }}">{{ s.recruiter_count }}</div><div class="sub">people who reached out</div></div>
 </section>
 
 <section class="card mt beyond" aria-labelledby="beyond-h"><h2 id="beyond-h">Beyond applications</h2>

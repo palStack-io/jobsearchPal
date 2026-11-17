@@ -264,3 +264,34 @@ def test_same_job_again_reopens_its_view(tmp_path):
     fake.busy, fake.st["job_id"] = True, "manual:gh"
     r = c.post("/finish-here/manual:gh", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/finish-here/manual:gh"
+
+
+# ---- final review fixes (2026-11-17) ----
+
+def test_setup_check_keeps_an_open_session(tmp_path, monkeypatch):
+    """Checking again in Setup while a form is open must not orphan that session (a second browser could open)."""
+    _health(monkeypatch)
+    (tmp_path / "config.yaml").write_text("finish: {on_server: true, host: 127.0.0.1, cdp_port: 9222, vnc_port: 5900}\n")
+    _, c, fake = _setup(tmp_path, {"on_server": True, "host": "127.0.0.1", "cdp_port": 9222, "vnc_port": 5900})
+    fake.st["state"] = "ready"
+    c.post("/setup/finish", follow_redirects=False)
+    assert c.app.state.finish_sessions is fake
+
+
+def test_viewer_reconnects_after_a_drop(tmp_path):
+    """A phone sleeping or a Wi-Fi blip drops the picture; the viewer must connect again while the form is open."""
+    _, c, _ = _setup(tmp_path, ON)
+    js = c.get("/finish-here/manual:gh").text
+    handler = js[js.index('addEventListener("disconnect"'):]
+    handler = handler[:handler.index("});") + 3]
+    assert "rfb = null" in handler
+    assert 'if (!rfb && (st.state === "ready" || st.state === "sent")) connect();' in js
+
+
+def test_closed_does_not_claim_nothing_was_sent(tmp_path):
+    """Done or the idle close without a recognised confirmation: you may still have pressed Submit."""
+    _, c, fake = _setup(tmp_path, ON)
+    fake.st["state"] = "closed"
+    html = c.get("/finish-here/manual:gh").text
+    assert "Nothing was sent from here" not in html
+    assert "Closed. We didn't see a confirmation page. If you pressed Submit, mark it sent on the job page." in html

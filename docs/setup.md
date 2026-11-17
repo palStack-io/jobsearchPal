@@ -76,6 +76,16 @@ docker compose up -d                        # dashboard + the daily scheduler (p
 docker compose --profile finish up -d       # optional: Finish it here; then Setup, "Finish applications in the browser"
 ```
 
+If `docker compose up` says "all predefined address pools have been fully subnetted" (a host with many Docker
+networks), give the networks small ranges of their own in a `docker-compose.override.yml` next to
+`docker-compose.yml`, for example:
+
+```
+networks:
+  default: {ipam: {config: [{subnet: "10.251.19.48/28"}]}}
+  finish-inner: {ipam: {config: [{subnet: "10.251.19.32/28"}]}}
+```
+
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
 **Create your account** (email and password; sign-in is required from then on), then the **Setup** page,
 which walks through everything in a browser:

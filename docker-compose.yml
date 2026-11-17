@@ -54,11 +54,10 @@ services:
     restart: unless-stopped
 
 networks:
-  # Internal: nothing on it can reach the internet except through finish-proxy. A small fixed range, so it starts
-  # where Docker's default pools are used up; set FINISH_INNER_SUBNET in .env if it clashes.
+  # Internal: nothing on it can reach the internet except through finish-proxy. Docker picks its range; on a host
+  # whose address pools are used up, give it one in docker-compose.override.yml (docs/setup.md).
   finish-inner:
     internal: true
-    ipam: {config: [{subnet: "${FINISH_INNER_SUBNET:-10.251.17.32/28}"}]}
 
 volumes:
   agent-home:

@@ -72,13 +72,16 @@ def test_public_site_loads(page):
 
 
 @pytest.mark.parametrize("url", ["http://192.168.10.247:8123/", "http://100.122.220.35:8787/", "http://10.0.0.1/",
-                                 "http://127.0.0.1:8787/", "http://169.254.169.254/"])
+                                 "http://127.0.0.1:8787/", "http://169.254.169.254/",
+                                 # the box's own debug port: Chromium bypasses a proxy for loopback unless told not to
+                                 "http://127.0.0.1:9223/json/version", "http://localhost:9223/json/version"])
 def test_home_addresses_refused(page, url):
     try:
         r = page.goto(url, wait_until="domcontentloaded", timeout=15000)
     except Exception:
         return  # refused outright
     assert r is None or r.status == 403, f"{url} answered {r.status}"
+    assert "webSocketDebuggerUrl" not in page.content()
 
 
 def test_version_file(page):

@@ -49,3 +49,9 @@ def test_digest_patterns_do_not_overlap():
     for image in ("jobsearchpal", "jobsearchpal-finish", "jobsearchpal-finish-proxy"):
         got = [n for n in names if fnmatch.fnmatch(n, f"digests-{image}--*")]
         assert got == [f"digests-{image}--amd64", f"digests-{image}--arm64"], image
+
+
+def test_docker_install_leaves_the_subnet_to_docker():
+    """Every Docker install gets finish-inner (web joins it), so a fixed range could clash on upgrade for people who
+    never turn Finish here on. Crowded hosts set a range in an override file instead (docs/setup.md)."""
+    assert "ipam" not in _load("docker-compose.yml")["networks"]["finish-inner"]

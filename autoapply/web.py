@@ -1315,8 +1315,14 @@ def make_app(settings, db: DB) -> FastAPI:
         if not h["ok"]:
             return RedirectResponse("/setup?err=" + quote("The browser box isn't answering yet. Start it with the "
                                     "command above, wait a few seconds, then check again.") + "#finish", status_code=303)
+        current = app.state.finish_sessions
+        live = current is not None and current.status()["state"] in finish_here.LIVE
+        if live and getattr(current, "box", box) != box:
+            return RedirectResponse("/setup?err=" + quote("An application is open in the browser. Press Done there "
+                                    "first, then check again.") + "#finish", status_code=303)
         setup.set_finish(settings, box.host, box.cdp_port, box.vnc_port)
-        app.state.finish_sessions = finish_here.Sessions(box)
+        if current is None or (not live and getattr(current, "box", None) != box):
+            app.state.finish_sessions = finish_here.Sessions(box)  # an open session is kept, never orphaned
         return RedirectResponse("/setup?msg=" + quote("Finish it here is on. It shows on any application that needs "
                                 "you to finish it.") + "#finish", status_code=303)
 

@@ -12,7 +12,7 @@ while true; do
   rm -rf /tmp/chrome
   chromium --no-sandbox --no-first-run --no-default-browser-check --disable-dev-shm-usage \
     --remote-debugging-address=127.0.0.1 --remote-debugging-port=9223 --user-data-dir=/tmp/chrome \
-    --proxy-server="$FINISH_PROXY" --window-size=1280,900 --window-position=0,0 \
+    --proxy-server="$FINISH_PROXY" --proxy-bypass-list="<-loopback>" --window-size=1280,900 --window-position=0,0 \
     --allow-file-access-from-files about:blank
   sleep 1
 done

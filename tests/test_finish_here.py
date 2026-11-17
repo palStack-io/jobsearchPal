@@ -19,7 +19,10 @@ def _start_chromium():
     with sync_playwright() as p:
         exe = p.chromium.executable_path
     d = tempfile.mkdtemp()
-    proc = subprocess.Popen([exe, "--headless=new", "--remote-debugging-port=0", f"--user-data-dir={d}", "--no-first-run",
+    # --use-mock-keychain / --password-store=basic: what Playwright adds itself; without them macOS asks for the
+    # keychain ("Chromium Safe Storage") every time a fresh Chromium starts.
+    proc = subprocess.Popen([exe, "--headless=new", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1",
+                             f"--user-data-dir={d}", "--no-first-run", "--use-mock-keychain", "--password-store=basic",
                              "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     f = Path(d) / "DevToolsActivePort"
     for _ in range(100):

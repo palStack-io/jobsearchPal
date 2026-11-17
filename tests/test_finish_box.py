@@ -16,7 +16,8 @@ pytestmark = pytest.mark.skipif(os.environ.get("JSP_FINISH_DOCKER") != "1", reas
 ROOT = Path(__file__).resolve().parent.parent
 CDP = int(os.environ.get("FINISH_CDP_PORT", "9222"))
 VNC = int(os.environ.get("FINISH_VNC_PORT", "5900"))
-COMPOSE = ["docker", "compose", "-f", str(ROOT / "docker-compose.finish.yml"), "-p", "jspfinishtest"]
+COMPOSE = ["docker", "compose", "-f", str(ROOT / "docker-compose.finish.yml"), "-p",
+           os.environ.get("JSP_FINISH_PROJECT", "jspfinishunit")]  # never a stack you are using
 
 
 @pytest.fixture(scope="module")
@@ -83,3 +84,18 @@ def test_home_addresses_refused(page, url):
 def test_version_file(page):
     page.goto("file:///etc/jobsearchpal-finish-version")
     assert page.inner_text("body").strip() == "dev"
+
+
+def test_box_comes_back_after_a_restart(box):
+    """Xvfb's lock file in /tmp survives `docker restart`; a stale one kept the screen (and Chromium) down.
+    Found end to end (2026-11-17)."""
+    name = subprocess.run([*COMPOSE, "ps", "-q", "finish"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    subprocess.run(["docker", "restart", name], check=True, capture_output=True)
+    for _ in range(40):
+        try:
+            if httpx.get(f"{box}/json/version", timeout=2).status_code == 200:
+                return
+        except httpx.HTTPError:
+            pass
+        time.sleep(1)
+    raise AssertionError("the box did not come back after a restart")

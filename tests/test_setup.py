@@ -243,3 +243,30 @@ def test_pick_a_resume_look_and_preview_it(fresh, tmp_path, monkeypatch):
     built = Document(io.BytesIO(r.content))
     assert str(built.paragraphs[0].runs[0].font.color.rgb) == "334155"
     assert yaml.safe_load((tmp_path / "profile.yaml").read_text())["resume_look"] == "navy"  # preview saves nothing
+
+
+def test_a_picked_but_unsaved_look_says_so(fresh, tmp_path):
+    """Harun (2026-11-17) picked a look and previewed it, never pressed Save look, and every resume stayed navy.
+    The picker now says when what's selected isn't what's saved."""
+    from playwright.sync_api import sync_playwright
+    s, c = fresh
+    c.post("/setup/resume", files={"docx": ("cv.docx", _shaped_resume())})
+    c.post("/setup/profile", data={"first_name": "Ada", "last_name": "Lovelace", "email": "ada@example.org"})
+    c.post("/setup/look", data={"look": "slate", "accent": ""})
+    html = c.get("/setup").text
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content(html)
+        shown = lambda: pg.evaluate("!document.getElementById('look-unsaved').hidden")  # the section may be folded
+        pick = lambda v: pg.evaluate("""v => { const r = document.querySelector(`input[name=look][value="${v}"]`);
+            r.checked = true; r.dispatchEvent(new Event("change", {bubbles: true})); }""", v)
+        assert shown() is False
+        pick("teal")
+        assert shown() and "Not saved yet" in pg.evaluate("document.getElementById('look-unsaved').textContent")
+        pick("slate")
+        assert shown() is False  # back to what's saved
+        pg.evaluate("""() => { const t = document.getElementById("accent"); t.value = "#7C2D12";
+            t.dispatchEvent(new Event("input", {bubbles: true})); }""")
+        assert shown()
+        b.close()

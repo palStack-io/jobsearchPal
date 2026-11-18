@@ -85,6 +85,13 @@ def work_search(settings) -> tuple[str, int]:
     return ws.get("label", "Work search"), int(ws.get("weekly_minimum", 3))
 
 
+def _field_label(name: str) -> str:
+    """A question label back from a form field name. Browsers send a quote in a field name as %22 and a line break as
+    %0D%0A (the HTML form encoding), so a label like 'By selecting "I agree", ...' came back with %22 and never matched
+    the question again: the answer was saved but never filled, and the consent check stayed red."""
+    return name.replace("%22", '"').replace("%0D%0A", "\n").replace("%0A", "\n").replace("%0D", "\r")
+
+
 def make_app(settings, db: DB) -> FastAPI:
     app = FastAPI()
     shots = settings.data_dir / "screenshots"
@@ -250,10 +257,20 @@ def make_app(settings, db: DB) -> FastAPI:
             return JSONResponse({"detail": "Internal Server Error"}, status_code=500)
         return _error_page(request, 500, str(exc)[:200])
 
+    def log_week() -> dict | None:
+        """This week's applications and the weekly minimum, for the Log an application line ("This makes 4 of 5")."""
+        try:
+            start = stats.week_start(date.today())
+            n = sum(1 for j in db.by_status("submitted") if (j["submitted_at"] or "")[:10] >= start.isoformat())
+            return {"n": n, "min": work_search(settings)[1], "start": start.isoformat()}
+        except Exception:  # a missing figure must never break a page; the line just does not show
+            return None
+
     def page(name: str, **ctx) -> HTMLResponse:  # noqa: F811  every page shows the waiting-email badge
         from . import setup
         return HTMLResponse(env.get_template(name).render(pending_count=len(db.pending_events()),
-                                                          setup_left=len(setup.status(settings, os.environ)["left"]), **ctx))
+                                                          setup_left=len(setup.status(settings, os.environ)["left"]),
+                                                          log_week=log_week(), **ctx))
 
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):
@@ -843,7 +860,7 @@ def make_app(settings, db: DB) -> FastAPI:
         lead = db.conn.execute("select * from leads where job_id = ?", (job_id,)).fetchone()
         docx = {slot: Path(p).with_suffix(".docx").name for slot, p in plan.get("files", {}).items()
                 if _servable(str(Path(p).with_suffix(".docx")))}
-        return page("job.html", nav="", job=job, report=report, approved=plan.get("approved", {}), files=files, checks=checks,
+        return page("job.html", nav="", job=job, report=report, approved={_field_label(k): v for k, v in (plan.get("approved") or {}).items()}, files=files, checks=checks,
                     blocked=preflight.blocking(checks), letter=letter, lead=dict(lead) if lead else None,
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
@@ -974,6 +991,8 @@ def make_app(settings, db: DB) -> FastAPI:
     from . import finish_here
     _box = finish_here.box_from(settings)
     app.state.finish_sessions = finish_here.Sessions(_box) if _box else None
+    from . import remake as _remake
+    app.state.remaker = _remake.Remaker()
 
     def _sessions():
         if not finish_here.box_from(settings) or app.state.finish_sessions is None:
@@ -1298,6 +1317,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     look=(lambda v: v if v in __import__("autoapply.docs", fromlist=["x"]).LOOKS else "navy")(str(prof.get("resume_look") or "").lower()), accent=str(prof.get("resume_accent") or "").lstrip("#"),
                     gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
+                    remake_n=len(__import__("autoapply.remake", fromlist=["x"]).waiting(db)), remake_st=app.state.remaker.status(),
                     msg=msg, err=err)
 
     @app.post("/setup/finish")
@@ -1391,6 +1411,15 @@ def make_app(settings, db: DB) -> FastAPI:
             return _back(err, "look")
         from .docs import LOOKS
         return _back(f"Saved. New tailored resumes and letters use the {LOOKS[settings.profile['resume_look']]['label']} look.", "look")
+
+    @app.post("/setup/look/remake")
+    def setup_look_remake():
+        """Lays out the waiting applications' resumes and letters again in the saved look (in the background)."""
+        from .docs import LOOKS
+        if not app.state.remaker.start(settings, db):
+            return _back("Already remaking them; this page shows when it's done.", "look")
+        label = LOOKS.get(settings.profile.get("resume_look") or "navy", LOOKS["navy"])["label"]
+        return _back(f"Remaking them in the {label} look. It takes a few seconds each; reload to see how far it got.", "look")
 
     @app.post("/setup/look/preview")
     async def setup_look_preview(request: Request):
@@ -1636,9 +1665,9 @@ def make_app(settings, db: DB) -> FastAPI:
         new_plan.setdefault("answers", {})
         for k, v in form.items():
             if k.startswith("ans::") and v:
-                new_plan["answers"][k[5:]] = v
+                new_plan["answers"][_field_label(k[5:])] = v
         # Held answers come only from this form, never from the JSON box.
-        new_plan["approved"] = {k[6:]: v for k, v in form.items() if k.startswith("held::") and v}
+        new_plan["approved"] = {_field_label(k[6:]): v for k, v in form.items() if k.startswith("held::") and v}
         new_plan["held_reviewed"] = True  # from now on a blank consent stays blank: no standing answer fills it
         new_plan["approved_by_user"] = False
 
@@ -1667,7 +1696,8 @@ def make_app(settings, db: DB) -> FastAPI:
             _record_applied(job, None)
         elif action == "refill":
             r = await run_in_threadpool(fill, new_plan, settings.profile, shots, headless)  # sync Playwright can't share the event loop
-            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot, error=None)
+            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot,
+                      error=r.closed_error)
         elif action == "submit":
             if old_report.get("submit_clicked") and not old_report.get("submitted") and form.get("resubmit") != "yes":
                 db.update(job_id, plan_json=new_plan,

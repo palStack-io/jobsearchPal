@@ -5,7 +5,7 @@
                   'daily': 'The morning pass finds roles, tailors your materials and fills forms. It never submits.',
                   'costs': 'What the daily pass may do each day, and what it costs.'}[tab] %}
 {% include "_tabs.html" %}
-{% if finish_box %}<p class="notice finish-health"><b>Browser on your server:</b>
+{% if finish_box %}<p class="notice finish-health{{ ' info' if finish_box.ok and not (finish_box.version and finish_box.app_version and finish_box.version not in ('dev', finish_box.app_version)) }}" style="display:block"><b>Browser on your server:</b>
  {% if not finish_box.ok %}not answering. Start it again with <code>docker compose -f docker-compose.finish.yml up -d</code>
   (or <code>docker compose --profile finish up -d</code> with Docker); until then, finish on your Mac.
  {% elif finish_box.version and finish_box.app_version and finish_box.version not in ('dev', finish_box.app_version) %}version {{ finish_box.version }}, and the app is {{ finish_box.app_version }}.

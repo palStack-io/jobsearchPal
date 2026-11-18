@@ -288,24 +288,32 @@ def _open(p, url: str, headless: bool):
 
 
 CLOSED_MSG = "This posting is closed. The company took it down; nothing was sent."
-# What the boards show for a removed role. Only read when the page has no visible Submit button, so a live form whose
-# description happens to say "no longer" is never called closed.
+# What the boards themselves show for a removed role. Phrased about the page you asked for ("the job you're looking
+# for ...", a sentence that starts "This job ..."), so ordinary ad text like "we are no longer accepting applications
+# from agencies" never counts. Read only on the known boards, and only when no Submit button shows up.
 CLOSED_TEXT = re.compile(
-    r"job not found|job you requested was not found"                                   # Ashby
-    r"|(job|position|posting|role|opening)\b[^.\n]{0,40}\bno longer (open|available|accepting|active)"  # Greenhouse, others
-    r"|no longer accepting applications|(posting|position|job) has (been )?(closed|expired|been filled)"
-    r"|couldn'?t find (that|this|the) (job|posting|position)"
-    r"|(posting|job) you('re| are) looking for (might have closed|doesn'?t exist|does not exist)",  # Lever
-    re.I)
+    r"\bjob not found\b|job you requested was not found"                                             # Ashby
+    r"|(job|position|posting|page) you(?: are|'re) looking for (?:is no longer (?:open|available)"     # Greenhouse, Lever
+    r"|might have closed|doesn'?t exist|does not exist|was not found|could not be found)"
+    r"|(?:^|[.!?]\s+)this (?:job|posting|position) is no longer (?:open|available|accepting applications)\s*[.!]?\s*$"
+    r"|(?:^|[.!?]\s+)this (?:job|posting|position) has (?:been )?(?:closed|expired|removed)\s*[.!]?\s*$",
+    re.I | re.M)
+BOARDS = {"greenhouse", "lever", "ashby"}
 
 
-def closed_reason(page: Page, a: ATS, status: int) -> str:
-    """CLOSED_MSG when the posting is gone (a 404/410, or the board's own "not found" page), else ""."""
+def closed_reason(page: Page, a: ATS, status: int, wait_ms: int = 5000) -> str:
+    """CLOSED_MSG when the posting is gone (a 404/410, or a known board's own "not found" page), else "".
+    Waits up to wait_ms for a Submit button first: React boards can mount it after the page loads."""
     if status in (404, 410):
         return CLOSED_MSG
+    if a.name not in BOARDS:
+        return ""  # a generic careers page's wording is anyone's
     try:
-        if page.locator(f"{a.submit} >> visible=true").count():
+        try:
+            page.locator(f"{a.submit} >> visible=true").first.wait_for(state="visible", timeout=max(wait_ms, 1))
             return ""
+        except Exception:
+            pass  # no button: read the page
         return CLOSED_MSG if CLOSED_TEXT.search(page.inner_text("body")) else ""
     except Exception:
         return ""

@@ -49,7 +49,7 @@ def test_remake_uses_the_saved_look_and_reports_failures(world, monkeypatch):
     calls = []
 
     def build(base, spec, out_dir, last_name="", pdf=True, today=None, look=None, accent=None):
-        calls.append((spec["company"], look, accent, Path(out_dir).name, last_name))
+        calls.append((spec["company"], look, accent, Path(out_dir).parent.name, last_name))  # built aside, in the app's folder
         if spec["company"] == "Globex":
             raise ValueError("bad spec")
         new = Path(out_dir) / f"Lovelace Resume - {spec['company']} (2).pdf"
@@ -81,3 +81,60 @@ def test_no_offer_without_waiting_applications(tmp_path):
     s = Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data")}, profile={})
     db = DB(s.data_dir / "t.db")
     assert "/setup/look/remake" not in client(s, db).get("/setup").text
+
+
+def _fake_build(made, problems=None, pdf=True):
+    def build(base, spec, out_dir, last_name="", pdf_=True, today=None, look=None, accent=None, **k):
+        made.append(spec["company"])
+        out = Path(out_dir)
+        docx_ = out / f"Lovelace Resume - {spec['company']}.docx"
+        docx_.write_bytes(b"docx new")
+        r = {"resume": str(docx_), "problems": list(problems or [])}
+        if pdf:
+            p = out / f"Lovelace Resume - {spec['company']}.pdf"
+            p.write_bytes(b"%PDF new")
+            r["pdf"] = {"resume": str(p)}
+        return r
+    return build
+
+
+def test_an_application_sent_during_the_remake_is_left_alone(world, monkeypatch):
+    """Review (2026-11-17): the list was read once, so a job sent mid-run still had its sent PDF replaced."""
+    s, db = world
+    made = []
+    inner = _fake_build(made)
+
+    def build(*a, **k):
+        db.update("gh:b", status="submitted")   # you press Submit on Globex while Acme is being remade
+        return inner(*a, **k)
+
+    monkeypatch.setattr(remake.docs, "build", build)
+    remake.Remaker().run(s, db)
+    assert made == ["Acme"]
+    assert (s.data_dir / "applications" / "globex" / "Lovelace Resume - Globex.pdf").read_bytes() == b"%PDF old"
+
+
+def test_files_are_swapped_in_whole_and_scratch_is_gone(world, monkeypatch):
+    s, db = world
+    monkeypatch.setattr(remake.docs, "build", _fake_build([]))
+    remake.Remaker().run(s, db)
+    acme = s.data_dir / "applications" / "acme"
+    assert (acme / "Lovelace Resume - Acme.pdf").read_bytes() == b"%PDF new"
+    assert not [p for p in acme.iterdir() if p.is_dir()]  # the build folder was removed
+    assert json.loads(db.get("gh:a")["plan_json"])["files"]["resume"] == str(acme / "Lovelace Resume - Acme.pdf")
+
+
+def test_no_pdf_never_turns_the_upload_into_a_word_file(world, monkeypatch):
+    s, db = world
+    monkeypatch.setattr(remake.docs, "build", _fake_build([], problems=["PDF not made for x: LibreOffice is missing"], pdf=False))
+    r = remake.Remaker()
+    r.run(s, db)
+    assert r.status()["done"] == 0 and sorted(r.status()["failed"]) == ["Acme", "Globex"]
+    assert json.loads(db.get("gh:a")["plan_json"])["files"]["resume"].endswith(".pdf")
+    assert (s.data_dir / "applications" / "acme" / "Lovelace Resume - Acme.pdf").read_bytes() == b"%PDF old"
+
+
+def test_a_closed_posting_is_not_remade(world):
+    s, db = world
+    db.update("gh:a", report_json={"closed": True})
+    assert [j for j, _ in remake.waiting(db)] == ["gh:b"]

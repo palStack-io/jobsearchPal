@@ -236,17 +236,48 @@ def test_missing_page_is_closed(base_url, pdfs, tmp_path):
     assert r.closed
 
 
-def test_open_form_mentioning_no_longer_available_is_not_closed():
-    """Text alone isn't enough: a live form with a Submit button stays open whatever its description says."""
+AD_LINES = ["We are no longer accepting applications from agencies.",
+            "If this role is no longer available, we will keep your details.",
+            "This position has been filled before; we are hiring again.",
+            "Our previous job board is no longer active; apply below.",
+            "This opening is no longer open to relocation."]
+
+
+@pytest.mark.parametrize("line", AD_LINES)
+def test_job_ad_sentences_are_not_a_closed_posting(line):
+    """Review (2026-11-17): ordinary ad text matched, and a form whose button mounts late would be called closed."""
     from playwright.sync_api import sync_playwright
-    from autoapply.fillers.base import closed_reason, GENERIC
+    from autoapply.fillers.base import closed_reason, detect
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page()
-        pg.set_content("<p>Our old office is no longer available.</p><form><input name=a><button type=submit>Apply</button></form>")
-        assert closed_reason(pg, GENERIC, 200) == ""
-        pg.set_content("<p>Our old office is no longer available.</p><form><input name=a></form>")
-        assert closed_reason(pg, GENERIC, 200) == ""  # no closed wording that names the job, no form button: not ours to call
+        pg.set_content(f"<p>{line}</p><form><input name=a></form>")  # no button (yet)
+        assert closed_reason(pg, detect("", "greenhouse"), 200, wait_ms=0) == ""
+        b.close()
+
+
+def test_a_late_submit_button_is_waited_for():
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, detect
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content("<p>Job not found</p><form id=f></form><script>setTimeout(() => "
+                       "document.getElementById('f').innerHTML = '<button type=submit>Submit Application</button>', 800)</script>")
+        assert closed_reason(pg, detect("", "ashby"), 200, wait_ms=3000) == ""
+        b.close()
+
+
+def test_only_known_boards_are_read_for_closed_text():
+    """A generic careers page is only called closed on a 404/410: its wording is anyone's."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, GENERIC, CLOSED_MSG
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content("<h2>Job not found</h2>")
+        assert closed_reason(pg, GENERIC, 200, wait_ms=0) == ""
+        assert closed_reason(pg, GENERIC, 404, wait_ms=0) == CLOSED_MSG
         b.close()
 
 

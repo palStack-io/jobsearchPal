@@ -106,12 +106,24 @@ def test_undo_after_the_button_goes_back_to_prepped(tmp_path, monkeypatch):
     assert db.get("greenhouse:acme:1")["status"] == "prepped"
 
 
-def test_by_hand_has_no_undo(tmp_path, monkeypatch):
+def test_by_hand_can_be_undone_too(tmp_path, monkeypatch):
+    # A mistaken "I applied by hand" (or any sent mark) must be undoable, not stuck as submitted.
     _, db, c = _setup(tmp_path, monkeypatch)
     c.post("/job/greenhouse:acme:1", data={"action": "manual"})
-    assert "Not sent? Undo" not in c.get("/job/greenhouse:acme:1").text
+    assert "Not sent? Undo" in c.get("/job/greenhouse:acme:1").text
     c.post("/job/greenhouse:acme:1", data={"action": "unsend"})
-    assert db.get("greenhouse:acme:1")["status"] == "submitted"
+    job = db.get("greenhouse:acme:1")
+    assert job["status"] == "filled" and not job["submitted_at"]
+    assert not any(e["id"] == "applied:greenhouse:acme:1" for e in db.events())
+
+
+def test_submitted_with_no_mark_can_be_undone(tmp_path, monkeypatch):
+    # Submitted through the review page's Submit (or logged elsewhere) leaves no mark: Undo still works.
+    _, db, c = _setup(tmp_path, monkeypatch, status="submitted")
+    db.update("greenhouse:acme:1", submitted_at="2026-11-18 16:00")
+    assert "Not sent? Undo" in c.get("/job/greenhouse:acme:1").text
+    c.post("/job/greenhouse:acme:1", data={"action": "unsend"})
+    assert db.get("greenhouse:acme:1")["status"] == "filled"
 
 
 def test_old_finish_log_table_gets_the_detail_column(tmp_path):

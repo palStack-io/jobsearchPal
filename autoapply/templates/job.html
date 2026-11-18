@@ -62,6 +62,10 @@
 <p class="notice sent-cmd" id="sent"><span class="grow"><b>Sent with the command.</b>
  {% if sent_mark.kind == 'auto' %}It saw the site's confirmation page{% if sent_mark.detail.get('confirmation') and not sent_mark.detail.confirmation.startswith('http') %} ("{{ sent_mark.detail.confirmation }}"){% endif %} at {{ sent_mark.at }}.{% else %}You marked it at {{ sent_mark.at }}.{% endif %}
  If it didn't go through, undo puts it back {{ 'as prepped' if was == 'prepped' else 'as filled' }}.</span>
+ <button class="btn ghost sm" name="action" value="unsend">Not sent? Undo</button></p>
+{% elif job.status == 'submitted' %}
+<p class="notice sent-cmd" id="sent"><span class="grow"><b>Marked sent{% if job.submitted_at %} {{ job.submitted_at }}{% endif %}.</b>
+ If it didn't go through, or you marked it by mistake, undo takes it off your sent list.</span>
  <button class="btn ghost sm" name="action" value="unsend">Not sent? Undo</button></p>{% endif %}
 {% if job.error %}<p class="notice">{{ job.error }}</p>{% endif %}
 

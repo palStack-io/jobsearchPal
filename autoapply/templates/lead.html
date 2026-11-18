@@ -6,18 +6,19 @@
 <header class="top"><div><h1>Check the details</h1>
  <div class="ink2">Read from what you pasted. Fix anything that's wrong, then save. Nothing runs until you press a button on the next page.</div></div></header>
 {% if problem %}<p class="notice" role="alert">{{ problem }}</p>{% endif %}
-<form method="post" action="/leads/add" class="card lead-form">
- <div class="grid g2">
-  <label class="fld"><span>Company</span><input name="company" value="{{ fields.company or '' }}" required maxlength="120"></label>
-  <label class="fld"><span>Role title</span><input name="title" value="{{ fields.title or '' }}" required maxlength="200"></label>
-  <label class="fld"><span>Location</span><input name="location" value="{{ fields.location or '' }}" maxlength="120"></label>
-  <label class="fld"><span>Work setting</span><select name="work_setting">{% for v, l in [('', 'Not stated'), ('on-site', 'On-site'), ('hybrid', 'Hybrid'), ('remote', 'Remote')] %}
-   <option value="{{ v }}" {% if (fields.work_setting or '') == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
-  <label class="fld"><span>Pay range</span><input name="pay" value="{{ fields.pay or '' }}" maxlength="80" placeholder="As posted, e.g. $137K - $257K"></label>
-  <label class="fld"><span>Link to the posting <small class="muted">(optional)</small></span><input name="url" value="{{ fields.url or '' }}" maxlength="1000" inputmode="url"></label>
+<form method="post" action="/leads/add" class="card lead-form la-kit">
+ <div class="la-rows">
+  <label class="la-row la-kv"><span class="la-k">Company</span><input name="company" value="{{ fields.company or '' }}" required maxlength="120" autocomplete="off"></label>
+  <label class="la-row la-kv"><span class="la-k">Role</span><input name="title" value="{{ fields.title or '' }}" required maxlength="200" autocomplete="off"></label>
  </div>
- <label class="fld"><span>The job description</span><textarea name="description" rows="14" maxlength="20000">{{ fields.description or '' }}</textarea></label>
- <div class="row"><a class="btn ghost" href="/leads">Cancel</a><button class="btn primary">Save</button></div>
+ <fieldset class="la-fs"><legend class="la-lbl">Work setting</legend><div class="la-pills">{% for v, l in [('on-site', 'On-site'), ('hybrid', 'Hybrid'), ('remote', 'Remote'), ('', 'Not stated')] %}<label><input type="radio" name="work_setting" value="{{ v }}" {% if (fields.work_setting or '') == v %}checked{% endif %}><span>{{ l }}</span></label>{% endfor %}</div></fieldset>
+ <div class="la-rows">
+  <label class="la-row la-kv"><span class="la-k">Location</span><input name="location" value="{{ fields.location or '' }}" maxlength="120" placeholder="Not listed"></label>
+  <label class="la-row la-kv"><span class="la-k">Pay</span><input name="pay" value="{{ fields.pay or '' }}" maxlength="80" placeholder="As posted, e.g. $137K - $257K"></label>
+  <label class="la-row la-kv"><span class="la-k">Posting link</span><input name="url" value="{{ fields.url or '' }}" maxlength="1000" inputmode="url" placeholder="Optional"></label>
+ </div>
+ <label class="fld"><span>The job description</span><textarea name="description" rows="12" maxlength="20000">{{ fields.description or '' }}</textarea></label>
+ <div class="row la-foot"><a class="btn ghost" href="/leads">Cancel</a><button class="btn primary">Save this job</button></div>
 </form>
 {% if pasted and not problem %}<details class="mt"><summary class="muted">What you pasted</summary><pre class="pasted">{{ pasted|truncate(6000) }}</pre></details>{% endif %}
 {% else %}

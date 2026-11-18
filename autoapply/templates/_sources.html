@@ -39,8 +39,8 @@
 .src-off{display:flex;gap:6px 10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:14px}
 .src-off .off-names{flex:1;min-width:0;color:var(--ink-2)}
 .co-list{margin:12px 0 0 19px}.co-list input{width:100%;max-width:340px;margin-bottom:10px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}.chips li{font-size:13.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2)}
-.chips li small{color:var(--good);font-weight:700;margin-left:2px}.sources .small{font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips li{font-size: 14px;padding:3px 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2)}
+.chips li small{color:var(--good);font-weight:700;margin-left:2px}.sources .small{font-size: 14px}
 @media (max-width:640px){.src-grid{grid-template-columns:1fr}.src-co{flex-wrap:wrap}.src-co .acts{margin-left:19px}}</style>
 <script>(()=>{const t=document.getElementById('co-toggle'),l=document.getElementById('co-list');if(!t||!l)return;
 t.addEventListener('click',()=>{const open=l.hidden;l.hidden=!open;t.setAttribute('aria-expanded',open);t.textContent=open?'Hide list':'See list';if(open)document.getElementById('co-filter').focus()});

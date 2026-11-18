@@ -53,7 +53,8 @@ you ─► dashboard ─► check answers, decide consents ─► Submit
   left to their job-alert emails; jobsearchPal doesn't try to get around those checks.
 - **Job-alert emails** from LinkedIn, Indeed (including its job-match emails), HigherEdJobs (Job Agent emails), Built In,
   Glassdoor, Wellfound, ZipRecruiter and Dice. Every role in them is saved on the **Leads** page with its location,
-  salary when given, source and a rough fit score. After each email sync the top leads are looked up on the
+  salary when given, source and a rough fit score (point at a score, or tap it on a phone, to see what made it up:
+  title keywords, level, words shared with your resume, freshness). After each email sync the top leads are looked up on the
   company's own job board (no AI) and join the roles the daily run can tailor; star others and the next run
   searches the web for them. Parsing is plain Python, from the "View job" blocks these emails use.
 - **Any job you paste.** Found a role somewhere else? Open **Add a job** on the Leads page and paste the whole post

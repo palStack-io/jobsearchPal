@@ -517,7 +517,8 @@ def main(argv=None):
             spec_path = spec_path / "docs.json"
         try:
             r = docs.build(base, json.loads(spec_path.read_text()), spec_path.parent,
-                           last_name=s.profile.get("last_name", ""))
+                           last_name=s.profile.get("last_name", ""),
+                           look=s.profile.get("resume_look"), accent=s.profile.get("resume_accent"))
         except (OSError, ValueError) as e:  # SpecError and bad JSON alike: say what to fix
             sys.exit(f"build-docs: {e}")
         _out(r)
@@ -560,7 +561,7 @@ def main(argv=None):
         out = report.as_dict()
         if args.job:
             db.update(args.job, status="filled", plan_json=plan, report_json=out,
-                      screenshot=report.screenshot, error=None)
+                      screenshot=report.screenshot, error=report.closed_error)
             from . import preflight
             out["checks_failed"] = [f"{c['group']}: {c['name']} ({c['detail']})" for c in preflight.for_job(db, s, args.job) if not c["ok"]]
         _out(out)
@@ -576,8 +577,9 @@ def main(argv=None):
         plan["approved_by_user"] = False
         report = fill(plan, s.profile, s.data_dir / "screenshots", headless)
         db.log_run("fill", not report.errors, f"refill {args.job_id}: {len(report.filled)} filled, {len(report.errors)} errors")
-        db.update(args.job_id, status="filled", plan_json=plan, report_json=report.as_dict(), screenshot=report.screenshot)
-        print(f"{len(report.filled)} filled, {len(report.errors)} errors")
+        db.update(args.job_id, status="filled", plan_json=plan, report_json=report.as_dict(), screenshot=report.screenshot,
+                  error=report.closed_error)
+        print(report.closed_error or f"{len(report.filled)} filled, {len(report.errors)} errors")
     elif args.cmd == "brief":
         from . import brief
         from .web import work_search

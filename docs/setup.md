@@ -45,8 +45,32 @@ the key's usage before and after, and the run is skipped once the month's budget
 7. Open `REVIEW_URL`, create your account (email and password), and sign in on each device. On the **Settings**
    page, pick the daily-run agent and model and the email-sorting order.
 8. Optional, on your laptop: `bash scripts/mac-setup.sh <ssh-host>` installs `autoapply-finish`.
+9. Optional, **Finish it here** (needs Docker on the server): `docker compose -f docker-compose.finish.yml up -d` in
+   `~/auto-apply`, then on the Setup page press **Check and turn it on** under "Finish applications in the browser".
+   It starts two small containers: a browser on a virtual screen, and the proxy that is its only way out (web ports
+   80 and 443, never a home, tailnet or Docker address). Their ports listen on this machine only (9222 and 5900;
+   change them with `FINISH_CDP_PORT` and `FINISH_VNC_PORT` in `.env`). If Docker says the address pools are used
+   up, or the ranges clash with a network you have, set `FINISH_INNER_SUBNET` and `FINISH_EGRESS_SUBNET` in `.env`.
+   Update it with the app: `docker compose -f docker-compose.finish.yml pull && docker compose -f
+   docker-compose.finish.yml up -d`. Turn it off: `docker compose -f docker-compose.finish.yml down` and set
+   `finish: {on_server: false}` in `config.yaml`.
 
 Updating later: `git pull && .venv/bin/pip install -e . && systemctl --user restart autoapply-review`.
+
+Resume PDFs set in a wider, plainer font than your Word file? Most resumes use Calibri or Cambria, which Linux
+doesn't have. Installs from before December 2026 need their free stand-ins (same letter widths, so lines and page breaks match):
+`sudo apt-get install -y fonts-crosextra-carlito fonts-crosextra-caladea`. The Docker image has them.
+
+Pick how your tailored resumes look (Navy, Teal band, Slate or your own layout, plus your own colour if you like) on
+the Setup page under **Base resume**; **Preview with my resume** shows your resume in that look before you save it.
+Only **Save look** keeps it (the page says "Not saved yet" until you do), and it applies to resumes made from then on.
+To bring the applications you haven't sent yet into the new look, press **Remake the waiting resumes and letters**:
+it lays out the text already written for each one again (no rewriting, a few seconds each); sent ones stay as they
+went out, and a remade letter carries today's date. It uses your current base resume, so anything you changed there
+since (outside the tailored parts) shows up too; one that no longer fits its page limit is left as it was and named.
+
+If a posting is taken down before you send it, filling or submitting stops with "This posting is closed. The company
+took it down; nothing was sent." (a 404, or the board's own "job not found" / "no longer open" page).
 
 ## Docker (alternative to steps 1, 4 and 6)
 
@@ -57,6 +81,17 @@ installed on the host. Your files stay in the repo folder, which is mounted into
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
 docker compose up -d                        # dashboard + the daily scheduler (pulls the published image)
 # then sign in to Claude or ChatGPT on the dashboard's Setup page (or: docker compose run --rm web claude)
+docker compose --profile finish up -d       # optional: Finish it here; then Setup, "Finish applications in the browser"
+```
+
+If `docker compose up` says "all predefined address pools have been fully subnetted" (a host with many Docker
+networks), give the networks small ranges of their own in a `docker-compose.override.yml` next to
+`docker-compose.yml`, for example:
+
+```
+networks:
+  default: {ipam: {config: [{subnet: "10.251.19.48/28"}]}}
+  finish-inner: {ipam: {config: [{subnet: "10.251.19.32/28"}]}}
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
@@ -90,7 +125,7 @@ by hand, so either way works; keys it saves go to `data/secrets.json` (owner-onl
   says otherwise, add `APP_UID` and `APP_GID` to `.env`.
 - **Updating:** `git pull && docker compose pull && docker compose up -d`. The image is published for amd64 and
   arm64 (Raspberry Pi 5, Apple silicon and ARM cloud machines) at `ghcr.io/palstack-io/jobsearchpal`; set
-  `JSP_VERSION=1.0.0` in `.env` to stay on one release, or build your own with `docker compose up -d --build`.
+  `JSP_VERSION=1.1.0` in `.env` to stay on one release, or build your own with `docker compose up -d --build`.
 - **Logins** live in the `agent-home` volume, so a rebuild keeps them.
 
 ### Signing in to your AI subscription

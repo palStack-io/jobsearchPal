@@ -57,6 +57,13 @@ private network such as Tailscale before you open it to your phone. `AUTOAPPLY_T
 key `autoapply finish` uses to fetch a filled form (`/bundle` and `/file`); it is made in `data/secrets.json`
 when you create the account.
 
+**Finish it here (optional).** When it's on, a browser runs in a container on your server and visits the job site
+you're finishing. It reaches the internet only through a second container, a proxy that refuses home, tailnet and
+Docker addresses, so a job site's page can't reach your other machines. None of your folders are mounted into it:
+the resume and letter for that one application are handed to the form through the browser connection, and a fresh
+browser profile is used and closed for each application, so nothing (cookies, files, history) is kept. You see it
+through the job page, behind your sign-in; its own ports listen on the server only. It never presses Submit.
+
 **What leaves your server.** Job emails, your resume and notes go to the model you pick (your Claude or
 ChatGPT subscription, or OpenRouter/Jev if you turn them on); Ollama stays local. Postings are fetched from
 public job boards. The form filler types your real name, email and files into the company's own form, and

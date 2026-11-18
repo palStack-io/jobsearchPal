@@ -1,6 +1,6 @@
 """The staged daily run: pre-ranking, stage list, picks, prompts, quick pick and the per-stage cost table."""
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 import yaml
@@ -153,7 +153,8 @@ def test_todo_line_for_phone_push(tmp_path, capsys):
     s, db, cfg = make(tmp_path)
     cli.main(["--config", str(cfg), "todo-line"])
     assert capsys.readouterr().out == ""  # nothing open, no line
-    db.add_event({"id": "<r@x>", "job_id": None, "kind": "recruiter", "at": "2026-10-01 09:00",
+    db.add_event({"id": "<r@x>", "job_id": None, "kind": "recruiter",
+                  "at": f"{(datetime.now() - timedelta(days=2)):%Y-%m-%d} 09:00",  # recent: old ones age out
                   "sender": "Pat Lee <pat@agency.example>", "subject": "Data role", "reviewed": 1})
     cli.main(["--config", str(cfg), "todo-line"])
     out = capsys.readouterr().out
@@ -344,3 +345,25 @@ def test_daily_agent_steps_load_no_mcp_servers():
     from pathlib import Path
     sh = (Path(__file__).resolve().parent.parent / "scripts" / "daily.sh").read_text()
     assert "--max-turns \"$turns\" --strict-mcp-config" in sh
+
+
+def _closed_report(*a, **k):
+    from autoapply.fillers.base import CLOSED_MSG, Report
+    return Report(url="u", closed=True, errors=[{"label": "(posting)", "error": CLOSED_MSG}])
+
+
+def test_refill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
+    s, db, cfg = make(tmp_path)
+    monkeypatch.setattr(cli, "fill", _closed_report)
+    db.update("gh:a:1", status="filled", plan_json={"url": "https://boards.greenhouse.io/a/jobs/1", "files": {}})
+    cli.main(["--config", str(cfg), "refill", "gh:a:1"])
+    assert db.get("gh:a:1")["error"].startswith("This posting is closed")
+
+
+def test_fill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
+    s, db, cfg = make(tmp_path)
+    monkeypatch.setattr(cli, "fill", _closed_report)
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps({"url": "https://boards.greenhouse.io/a/jobs/1", "ats": "greenhouse", "files": {}}))
+    cli.main(["--config", str(cfg), "fill", str(plan), "--job", "gh:a:1"])
+    assert db.get("gh:a:1")["error"].startswith("This posting is closed")

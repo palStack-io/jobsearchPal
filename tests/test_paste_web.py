@@ -167,3 +167,14 @@ def test_leads_page_stays_light(tmp_path):
     assert t.count('data-confirm-ref="confirm-auto"') == 150 and "Show all 400" in t and t.count("It uses credits") == 1
     assert len(t) < 400_000, len(t)
     assert c.get("/leads?more=1").text.count('data-confirm-ref="confirm-auto"') == 400
+
+
+def test_check_the_details_always_has_one_work_setting(tmp_path):
+    """Form kit (2026-11-18): Work setting is pills; an odd or missing value checks Not stated, so the field is always sent."""
+    import re
+    s, db, _ = make(tmp_path)
+    c = client(s, db)
+    t = c.post("/leads/paste", data={"text": FIX("paste_linkedin.txt")}).text
+    assert len(re.findall(r'name="work_setting" value="[^"]*" checked', t)) == 1
+    r = c.post("/leads/add", data={"company": "Initech", "title": "Data analyst", "description": "x"}, follow_redirects=False)
+    assert r.status_code == 303

@@ -133,6 +133,17 @@ def test_viewer_has_one_primary_action_per_state(tmp_path, state):
     assert ("/static/novnc/core/rfb.js" in html) == (state in ("starting", "filling", "ready", "sent"))
 
 
+def test_viewer_closed_posting_offers_only_back(tmp_path):
+    """Trying again can't bring a removed role back: the one action is Back to the job."""
+    _, c, fake = _setup(tmp_path, ON)
+    fake.st.update(state="error", gone=True, error="This posting is closed. The company took it down; nothing was sent.")
+    html = c.get("/finish-here/manual:gh").text
+    card = html[html.index('<section class="card mt fh"'):]
+    card = card[:card.index("</section>")]
+    assert "This posting is closed" in card and "Try again" not in card
+    assert re.findall(r'<a class="btn primary" href="/job/manual%3Agh">Back to the job</a>', card)
+
+
 def test_viewer_busy_offers_to_close(tmp_path):
     _, c, fake = _setup(tmp_path, ON)
     html = c.get("/finish-here/manual:gh?busy=1").text  # where a busy start sends you: the running job

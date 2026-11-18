@@ -375,3 +375,14 @@ def test_state_work_search_rule(tmp_path, base_url, pdfs):
     assert "Pick your state" in c.get("/dua").text
     html = c.get("/setup").text
     assert 'value="MA"' in html and 'id="ws_rules"' in html
+
+
+def test_refill_of_a_removed_posting_keeps_the_closed_message(tmp_path, base_url, pdfs, monkeypatch):
+    """The Refill button used to clear the error, so a removed role looked filled with nothing in it."""
+    from autoapply import web
+    from autoapply.fillers.base import CLOSED_MSG, Report
+    db, c, _ = setup(tmp_path, base_url, pdfs)
+    monkeypatch.setattr(web, "fill", lambda *a, **k: Report(url="u", closed=True,
+                                                            errors=[{"label": "(posting)", "error": CLOSED_MSG}]))
+    c.post("/job/manual:gh", data={"action": "refill"}, follow_redirects=False)
+    assert db.get("manual:gh")["error"] == CLOSED_MSG

@@ -1667,7 +1667,8 @@ def make_app(settings, db: DB) -> FastAPI:
             _record_applied(job, None)
         elif action == "refill":
             r = await run_in_threadpool(fill, new_plan, settings.profile, shots, headless)  # sync Playwright can't share the event loop
-            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot, error=None)
+            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot,
+                      error=r.closed_error)
         elif action == "submit":
             if old_report.get("submit_clicked") and not old_report.get("submitted") and form.get("resubmit") != "yes":
                 db.update(job_id, plan_json=new_plan,

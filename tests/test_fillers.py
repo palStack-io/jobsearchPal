@@ -210,3 +210,53 @@ def test_handoff_on_page_called_after_fill(base_url, pdfs):
                 on_page=lambda pg, rep: seen.append((pg.input_value("#first_name"), type(rep).__name__)))
         b.close()
     assert seen == [("Jane", "Report")]
+
+
+# ---- a posting the company took down ----
+
+CLOSED = "This posting is closed"
+
+
+def test_removed_ashby_job_says_closed_not_submit_button(base_url, pdfs, tmp_path):
+    """Optro on Ashby (2026-11-17): the page said "Job not found", the filler said it couldn't find a Submit button."""
+    r = submit({"url": f"{base_url}/ashby-closed", "ats": "ashby", "approved_by_user": True, "files": pdfs},
+               PROFILE, tmp_path)
+    assert r.closed and not r.submit_clicked and not r.filled
+    assert [e["label"] for e in r.errors] == ["(posting)"] and CLOSED in r.errors[0]["error"]
+    assert r.screenshot and Path(r.screenshot).exists()
+
+
+def test_greenhouse_no_longer_open_is_closed(base_url, pdfs, tmp_path):
+    r = fill({"url": f"{base_url}/gh-closed/", "ats": "greenhouse", "files": pdfs}, PROFILE, tmp_path)
+    assert r.closed and CLOSED in r.errors[0]["error"]
+
+
+def test_missing_page_is_closed(base_url, pdfs, tmp_path):
+    r = fill({"url": f"{base_url}/gone-for-good/", "ats": "generic", "files": pdfs}, PROFILE, tmp_path)
+    assert r.closed
+
+
+def test_open_form_mentioning_no_longer_available_is_not_closed():
+    """Text alone isn't enough: a live form with a Submit button stays open whatever its description says."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, GENERIC
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content("<p>Our old office is no longer available.</p><form><input name=a><button type=submit>Apply</button></form>")
+        assert closed_reason(pg, GENERIC, 200) == ""
+        pg.set_content("<p>Our old office is no longer available.</p><form><input name=a></form>")
+        assert closed_reason(pg, GENERIC, 200) == ""  # no closed wording that names the job, no form button: not ours to call
+        b.close()
+
+
+def test_handoff_on_closed_posting_skips_the_fill(base_url, pdfs):
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    seen = []
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        r = handoff({"url": f"{base_url}/ashby-closed", "ats": "ashby", "files": pdfs}, PROFILE, browser=b,
+                    tick=lambda: False, on_page=lambda pg, rep: seen.append(rep.closed))
+        b.close()
+    assert r.closed and seen == [True] and not r.filled

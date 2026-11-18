@@ -26,6 +26,8 @@
   <div class="fh-actions">
    {% if live %}
    <form method="post" action="/finish-here/close"><button class="btn {{ 'primary' if state in ('ready', 'sent', 'starting', 'filling') else '' }}">{{ 'Done' if state in ('ready', 'sent') else 'Stop' }}</button></form>
+   {% elif state == 'error' and st.get('gone') %}
+   <a class="btn primary" href="/job/{{ job.id|urlencode }}">Back to the job</a>
    {% elif state == 'error' %}
    <form method="post" action="/finish-here/{{ job.id|urlencode }}"><button class="btn primary">Try again</button></form>
    <a class="btn ghost" href="/job/{{ job.id|urlencode }}">Back to the job</a>

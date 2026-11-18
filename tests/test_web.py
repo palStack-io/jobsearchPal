@@ -386,3 +386,15 @@ def test_refill_of_a_removed_posting_keeps_the_closed_message(tmp_path, base_url
                                                             errors=[{"label": "(posting)", "error": CLOSED_MSG}]))
     c.post("/job/manual:gh", data={"action": "refill"}, follow_redirects=False)
     assert db.get("manual:gh")["error"] == CLOSED_MSG
+
+
+def test_held_answer_keeps_quotes_in_its_label(tmp_path, base_url, pdfs):
+    # Browsers send a quote in a form field name as %22 (Toast: 'By selecting "I agree", ...'). The saved answer must
+    # keep the real label, or the filler never finds it and the consent check stays red.
+    db, c, plan = setup(tmp_path, base_url, pdfs)
+    label = 'By selecting "I agree", I understand my information will be processed.'
+    c.post("/job/manual:gh", data={"action": "skip", "plan": json.dumps(plan),
+                                    "held::" + label.replace('"', "%22"): "I agree",
+                                    "ans::Say %22hi%22": "hi"})
+    saved = json.loads(db.get("manual:gh")["plan_json"])
+    assert saved["approved"] == {label: "I agree"} and saved["answers"]['Say "hi"'] == "hi"

@@ -85,6 +85,13 @@ def work_search(settings) -> tuple[str, int]:
     return ws.get("label", "Work search"), int(ws.get("weekly_minimum", 3))
 
 
+def _field_label(name: str) -> str:
+    """A question label back from a form field name. Browsers send a quote in a field name as %22 and a line break as
+    %0D%0A (the HTML form encoding), so a label like 'By selecting "I agree", ...' came back with %22 and never matched
+    the question again: the answer was saved but never filled, and the consent check stayed red."""
+    return name.replace("%22", '"').replace("%0D%0A", "\n").replace("%0A", "\n").replace("%0D", "\r")
+
+
 def make_app(settings, db: DB) -> FastAPI:
     app = FastAPI()
     shots = settings.data_dir / "screenshots"
@@ -843,7 +850,7 @@ def make_app(settings, db: DB) -> FastAPI:
         lead = db.conn.execute("select * from leads where job_id = ?", (job_id,)).fetchone()
         docx = {slot: Path(p).with_suffix(".docx").name for slot, p in plan.get("files", {}).items()
                 if _servable(str(Path(p).with_suffix(".docx")))}
-        return page("job.html", nav="", job=job, report=report, approved=plan.get("approved", {}), files=files, checks=checks,
+        return page("job.html", nav="", job=job, report=report, approved={_field_label(k): v for k, v in (plan.get("approved") or {}).items()}, files=files, checks=checks,
                     blocked=preflight.blocking(checks), letter=letter, lead=dict(lead) if lead else None,
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
@@ -1648,9 +1655,9 @@ def make_app(settings, db: DB) -> FastAPI:
         new_plan.setdefault("answers", {})
         for k, v in form.items():
             if k.startswith("ans::") and v:
-                new_plan["answers"][k[5:]] = v
+                new_plan["answers"][_field_label(k[5:])] = v
         # Held answers come only from this form, never from the JSON box.
-        new_plan["approved"] = {k[6:]: v for k, v in form.items() if k.startswith("held::") and v}
+        new_plan["approved"] = {_field_label(k[6:]): v for k, v in form.items() if k.startswith("held::") and v}
         new_plan["held_reviewed"] = True  # from now on a blank consent stays blank: no standing answer fills it
         new_plan["approved_by_user"] = False
 

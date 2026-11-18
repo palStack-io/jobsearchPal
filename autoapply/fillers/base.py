@@ -340,6 +340,10 @@ def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
         info = {"label": f["label"], "kind": f["kind"], "required": f.get("required", False),
                 "options": [o if isinstance(o, str) else o["text"] for o in f.get("options", [])][:30]}
         if source == "held":
+            if f["kind"] == "combobox" and not info["options"]:
+                # Greenhouse loads a dropdown's choices only when it opens: read them, so the review page offers
+                # "I agree" to pick instead of an empty text box.
+                info["options"] = _combobox_options(page, f)[:30]
             report.held.append(info)
             continue
         if source in ("standing", "approved"):

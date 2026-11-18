@@ -52,7 +52,7 @@
   <div class="actions"><button class="btn primary">{{ 'Replace' if resume else 'Upload' }}</button>
    {% if resume %}<span class="muted" style="align-self:center">Current: <code>materials/{{ resume.name }}</code></span>{% endif %}</div>
  </form>
- <form method="post" action="/setup/look" class="looks" id="look">
+ <form method="post" action="/setup/look" class="looks" id="look" data-saved-look="{{ look }}" data-saved-accent="{{ accent|upper }}">
   <h3>How your tailored resumes look</h3>
   <p class="muted">Pick a look for every resume and cover letter the daily run makes. Each one keeps a single column of
    plain text with standard headings, so the screening software employers use (applicant tracking systems) reads it the same way.
@@ -73,11 +73,24 @@
   <div class="actions"><button class="btn primary">Save look</button>
    {% if resume %}<button class="btn" formaction="/setup/look/preview" formtarget="_blank">Preview with my resume</button>
    <small class="muted" style="align-self:center">Makes a PDF of your base resume in this look (takes a few seconds).</small>{% endif %}</div>
+  <p class="look-unsaved" id="look-unsaved" role="status" hidden>Not saved yet. Press Save look to use it for new resumes; a preview changes nothing.</p>
  </form>
+ {% if resume and (remake_n or remake_st.total) %}
+ <form method="post" action="/setup/look/remake" class="remake">
+  {% if remake_st.running %}<p class="muted" role="status">Remaking resumes and letters: {{ remake_st.done }} of {{ remake_st.total }} done.</p>
+  {% else %}
+  {% if remake_st.total %}<p class="muted" role="status">Remade {{ remake_st.done }} of {{ remake_st.total }} in the {{ looks[remake_st.look].label if remake_st.look in looks else looks.navy.label }} look.{% if remake_st.failed %} Couldn't remake: {{ remake_st.failed|join(', ') }}.{% endif %}</p>{% endif %}
+  {% if remake_n %}<button class="btn">Remake {{ 'the waiting resume and letter' if remake_n == 1 else 'the ' ~ remake_n ~ ' waiting resumes and letters' }} in the {{ looks[look].label }} look</button>
+  <small class="muted">Already-made applications keep the look they were made in. This lays out the same text again for the ones you haven't sent; sent ones stay as they went out.</small>{% endif %}
+  {% endif %}
+ </form>
+ {% endif %}
 </section>
 <style>
 .looks{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}.looks h3{margin:0 0 4px}
 .looks .fig{color:var(--accent-ink)}
+.look-unsaved{margin:10px 0 0;font-weight:600;color:var(--accent-ink)}
+.remake{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}.remake p{margin:0;flex-basis:100%}.remake small{flex:1 1 260px}
 .look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
 .look-opt{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
 .look-opt:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -95,6 +108,11 @@
 <script>(()=>{const p=document.getElementById("accent-pick"),t=document.getElementById("accent");if(!p||!t)return;
  p.addEventListener("input",()=>{t.value=p.value.toUpperCase()});
  t.addEventListener("input",()=>{const v=t.value.trim().replace(/^#?/,"#");if(/^#[0-9a-f]{6}$/i.test(v))p.value=v})})();</script>
+<script>(()=>{const f=document.getElementById("look"),n=document.getElementById("look-unsaved");if(!f||!n)return;
+ // Picking a look (or previewing it) doesn't keep it: say so until Save look is pressed.
+ const now=()=>{const r=f.querySelector("input[name=look]:checked"),a=(f.elements.accent?f.elements.accent.value:"").trim().replace(/^#/,"").toUpperCase();
+  n.hidden=(r?r.value:"")===f.dataset.savedLook&&a===f.dataset.savedAccent};
+ f.addEventListener("change",now);f.addEventListener("input",now)})();</script>
 
 <section class="card mt step" id="profile">
  <h2><span><span class="n {{ 'done' if s.profile.done }}">{% if s.profile.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}2{% endif %}</span> Contact details and standard answers</span><span class="count">required</span></h2>

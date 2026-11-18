@@ -345,3 +345,25 @@ def test_daily_agent_steps_load_no_mcp_servers():
     from pathlib import Path
     sh = (Path(__file__).resolve().parent.parent / "scripts" / "daily.sh").read_text()
     assert "--max-turns \"$turns\" --strict-mcp-config" in sh
+
+
+def _closed_report(*a, **k):
+    from autoapply.fillers.base import CLOSED_MSG, Report
+    return Report(url="u", closed=True, errors=[{"label": "(posting)", "error": CLOSED_MSG}])
+
+
+def test_refill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
+    s, db, cfg = make(tmp_path)
+    monkeypatch.setattr(cli, "fill", _closed_report)
+    db.update("gh:a:1", status="filled", plan_json={"url": "https://boards.greenhouse.io/a/jobs/1", "files": {}})
+    cli.main(["--config", str(cfg), "refill", "gh:a:1"])
+    assert db.get("gh:a:1")["error"].startswith("This posting is closed")
+
+
+def test_fill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
+    s, db, cfg = make(tmp_path)
+    monkeypatch.setattr(cli, "fill", _closed_report)
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps({"url": "https://boards.greenhouse.io/a/jobs/1", "ats": "greenhouse", "files": {}}))
+    cli.main(["--config", str(cfg), "fill", str(plan), "--job", "gh:a:1"])
+    assert db.get("gh:a:1")["error"].startswith("This posting is closed")

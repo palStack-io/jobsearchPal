@@ -195,3 +195,16 @@ def test_unreachable_box_is_an_error_not_a_hang(base_url, pdfs):
     s.start("job:1", _plan(base_url, pdfs), PROFILE, mark_sent=lambda j, c: {})
     st = _wait(s, {"error"}, timeout=20)
     assert "Try again" in st["error"]
+
+
+def test_closed_posting_ends_with_its_own_message(chrome, base_url, pdfs):
+    """A removed role shows "This posting is closed", not "We lost the browser", and the lock is free again."""
+    _, box = chrome
+    s = Sessions(box)
+    plan = {"url": f"{base_url}/ashby-closed", "ats": "ashby", "files": pdfs}
+    s.start("job:gone", plan, PROFILE, mark_sent=lambda j, c: {})
+    st = _wait(s, {"error"})
+    assert st["state"] == "error" and st["error"].startswith("This posting is closed") and st["gone"] is True
+    assert s.start("job:2", _plan(base_url, pdfs), PROFILE, mark_sent=lambda j, c: {}) == {"started": True}
+    s.close()
+    _wait(s, {"closed"})

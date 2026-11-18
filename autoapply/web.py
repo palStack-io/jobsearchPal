@@ -974,6 +974,8 @@ def make_app(settings, db: DB) -> FastAPI:
     from . import finish_here
     _box = finish_here.box_from(settings)
     app.state.finish_sessions = finish_here.Sessions(_box) if _box else None
+    from . import remake as _remake
+    app.state.remaker = _remake.Remaker()
 
     def _sessions():
         if not finish_here.box_from(settings) or app.state.finish_sessions is None:
@@ -1298,6 +1300,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     look=(lambda v: v if v in __import__("autoapply.docs", fromlist=["x"]).LOOKS else "navy")(str(prof.get("resume_look") or "").lower()), accent=str(prof.get("resume_accent") or "").lstrip("#"),
                     gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
+                    remake_n=len(__import__("autoapply.remake", fromlist=["x"]).waiting(db)), remake_st=app.state.remaker.status(),
                     msg=msg, err=err)
 
     @app.post("/setup/finish")
@@ -1391,6 +1394,15 @@ def make_app(settings, db: DB) -> FastAPI:
             return _back(err, "look")
         from .docs import LOOKS
         return _back(f"Saved. New tailored resumes and letters use the {LOOKS[settings.profile['resume_look']]['label']} look.", "look")
+
+    @app.post("/setup/look/remake")
+    def setup_look_remake():
+        """Lays out the waiting applications' resumes and letters again in the saved look (in the background)."""
+        from .docs import LOOKS
+        if not app.state.remaker.start(settings, db):
+            return _back("Already remaking them; this page shows when it's done.", "look")
+        label = LOOKS.get(settings.profile.get("resume_look") or "navy", LOOKS["navy"])["label"]
+        return _back(f"Remaking them in the {label} look. It takes a few seconds each; reload to see how far it got.", "look")
 
     @app.post("/setup/look/preview")
     async def setup_look_preview(request: Request):
@@ -1667,7 +1679,8 @@ def make_app(settings, db: DB) -> FastAPI:
             _record_applied(job, None)
         elif action == "refill":
             r = await run_in_threadpool(fill, new_plan, settings.profile, shots, headless)  # sync Playwright can't share the event loop
-            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot, error=None)
+            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot,
+                      error=r.closed_error)
         elif action == "submit":
             if old_report.get("submit_clicked") and not old_report.get("submitted") and form.get("resubmit") != "yes":
                 db.update(job_id, plan_json=new_plan,

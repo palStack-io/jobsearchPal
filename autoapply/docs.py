@@ -112,6 +112,15 @@ class _Resume:
         hits = [b for b in self.blocks if b["heading"].lower() == k]
         if not hits:
             hits = [b for b in self.blocks if b["heading"].lower().startswith(k)]
+        if not hits and "|" in k:
+            # The base resume's heading was renamed since this text was written ("Founder & Engineer | palStack.io" ->
+            # "Founder & Engineering Lead | palStack.io"): the same place and a close title, never a guess between two.
+            import difflib
+            org = k.rsplit("|", 1)[1].strip()
+            same = [b for b in self.blocks if "|" in b["heading"] and b["heading"].lower().rsplit("|", 1)[1].strip() == org]
+            title = k.rsplit("|", 1)[0].strip()  # the title alone: a shared place name would inflate the score
+            hits = [b for b in same
+                    if difflib.SequenceMatcher(None, b["heading"].lower().rsplit("|", 1)[0].strip(), title).ratio() >= 0.75]
         if len(hits) == 1:
             return hits[0]
         names = "; ".join(b["heading"] for b in self.blocks)

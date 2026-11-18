@@ -123,6 +123,10 @@ class Sessions:
         ended = [""]
 
         def on_page(page, report):
+            if report.closed:  # the company took the posting down: say so, and nothing to finish
+                ended[0] = "posting"
+                self._set(state="error", error=report.errors[0]["error"], gone=True)
+                return
             page_ref.append(page)
             page.bring_to_front()
             self._set(state="ready", unanswered=[u["label"] for u in report.unanswered], last_input=time.time())  # idle counts from here
@@ -165,6 +169,8 @@ class Sessions:
                         browser.close()  # a CDP connection: this disconnects, the box's browser keeps running
                     except Exception:
                         pass
+            if ended[0] == "posting":
+                return  # state is already the closed-posting error
             if not page_ref:
                 raise RuntimeError("the form never opened")
             if not browser.is_connected() and not ended[0] and not sent_at[0]:

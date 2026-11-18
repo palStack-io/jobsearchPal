@@ -6,7 +6,7 @@
 .finish{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent)} .finish h2{font-size:18px;color:var(--accent-ink)}
 .finish .why{margin:-4px 0 10px;font-weight:600} .finish .steps{margin:0 0 12px;padding-left:20px;display:grid;gap:10px}
 .finish .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 4px;padding:10px 12px;background:var(--surface);border-radius:12px;border:1px solid var(--line-2)}
-.finish .cmd code{font-size: 16px;background:none;padding:0;user-select:all;word-break:break-all;flex:1;min-width:0}
+.finish .cmd code{font-size: 16px;background:none;padding:0;user-select:all;overflow-wrap:anywhere;flex:1 1 220px;min-width:0}
 .finish small{color:var(--ink-2)}
 .finish .here-start{display:grid;gap:6px;justify-items:start;margin:4px 0 14px} .finish .sub3{margin:0 0 6px;font-weight:600}</style>
 <a class="crumb" href="/">← Dashboard</a>
@@ -206,7 +206,7 @@ It uses credits, roughly 1M tokens of your Claude plan (or OpenRouter credit). N
 .ptabs button{font:inherit;font-size: 14px;font-weight:600;border:0;background:none;color:var(--ink-2);padding:8px 10px;border-bottom:2px solid transparent;cursor:pointer}
 .ptabs button[aria-selected="true"]{color:var(--accent-ink);border-bottom-color:var(--accent)}
 .side-tabs{position:sticky;top:16px} .side-tabs .doc{height:calc(100vh - 120px);min-height:520px}
-#preflight,#check,#unanswered,#problems,#answers{scroll-margin-top:90px}
+#preflight,#check,#unanswered,#problems,#answers{scroll-margin-top:90px} #finish{scroll-margin-top:124px}
 @media (max-width:860px){.side-tabs{position:static}.bar{position:static}}
 </style>
 <script>

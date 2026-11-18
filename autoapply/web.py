@@ -257,10 +257,20 @@ def make_app(settings, db: DB) -> FastAPI:
             return JSONResponse({"detail": "Internal Server Error"}, status_code=500)
         return _error_page(request, 500, str(exc)[:200])
 
+    def log_week() -> dict | None:
+        """This week's applications and the weekly minimum, for the Log an application line ("This makes 4 of 5")."""
+        try:
+            start = stats.week_start(date.today())
+            n = sum(1 for j in db.by_status("submitted") if (j["submitted_at"] or "")[:10] >= start.isoformat())
+            return {"n": n, "min": work_search(settings)[1], "start": start.isoformat()}
+        except Exception:  # a missing figure must never break a page; the line just does not show
+            return None
+
     def page(name: str, **ctx) -> HTMLResponse:  # noqa: F811  every page shows the waiting-email badge
         from . import setup
         return HTMLResponse(env.get_template(name).render(pending_count=len(db.pending_events()),
-                                                          setup_left=len(setup.status(settings, os.environ)["left"]), **ctx))
+                                                          setup_left=len(setup.status(settings, os.environ)["left"]),
+                                                          log_week=log_week(), **ctx))
 
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):

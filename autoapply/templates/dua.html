@@ -76,13 +76,22 @@
 
 <section class="card people" id="people" aria-labelledby="people-h"><h2 id="people-h"><span>People you've been in touch with</span><span class="count">{{ people|length }}</span></h2>
  <p class="ink2 lead">A short note to a former colleague or a friend of a friend is real search work. Each one goes in your log as a networking contact{% if not contacts_count %}, not counted toward your weekly number unless you turn that on below{% endif %}.</p>
- <form method="post" action="/contacts" class="add-person"><input type="hidden" name="action" value="add">
-  <label class="fld"><span>Who</span><input type="text" name="name" maxlength="80" required placeholder="e.g. Sam Rivera"></label>
-  <label class="fld"><span>Where they work</span><input type="text" name="company" maxlength="80" value="{{ prefill_company }}" {% if prefill_company %}autofocus{% endif %}></label>
-  <label class="fld"><span>How</span><select name="how">{% for h in how %}<option>{{ h }}</option>{% endfor %}</select></label>
-  <label class="fld"><span>When</span><input type="date" name="at" value="{{ today.isoformat() }}"></label>
-  <label class="fld wide"><span>Note (optional)</span><input type="text" name="note" maxlength="200" placeholder="e.g. asked about the analytics team"></label>
-  <div class="acts"><button class="btn sm primary">Add</button></div></form>
+ <form method="post" action="/contacts" class="add-person la-kit"><input type="hidden" name="action" value="add">
+  <input type="hidden" name="at" value="{{ today.isoformat() }}">
+  <div class="la-rows">
+   <label class="la-row"><span class="la-ic la-ic-a" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="la-sr">Who</span><input type="text" name="name" maxlength="80" required placeholder="Who, e.g. Sam Rivera" autocomplete="off"></label>
+   <label class="la-row"><span class="la-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 9h2a2 2 0 0 1 2 2v10M9 7h2M9 11h2M9 15h2M2 21h20"/></svg></span><span class="la-sr">Where they work</span><input type="text" name="company" maxlength="80" value="{{ prefill_company }}" placeholder="Where they work" autocomplete="off" {% if prefill_company %}autofocus{% endif %}></label>
+  </div>
+  <fieldset class="la-fs"><legend class="la-lbl">How</legend><div class="la-pills">{% for h in how %}<label><input type="radio" name="how" value="{{ h }}" {% if loop.first %}checked{% endif %}><span>{{ h.split(' (')[0] }}</span></label>{% endfor %}</div></fieldset>
+  <div class="la-when"><span class="la-lbl" id="ap-when-l">When</span>
+   <div class="la-seg" role="radiogroup" aria-labelledby="ap-when-l" data-field="at">
+    <button type="button" role="radio" aria-checked="true" data-when="today">Today</button>
+    <button type="button" role="radio" aria-checked="false" data-when="yesterday">Yesterday</button>
+    <button type="button" role="radio" aria-checked="false" data-when="pick">Pick a date</button></div>
+   <input type="date" class="la-date" aria-label="Date you were in touch" max="{{ today.isoformat() }}" hidden></div>
+  <div class="la-chips"><button type="button" class="la-chip" data-reveal="note" aria-expanded="false">+ Add a note</button></div>
+  <label class="fld la-opt" data-opt="note" hidden><span>Note</span><input type="text" name="note" maxlength="200" placeholder="Asked about the analytics team"></label>
+  <div class="acts"><button class="btn primary">Add to my log</button></div></form>
  {% if people %}<ul class="feed people-list">{% for c in people %}<li><div style="min-width:0"><div class="who">{{ c.name }}{% if c.company %} <span class="muted">· {{ c.company }}</span>{% endif %}</div>
   <div class="ink2" style="font-size:14px">{{ c.how }}{% if c.note %} · {{ c.note }}{% endif %}</div></div>
   <span class="when">{{ c.at[5:10]|replace('-', '/') }}</span>
@@ -120,10 +129,10 @@
 .add-task{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}.add-task input[type=text]{flex:1 1 220px;min-width:0}.add-task input[type=date]{width:auto}
 .general{margin:0;padding-left:18px;font-size:15px;color:var(--ink-2)}.general li{margin:3px 0}.res{gap:10px}.res-item{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;color:inherit}
 .res-item:hover{text-decoration:none;background:var(--surface-2)}
-.people{margin-bottom:16px}.people .lead{margin:0 0 10px;max-width:70ch}.add-person{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}
-.add-person .wide{grid-column:1/-2}.add-person .acts{margin:0}.people-list{margin-top:12px}.people-list li{display:flex;gap:10px;align-items:center}.people-list li>div{flex:1}.people-list form{margin:0}
+.people{margin-bottom:16px}.people .lead{margin:0 0 10px;max-width:70ch}.add-person{max-width:600px}
+.add-person .acts{margin:0}.people-list{margin-top:12px}.people-list li{display:flex;gap:10px;align-items:center}.people-list li>div{flex:1}.people-list form{margin:0}
 .counts-form{display:grid;gap:4px;margin-top:12px;font-size: 14px}.counts-form .muted{font-size: 14px}
-@media (max-width:700px){.add-person{grid-template-columns:minmax(0,1fr)}.add-person .wide{grid-column:auto}}.res-item span{font-size:14px;color:var(--ink-2)}</style>
+.res-item span{font-size:14px;color:var(--ink-2)}</style>
 {% macro week_card(w, first) %}<section class="card {% if not first %}mt{% endif %}">
  <h2><span>{{ w.start.strftime("%b %-d") }} – {{ w.end.strftime("%b %-d, %Y") }}{% if w.current %} <span class="pill filled" style="margin-left:6px">this week</span>{% endif %}
    <span class="pill {{ 'submitted' if w.count >= floor else 'waiting' }}" style="margin-left:6px">{{ w.count }} / {{ floor }} activities</span></span>

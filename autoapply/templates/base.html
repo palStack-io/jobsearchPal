@@ -293,17 +293,33 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s var(--e
 <template id="confirm-applied">Marks this role as applied today. It counts toward your week, and the daily run won't offer it again.
 
 Applied on a different day? Use Applied elsewhere in the menu to pick the date.</template>
-<dialog id="logapp" class="ask" aria-labelledby="logapp-t">
- <h2 id="logapp-t">I applied somewhere else</h2>
- <div class="ask-b"><p>On LinkedIn, a company site or by email? Add it so it counts toward your week, and the daily run never offers you that role again.</p></div>
+<dialog id="logapp" class="ask la" aria-labelledby="logapp-t">
+ <div class="la-head"><div class="la-ht"><h2 id="logapp-t">Log an application</h2>
+  <p>For one you sent yourself. It goes on your list and counts toward this week.</p></div>
+  <button type="button" class="la-x" data-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
  <form method="post" action="/applications/log" class="logapp-f">
   <input type="hidden" name="back" value="">
-  <label class="fld"><span>Company</span><input type="text" name="company" required maxlength="120" autocomplete="off"></label>
-  <label class="fld"><span>Role</span><input type="text" name="title" required maxlength="200" autocomplete="off"></label>
-  <label class="fld"><span>Date applied</span><input type="date" name="applied_on"></label>
-  <label class="fld"><span>Where you applied <i class="muted">(optional)</i></span><input type="text" name="via" maxlength="60" placeholder="e.g. LinkedIn, Workday, email"></label>
-  <label class="fld wide"><span>Link to the posting <i class="muted">(optional)</i></span><input type="url" name="url" maxlength="500" placeholder="https://"></label>
-  <div class="ask-acts wide"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add to my applications</button></div>
+  <input type="hidden" name="applied_on" value="">
+  <div class="la-rows">
+   <label class="la-row"><span class="la-ic la-ic-a" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M8 7h4M8 11h4M8 15h4M2 21h20"/></svg></span>
+    <span class="la-sr">Company</span><input type="text" name="company" required maxlength="120" autocomplete="off" placeholder="Company"></label>
+   <label class="la-row"><span class="la-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></span>
+    <span class="la-sr">Role</span><input type="text" name="title" required maxlength="200" autocomplete="off" placeholder="Role"></label>
+  </div>
+  <div class="la-when"><span id="la-when-l" class="la-lbl">When did you apply?</span>
+   <div class="la-seg" role="radiogroup" aria-labelledby="la-when-l">
+    <button type="button" role="radio" aria-checked="true" data-when="today">Today</button>
+    <button type="button" role="radio" aria-checked="false" data-when="yesterday">Yesterday</button>
+    <button type="button" role="radio" aria-checked="false" data-when="pick">Pick a date</button></div>
+   <input type="date" class="la-date" aria-label="Date applied" hidden></div>
+  <div class="la-chips">
+   <button type="button" class="la-chip" data-reveal="via" aria-expanded="false">+ Where you applied</button>
+   <button type="button" class="la-chip" data-reveal="url" aria-expanded="false">+ Posting link</button></div>
+  <label class="fld la-opt" data-opt="via" hidden><span>Where you applied</span><input type="text" name="via" maxlength="60" placeholder="LinkedIn, Workday, email"></label>
+  <label class="fld la-opt" data-opt="url" hidden><span>Link to the posting</span><input type="url" name="url" maxlength="500" placeholder="https://"></label>
+  {% if log_week %}<div class="la-week" data-n="{{ log_week.n }}" data-min="{{ log_week.min }}" data-start="{{ log_week.start }}">
+   <span class="la-week-t"></span><span class="la-track" aria-hidden="true"><span></span></span></div>{% endif %}
+  <div class="ask-acts la-acts"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add to my applications</button></div>
  </form>
 </dialog>
 <dialog id="ask" class="ask" aria-labelledby="ask-t"><form method="dialog">
@@ -313,8 +329,44 @@ Applied on a different day? Use Applied elsewhere in the menu to pick the date.<
 <style>.ask{border:1px solid var(--line-2);border-radius:var(--radius);background:var(--surface);color:var(--ink);padding:20px 22px;
  width:min(520px,calc(100vw - 32px));box-shadow:var(--shadow-lg,0 12px 32px rgba(0,0,0,.2))}.ask::backdrop{background:rgba(20,16,8,.45)}
 .ask.err h2{color:var(--bad)}.ask .code{color:var(--ink-3);font-size:13px;margin:0}
-.logapp-f{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.logapp-f .wide{grid-column:1/-1}
-.logapp-f .fld{display:grid;gap:4px;font-size:14px;color:var(--ink-2)}@media (max-width:520px){.logapp-f{grid-template-columns:1fr}}
+/* Log an application (form kit, 2026-11-18): one group for who and what, when as three choices, the rest on request. */
+.la{width:min(540px,calc(100vw - 32px));padding:0;overflow:hidden}
+.la-head{display:flex;align-items:flex-start;gap:12px;padding:22px 24px 6px}.la-ht{flex:1}.la-ht h2{margin:0;font-size:20px;font-weight:600}
+.la-ht p{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--ink-2)}
+.la-x{width:36px;height:36px;border-radius:18px;border:none;background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.logapp-f{display:flex;flex-direction:column;gap:18px;padding:16px 24px 0}
+.la-rows{border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.la-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;margin:0}.la-row+.la-row{border-top:1px solid var(--line)}
+.la-row:focus-within{background:var(--surface-2)}.la-row input:focus{box-shadow:none;border:none}.la-row:focus-within{box-shadow:inset 3px 0 0 var(--accent)}
+.la-row input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;font-weight:600;color:var(--ink);padding:0;height:52px}
+.la-ic{width:32px;height:32px;border-radius:9px;background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.la-ic-a{background:var(--accent-soft);color:var(--accent-ink)}
+.la-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.la-when{display:flex;flex-direction:column;gap:8px}.la-lbl{font-size:13px;font-weight:500;color:var(--ink-2)}
+.la-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--surface-2);padding:3px;border-radius:12px}
+.la-seg button{height:36px;border:none;border-radius:9px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--ink-2);cursor:pointer;transition:background-color 150ms var(--ease-out),color 150ms var(--ease-out)}
+.la-seg button[aria-checked=true]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.10),0 0 0 1px rgba(16,24,40,.04)}
+.la-date{height:44px;border:1px solid var(--line-2);border-radius:12px;padding:0 12px;font:inherit;background:var(--surface);color:var(--ink)}
+.la-chips{display:flex;gap:8px;flex-wrap:wrap}.la-chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.la-chip[aria-expanded=true]{display:none}.la-chips:not(:has(.la-chip[aria-expanded=false])){display:none}
+.la-seg button:hover:not([aria-checked=true]){background:transparent;color:var(--ink)}.la-seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.logapp-f .fld{display:grid;gap:4px;font-size:13px;font-weight:500;color:var(--ink-2)}.logapp-f .fld input{height:44px}
+.la-week{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--ink-2)}
+.la-week-t{flex:1}.la-week-t strong{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.la-track{width:120px;height:6px;border-radius:6px;background:var(--track,var(--line));overflow:hidden;flex:none}.la-track span{display:block;height:6px;border-radius:6px;background:var(--accent);transition:width 200ms var(--ease-out)}
+.la-acts{margin:18px -24px 0;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)}
+@media (max-width:520px){.la-head{padding:18px 16px 4px}.logapp-f{padding:12px 16px 0}.la-acts{margin:14px -16px 0;padding:12px 16px}.la-track{width:80px}}
+.la-opt[hidden],.la-date[hidden],.la-week[hidden]{display:none!important}
+.la-kit{display:flex;flex-direction:column;gap:16px}.la-fs{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.la-pills{display:flex;flex-wrap:wrap;gap:8px}.la-pills label{position:relative}.la-pills input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.la-pills span{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line-2);background:var(--surface);font-size:14px;font-weight:500;color:var(--ink-2);transition:background-color 150ms var(--ease-out),border-color 150ms var(--ease-out),color 150ms var(--ease-out)}
+.la-pills input:checked+span{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.la-pills input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.la-kit .acts{display:flex;justify-content:flex-end}
+.la-kv .la-k{width:112px;flex:none;font-size:13px;font-weight:500;color:var(--ink-2)}.la-kv input{font-weight:500}
+.la-kit .la-foot{display:flex;justify-content:flex-end;gap:8px}.lead-form.la-kit{max-width:760px}
+@media (max-width:520px){.la-kv{flex-direction:column;align-items:stretch;gap:0;padding-top:10px}.la-kv .la-k{width:auto}.la-kv input{height:40px}}
+@media (prefers-reduced-motion:reduce){.la-seg button,.la-track span,.la-pills span{transition:none}}
 .ask h2{margin:0 0 10px;font-size:18px;line-height:1.3}.ask-b p{margin:0 0 10px;color:var(--ink-2);font-size: 16px}
 .ask-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .field-err,.fld .field-err{display:block;color:var(--bad);font-size: 14px;margin-top:4px}[aria-invalid=true]{border-color:var(--bad)!important}</style>
@@ -384,14 +436,34 @@ if(ask)document.addEventListener("submit",async e=>{const f=e.target;
  const msg=f.dataset.confirm||(f.dataset.confirmRef&&(document.getElementById(f.dataset.confirmRef)||{}).innerHTML||"").trim();
  if(msg&&!await ask(f.dataset.confirmTitle||"Are you sure?",new DOMParser().parseFromString(msg,"text/html").documentElement.textContent,{ok:f.dataset.confirmOk||"OK"}))return;
  sendInPage(f,by)});
-// "Applied elsewhere": any .applied-open button opens the popup form (data-company/-title/-url prefill it).
+// Form kit on a page (not the Log dialog): Today / Yesterday / Pick a date fill the field named by data-field; + chips reveal fields.
+document.querySelectorAll("form.la-kit").forEach(f=>{const iso=x=>new Date(x-new Date(x).getTimezoneOffset()*6e4).toISOString().slice(0,10);
+ f.querySelectorAll(".la-seg[data-field]").forEach(g=>{const fld=f.elements[g.dataset.field],pick=g.parentNode.querySelector(".la-date"),bs=[...g.querySelectorAll("[data-when]")];
+  const set=w=>{bs.forEach(b=>b.setAttribute("aria-checked",String(b.dataset.when===w)));pick.hidden=w!=="pick";const now=Date.now();
+   fld.value=w==="today"?iso(now):w==="yesterday"?iso(now-864e5):(pick.value||iso(now));if(w==="pick"){pick.value=fld.value;pick.focus()}};
+  bs.forEach(b=>b.addEventListener("click",()=>set(b.dataset.when)));pick.addEventListener("change",()=>{fld.value=pick.value})});
+ f.querySelectorAll("[data-reveal]").forEach(c=>c.addEventListener("click",()=>{const o=f.querySelector('[data-opt="'+c.dataset.reveal+'"]');o.hidden=false;c.setAttribute("aria-expanded","true");o.querySelector("input,textarea,select").focus()}))});
+// "Applied elsewhere": any .applied-open button opens the Log an application form (data-company/-title/-url prefill it).
 (()=>{const d=document.getElementById("logapp");if(!d||!d.showModal)return;const f=d.querySelector("form");
- d.querySelector("[data-close]").onclick=()=>d.close();
+ const iso=x=>new Date(x-new Date(x).getTimezoneOffset()*6e4).toISOString().slice(0,10);
+ const seg=[...d.querySelectorAll(".la-seg [data-when]")],pick=d.querySelector(".la-date"),wk=d.querySelector(".la-week");
+ const week=()=>{if(!wk)return;const n=+wk.dataset.n,min=+wk.dataset.min,inWeek=f.applied_on.value>=wk.dataset.start;
+  wk.hidden=!inWeek||!min;const k=n+1;wk.querySelector(".la-week-t").innerHTML="This makes <strong>"+k+" of "+min+"</strong> applications this week";
+  wk.querySelector(".la-track span").style.width=Math.min(100,Math.round(k/min*100))+"%"};
+ const setWhen=w=>{seg.forEach(b=>b.setAttribute("aria-checked",String(b.dataset.when===w)));const now=Date.now();
+  pick.hidden=w!=="pick";f.applied_on.value=w==="today"?iso(now):w==="yesterday"?iso(now-864e5):(pick.value||iso(now));
+  if(w==="pick"){pick.value=f.applied_on.value;pick.focus()}week()};
+ seg.forEach(b=>b.addEventListener("click",()=>setWhen(b.dataset.when)));
+ pick.addEventListener("change",()=>{f.applied_on.value=pick.value;week()});
+ d.querySelectorAll("[data-reveal]").forEach(c=>c.addEventListener("click",()=>{const o=d.querySelector('[data-opt="'+c.dataset.reveal+'"]');
+  o.hidden=false;c.setAttribute("aria-expanded","true");o.querySelector("input").focus()}));
+ d.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>d.close());
  document.addEventListener("click",e=>{const b=e.target.closest(".applied-open");if(!b)return;e.preventDefault();
-  f.reset();const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
-  f.applied_on.value=t;f.applied_on.max=t;f.back.value=location.pathname+location.search;
+  f.reset();const t=iso(Date.now());pick.max=t;f.back.value=location.pathname+location.search;
+  d.querySelectorAll(".la-opt").forEach(o=>o.hidden=true);d.querySelectorAll("[data-reveal]").forEach(c=>c.setAttribute("aria-expanded","false"));
   for(const k of ["company","title","url"])if(b.dataset[k])f[k].value=b.dataset[k];
-  d.showModal();(f.company.value?f.via:f.company).focus()})})();
+  if(f.url.value){d.querySelector('[data-opt="url"]').hidden=false;d.querySelector('[data-reveal="url"]').setAttribute("aria-expanded","true")}
+  setWhen("today");d.showModal();(f.company.value?f.title:f.company).focus()})})();
 // Put-away panels: any [data-open="<dialog id>"] opens that dialog; [data-close] or a click on the backdrop closes it.
 document.addEventListener("click",e=>{const o=e.target.closest("[data-open]");
  if(o){const d=document.getElementById(o.dataset.open);if(d&&d.showModal){e.preventDefault();d.showModal()}return}

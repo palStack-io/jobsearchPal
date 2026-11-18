@@ -179,3 +179,19 @@ def test_only_web_links_are_kept(tmp_path):
                              ["Gamma", "Engineer", "2026-11-02", "https://jobs.example.com/1"]])
     urls = {j["company"]: j["url"] for j in db.all() if j["company"] in ("Beta", "Gamma")}
     assert urls == {"Beta": "", "Gamma": "https://jobs.example.com/1"}
+
+
+def test_log_an_application_dialog_shows_the_week_and_the_choices(tmp_path):
+    """Form kit (2026-11-18): who and what as one group, when as Today / Yesterday / Pick a date, this week's count."""
+    from datetime import date
+
+    from autoapply.stats import week_start
+    s = Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data"), "work_search": {"weekly_minimum": 5}},
+                 profile={"first_name": "Alex"})
+    db = DB(s.data_dir / "t.db")
+    c = client(s, db)
+    c.post("/applications/log", data={"company": "Initech", "title": "Data analyst", "applied_on": date.today().isoformat()})
+    html = c.get("/").text
+    assert "Log an application" in html and 'data-when="today"' in html and 'data-when="pick"' in html
+    assert 'data-n="1"' in html and 'data-min="5"' in html and f'data-start="{week_start(date.today()).isoformat()}"' in html
+    assert 'name="applied_on"' in html and 'name="via"' in html and 'name="url"' in html  # the same fields the route reads

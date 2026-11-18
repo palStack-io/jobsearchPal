@@ -337,7 +337,7 @@ Applied on a different day? Use Applied elsewhere in the menu to pick the date.<
 .logapp-f{display:flex;flex-direction:column;gap:18px;padding:16px 24px 0}
 .la-rows{border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .la-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;margin:0}.la-row+.la-row{border-top:1px solid var(--line)}
-.la-row:focus-within{background:var(--surface-2)}
+.la-row:focus-within{background:var(--surface-2)}.la-row input:focus{box-shadow:none;border:none}.la-row:focus-within{box-shadow:inset 3px 0 0 var(--accent)}
 .la-row input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;font-weight:600;color:var(--ink);padding:0;height:52px}
 .la-ic{width:32px;height:32px;border-radius:9px;background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;flex:none}
 .la-ic-a{background:var(--accent-soft);color:var(--accent-ink)}
@@ -348,7 +348,8 @@ Applied on a different day? Use Applied elsewhere in the menu to pick the date.<
 .la-seg button[aria-checked=true]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.10),0 0 0 1px rgba(16,24,40,.04)}
 .la-date{height:44px;border:1px solid var(--line-2);border-radius:12px;padding:0 12px;font:inherit;background:var(--surface);color:var(--ink)}
 .la-chips{display:flex;gap:8px;flex-wrap:wrap}.la-chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer}
-.la-chip[aria-expanded=true]{display:none}
+.la-chip[aria-expanded=true]{display:none}.la-chips:not(:has(.la-chip[aria-expanded=false])){display:none}
+.la-seg button:hover:not([aria-checked=true]){background:transparent;color:var(--ink)}.la-seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .logapp-f .fld{display:grid;gap:4px;font-size:13px;font-weight:500;color:var(--ink-2)}.logapp-f .fld input{height:44px}
 .la-week{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--ink-2)}
 .la-week-t{flex:1}.la-week-t strong{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}

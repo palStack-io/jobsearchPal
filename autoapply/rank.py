@@ -60,30 +60,51 @@ def level_of(title: str) -> str:
     return next((lvl for lvl, rx in _LEVEL_RX if re.search(rx, t)), "mid")
 
 
-def score(job: dict, search: dict, terms: set[str], now: datetime | None = None, my_skills: list | None = None) -> float:
+def score_parts(job: dict, search: dict, terms: set[str], now: datetime | None = None,
+                my_skills: list | None = None) -> list[tuple[str, float]]:
+    """The score taken apart: (plain label, points) for each thing that moved it. The Leads page shows these when you
+    hover a score; score() is their sum."""
     title = (job.get("title") or "").lower()
-    s = 3.0 * sum(1 for k in search.get("title_keywords") or [] if k in title)
+    parts: list[tuple[str, float]] = []
+    for k in search.get("title_keywords") or []:
+        if k in title:
+            parts.append((f"Title has \u201c{k}\u201d, one of your titles", 3.0))
     levels = search.get("levels") or []
+    lvl = level_of(title)
+    name = dict(LEVELS).get(lvl, lvl)
     if levels:  # the levels you picked on Setup: a small lift for those, a small drop for the rest
-        s += 1.0 if level_of(title) in levels else -1.0
+        parts.append((f"{name} title, a level you picked", 1.0) if lvl in levels
+                     else (f"{name} title, not a level you picked", -1.0))
     elif re.search(r"\b(senior|sr\.?|staff|lead|principal|head|manager|director)\b", title):
-        s += 1.0  # nothing picked: the old lean toward senior titles
+        parts.append(("Senior-type title (no levels picked on Setup)", 1.0))  # the old lean toward senior titles
     desc = set(_words(job.get("description") or ""))
     if terms and desc:
-        s += 6.0 * len(desc & terms) / max(20, min(len(terms), 80))
+        common = sorted(desc & terms)
+        pts = 6.0 * len(common) / max(20, min(len(terms), 80))
+        eg = f": {', '.join(common[:6])}{', ...' if len(common) > 6 else ''}" if common else ""
+        parts.append((f"{len(common)} word{'' if len(common) == 1 else 's'} in common with your resume and notes{eg}", pts))
+    elif not desc:
+        parts.append(("No posting text, so no resume match yet", 0.0))
     try:
         age = ((now or datetime.now()) - datetime.fromisoformat(str(job.get("found_at"))[:19])).days
-        s += max(0.0, 2.0 - 0.25 * age)
+        fresh = max(0.0, 2.0 - 0.25 * age)
+        when = "fresh" if age <= 0 else f"{age} day{'' if age == 1 else 's'} ago"
+        parts.append(("New when scored" if age <= 0 else f"Found {when}" if fresh else f"Found {when}, too old for a freshness lift", fresh))
     except ValueError:
         pass
     if job.get("ats") == "feed":
-        s -= 0.5  # needs a hop to the real posting
+        parts.append(("From a job feed: needs a hop to the real posting", -0.5))
     if my_skills:  # optional AI skill matching (skills.py): the posting's must-haves you have count most
         from .skills import for_job
         m = for_job(job, my_skills)
         if m:
-            s += 5.0 * m["ratio"] + 1.0 * m["nice_ratio"]
-    return round(s, 2)
+            parts.append(("Must-have skills you have", 5.0 * m["ratio"]))
+            parts.append(("Nice-to-have skills you have", 1.0 * m["nice_ratio"]))
+    return parts
+
+
+def score(job: dict, search: dict, terms: set[str], now: datetime | None = None, my_skills: list | None = None) -> float:
+    return round(sum(p for _, p in score_parts(job, search, terms, now, my_skills)), 2)
 
 
 DONE = {"submitted": "applied", "filled": "filled a form", "prepped": "prepped an application"}

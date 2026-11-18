@@ -187,3 +187,107 @@ def test_same_label_choice_question_does_not_take_the_phone_number():
     sib = {norm(o["text"]) for o in consent["options"]}
     assert resolve(consent, plan, prof, sib)[1] == "plan"
     assert resolve(text, plan, prof, sib) == ("(978) 555-0100", "profile")
+
+
+def test_handoff_with_browser_keeps_browser_open(base_url, pdfs):
+    """Finish here hands handoff a browser it did not launch: only its own context is closed afterwards."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        handoff({"url": f"{base_url}/gh/", "ats": "greenhouse", "files": pdfs}, PROFILE, browser=b, tick=lambda: False)
+        assert b.is_connected() and len(b.contexts) == 0
+        b.close()
+
+
+def test_handoff_on_page_called_after_fill(base_url, pdfs):
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    seen = []
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        handoff({"url": f"{base_url}/gh/", "ats": "greenhouse", "files": pdfs}, PROFILE, browser=b, tick=lambda: False,
+                on_page=lambda pg, rep: seen.append((pg.input_value("#first_name"), type(rep).__name__)))
+        b.close()
+    assert seen == [("Jane", "Report")]
+
+
+# ---- a posting the company took down ----
+
+CLOSED = "This posting is closed"
+
+
+def test_removed_ashby_job_says_closed_not_submit_button(base_url, pdfs, tmp_path):
+    """Optro on Ashby (2026-11-17): the page said "Job not found", the filler said it couldn't find a Submit button."""
+    r = submit({"url": f"{base_url}/ashby-closed", "ats": "ashby", "approved_by_user": True, "files": pdfs},
+               PROFILE, tmp_path)
+    assert r.closed and not r.submit_clicked and not r.filled
+    assert [e["label"] for e in r.errors] == ["(posting)"] and CLOSED in r.errors[0]["error"]
+    assert r.screenshot and Path(r.screenshot).exists()
+
+
+def test_greenhouse_no_longer_open_is_closed(base_url, pdfs, tmp_path):
+    r = fill({"url": f"{base_url}/gh-closed/", "ats": "greenhouse", "files": pdfs}, PROFILE, tmp_path)
+    assert r.closed and CLOSED in r.errors[0]["error"]
+
+
+def test_missing_page_is_closed(base_url, pdfs, tmp_path):
+    r = fill({"url": f"{base_url}/gone-for-good/", "ats": "generic", "files": pdfs}, PROFILE, tmp_path)
+    assert r.closed
+
+
+AD_LINES = ["We are no longer accepting applications from agencies.",
+            "If this role is no longer available, we will keep your details.",
+            "This position has been filled before; we are hiring again.",
+            "Our previous job board is no longer active; apply below.",
+            "This opening is no longer open to relocation."]
+
+
+@pytest.mark.parametrize("line", AD_LINES)
+def test_job_ad_sentences_are_not_a_closed_posting(line):
+    """Review (2026-11-17): ordinary ad text matched, and a form whose button mounts late would be called closed."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, detect
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content(f"<p>{line}</p><form><input name=a></form>")  # no button (yet)
+        assert closed_reason(pg, detect("", "greenhouse"), 200, wait_ms=0) == ""
+        b.close()
+
+
+def test_a_late_submit_button_is_waited_for():
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, detect
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content("<p>Job not found</p><form id=f></form><script>setTimeout(() => "
+                       "document.getElementById('f').innerHTML = '<button type=submit>Submit Application</button>', 800)</script>")
+        assert closed_reason(pg, detect("", "ashby"), 200, wait_ms=3000) == ""
+        b.close()
+
+
+def test_only_known_boards_are_read_for_closed_text():
+    """A generic careers page is only called closed on a 404/410: its wording is anyone's."""
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import closed_reason, GENERIC, CLOSED_MSG
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content("<h2>Job not found</h2>")
+        assert closed_reason(pg, GENERIC, 200, wait_ms=0) == ""
+        assert closed_reason(pg, GENERIC, 404, wait_ms=0) == CLOSED_MSG
+        b.close()
+
+
+def test_handoff_on_closed_posting_skips_the_fill(base_url, pdfs):
+    from playwright.sync_api import sync_playwright
+    from autoapply.fillers.base import handoff
+    seen = []
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        r = handoff({"url": f"{base_url}/ashby-closed", "ats": "ashby", "files": pdfs}, PROFILE, browser=b,
+                    tick=lambda: False, on_page=lambda pg, rep: seen.append(rep.closed))
+        b.close()
+    assert r.closed and seen == [True] and not r.filled

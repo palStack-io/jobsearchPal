@@ -156,6 +156,25 @@ def rows(db, status: str = "") -> list[dict]:
     return [dict(r) for r in db.conn.execute(q + " order by (status = 'starred') desc, score desc, last_seen desc", args)]
 
 
+def explain_scores(rows: list[dict], settings):
+    """Adds r["score_why"] (label, points) and r["score_note"] to each lead. A lead's score was taken when it came in,
+    so the parts are worked out as of first_seen; if your titles, levels or resume changed since, the parts add up to
+    a different number and the note says so."""
+    from .rank import profile_terms, score_parts
+    search, terms = settings.raw.get("search") or {}, profile_terms(settings.root)
+    for r in rows:
+        try:
+            when = datetime.fromisoformat(str(r.get("first_seen"))[:19])
+        except ValueError:
+            when = None
+        parts = score_parts({"title": r.get("title"), "description": r.get("description") or "",
+                             "found_at": r.get("first_seen")}, search, terms, now=when)
+        now_total = round(sum(p for _, p in parts), 1)
+        r["score_why"] = parts
+        r["score_note"] = "" if abs(now_total - round(r.get("score") or 0, 1)) < 0.05 else \
+            f"With today's titles, levels and resume this would be {now_total:.1f}. The list keeps the score from when it came in."
+
+
 def set_status(db, k: str, status: str):
     if status not in ("new", "starred", "dismissed"):
         raise ValueError(status)

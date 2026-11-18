@@ -1,9 +1,9 @@
 [project]
 name = "autoapply"
-version = "1.0.0"
+version = "1.1.0"
 description = "Self-hosted job application assistant: find, rank, tailor, fill, then you review and submit."
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "AGPL-3.0-or-later"}
 requires-python = ">=3.11"
 dependencies = [
   "playwright>=1.45",
@@ -16,6 +16,7 @@ dependencies = [
   "pypdf>=4",
   "python-multipart>=0.0.9",
   "markdown-it-py>=3.0",
+  "websockets>=12",  # uvicorn WebSockets: the Finish it here viewer
 ]
 
 [project.optional-dependencies]
@@ -28,7 +29,7 @@ autoapply = "autoapply.cli:main"
 include = ["autoapply*"]
 
 [tool.setuptools.package-data]
-autoapply = ["fillers/scan.js", "templates/*.html", "work_search_states.yaml", "market.yaml", "static/fonts/*"]
+autoapply = ["fillers/scan.js", "templates/*.html", "work_search_states.yaml", "market.yaml", "static/fonts/*", "static/novnc/*", "static/novnc/*/*", "static/novnc/*/*/*", "static/novnc/*/*/*/*", "static/novnc/*/*/*/*/*"]
 
 [build-system]
 requires = ["setuptools>=68"]

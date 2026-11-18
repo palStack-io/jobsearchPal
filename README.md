@@ -61,6 +61,7 @@ The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them
     └─ apply     tailor resume + cover letter ─► autoapply scan ─► plan.json ─► autoapply fill (stops before Submit)
   ─► autoapply brief --send      morning email: what's ready, new replies, where everything stands
 you ─► dashboard ─► check answers, decide consents ─► Submit
+   or: Finish it here ─► the filled form in a browser on your server, shown on the job page, you submit
    or: autoapply-finish <job> on your laptop ─► a real Chrome window, filled in, you submit
 ```
 
@@ -86,6 +87,7 @@ ChatGPT subscription (for the Codex CLI). With Docker:
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
 docker compose up -d                        # dashboard + the daily scheduler (pulls the published image)
 # then sign in to Claude or ChatGPT on the dashboard's Setup page (or: docker compose run --rm web claude)
+docker compose --profile finish up -d       # optional: Finish it here (a browser on this server for captchas)
 ```
 
 Open `http://localhost:8787/`, create your account, and the **Setup** page walks you through the rest (resume, job
@@ -107,6 +109,10 @@ phone, is in [docs/setup.md](docs/setup.md).
 
 ## Status and limits
 
+> **Rather not run a server?** We're looking into a hosted jobsearchPal, if there's interest. Tell us at
+> [support@palstack.io](mailto:support@palstack.io?subject=jobsearchPal%20hosting) or on
+> [Discord](https://discord.gg/mcgcp7RdYs).
+
 jobsearchPal is young: it's used daily by its author and has been tested from a clean Docker install, but expect
 rough edges. Known limits today:
 
@@ -116,7 +122,8 @@ rough edges. Known limits today:
   the recruiter search uses plain keywords, so it is a little broader.
 - **US-focused.** Job filters lean US, and the unemployment rules cover US states and territories.
 - **Some sites need you.** Workday and other account-based sites get materials prepared and are marked "apply by
-  hand"; captchas and emailed codes are finished by you (`autoapply-finish` opens the filled form in Chrome).
+  hand"; captchas and emailed codes are finished by you: **Finish it here** opens the filled form in a browser on your
+  server that you use from the job page, or `autoapply-finish` opens it in Chrome on your Mac.
 - **AI usage is real.** A full morning run is roughly 1-2 million tokens on your subscription; caps and a monthly
   budget for paid APIs are on Settings > Costs & limits.
 
@@ -129,4 +136,8 @@ Please keep personal data out of issues, tests and screenshots; use `scripts/dem
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+**AGPL-3.0** (version 3 or later), from version 1.0. Use it, change it, run it for yourself. If you run a modified
+version as a service for other people, share your changes under the same license. See [LICENSE](LICENSE).
+
+Copyright (C) 2026 Harun Gunasekaran. Releases before 1.0 (v0.1.0 and earlier) were published under the MIT license
+and stay available under it.

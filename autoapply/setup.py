@@ -198,6 +198,34 @@ def save_profile(settings, form: dict) -> dict:
     return prof
 
 
+def save_look(settings, look: str, accent: str) -> str | None:
+    """Saves the resume look (and an optional own colour) to profile.yaml. Returns an error to show, or None."""
+    from .docs import LOOKS, SpecError, accent_color
+    look = str(look or "").strip().lower()
+    if look not in LOOKS:
+        return "Pick one of the looks."
+    accent = str(accent or "").strip()
+    if accent:
+        try:
+            accent = str(accent_color(accent))
+        except SpecError:
+            return f'"{accent[:20]}" is not a colour like #1F4E79.'
+    root = settings.root
+    if not (root / "profile.yaml").exists():
+        return "Save your contact details first; the look is kept with them in profile.yaml."
+    prof = _yaml(root / "profile.yaml")
+    prof["resume_look"] = look
+    if accent:
+        prof["resume_accent"] = accent
+    else:
+        prof.pop("resume_accent", None)
+    head = "# Written by the dashboard's Setup page. Edit here or there.\n"
+    (root / "profile.yaml").write_text(head + yaml.safe_dump(prof, sort_keys=False, allow_unicode=True))
+    settings.profile.clear()
+    settings.profile.update(prof)
+    return None
+
+
 # ---- config.yaml ----------------------------------------------------------------------------------
 
 def parse_board(line: str) -> tuple[str, str] | None:
@@ -445,3 +473,23 @@ def test_gmail(user: str, pw: str, provider: str = "gmail") -> str:
     """'' when the login works, else a short reason. Any provider in mailboxes.PROVIDERS (the name is historical)."""
     from . import mailboxes
     return mailboxes.test(provider, user, pw)
+
+
+def set_finish(settings, host: str, cdp_port: int = 9222, vnc_port: int = 5900) -> None:
+    """Turns Finish it here on (Setup's check found the browser box). config.yaml is copied to .bak-<date> first,
+    because writing it again drops any comments in it."""
+    import shutil
+    import time
+    root = settings.root
+    path = root / "config.yaml"
+    if path.exists():
+        shutil.copy2(path, root / f"config.yaml.bak-{time.strftime('%Y-%m-%d-%H%M%S')}")
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    cfg["finish"] = {"on_server": True, "host": host, "cdp_port": int(cdp_port), "vnc_port": int(vnc_port)}
+    keep = {k: settings.raw[k] for k in ("data_dir",) if k in settings.raw and k not in cfg}
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    path.write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update({**cfg, **keep})

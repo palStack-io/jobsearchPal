@@ -6,8 +6,9 @@
 .finish{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent)} .finish h2{font-size:18px;color:var(--accent-ink)}
 .finish .why{margin:-4px 0 10px;font-weight:600} .finish .steps{margin:0 0 12px;padding-left:20px;display:grid;gap:10px}
 .finish .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 4px;padding:10px 12px;background:var(--surface);border-radius:12px;border:1px solid var(--line-2)}
-.finish .cmd code{font-size:15.5px;background:none;padding:0;user-select:all;word-break:break-all;flex:1;min-width:0}
-.finish small{color:var(--ink-2)}</style>
+.finish .cmd code{font-size: 16px;background:none;padding:0;user-select:all;overflow-wrap:anywhere;flex:1 1 220px;min-width:0}
+.finish small{color:var(--ink-2)}
+.finish .here-start{display:grid;gap:6px;justify-items:start;margin:4px 0 14px} .finish .sub3{margin:0 0 6px;font-weight:600}</style>
 <a class="crumb" href="/">← Dashboard</a>
 <header class="top"><div><h1>{{ job.company|title if job.company.islower() else job.company }} · {{ job.title }}</h1>
  <div class="ink2">{{ job.location or "" }}{% if job.pay %} · {{ job.pay }}{% endif %} · <a href="{{ job.url }}" target="_blank">posting</a></div></div>
@@ -15,6 +16,7 @@
 {% if report.submitted %}<p class="notice" style="background:var(--good-soft)">Sent {{ job.submitted_at }}. That's one more door you knocked on. Confirmation: “{{ report.confirmation }}”</p>{% endif %}
 
 {% set kitmode = job.status in ('new', 'prepped') %}
+{% set errors = report.errors|rejectattr('label', 'equalto', '(submit)')|list if job.status == 'submitted' else report.errors %}
 {% if lead and lead.note %}<p class="tried-note"><b>Last run {{ lead.tried_at[5:10]|replace('-', '/') }} {{ lead.tried_at[11:16] }}:</b> {{ lead.note }} <a href="/runs">Run log</a></p>{% endif %}
 {% if kitmode and running %}<p class="notice" role="status"><span class="grow">A run is going{% if running.label %}: {{ running.label }}{% endif %}. What it makes shows up on this page.</span><a class="btn sm" href="/runs">See what it's doing</a></p>
  <script>setTimeout(()=>location.reload(),20000)</script>{% endif %}
@@ -36,7 +38,7 @@
   {% if blocked %}<a href="#preflight" class="chip bad">Fix first <b>{{ blocked|length }}</b></a>{% elif checks %}<a href="#preflight" class="chip ok">Checks pass</a>{% endif %}
   {% if report.held %}<a href="#check" class="chip warn">Check these <b>{{ report.held|length }}</b>{% if need_n %} · {{ need_n }} need you{% endif %}</a>{% endif %}
   {% if report.unanswered %}<a href="#unanswered" class="chip">Unanswered <b>{{ report.unanswered|length }}</b>{% set req = report.unanswered|selectattr('required')|list|length %}{% if req %} · {{ req }} required{% endif %}</a>{% endif %}
-  {% if report.errors %}<a href="#problems" class="chip bad">Problems <b>{{ report.errors|length }}</b></a>{% endif %}
+  {% if errors %}<a href="#problems" class="chip bad">Problems <b>{{ errors|length }}</b></a>{% endif %}
   <a href="#answers" class="chip ok">Filled <b>{{ report.filled|length }}</b></a>
  </div>
  {% if job.status != 'submitted' %}<div class="act">
@@ -62,10 +64,21 @@
 
 {% if handoff %}<section class="card finish" style="margin-bottom:16px" id="finish"><h2>Finish this one yourself</h2>
  <p class="why">{{ handoff }}</p>
+ {% set here_ok = finish_box and finish_box.ok %}
+ {% if here_ok %}
+ <div class="here-start">
+  {# This card sits inside the page's main form, and a nested <form> is dropped by browsers: the button posts the
+     separate form at the end of the page instead. #}
+  <button class="btn primary" form="finish-here-form" data-finish-here>Finish it here</button>
+  <small>Opens the form, filled in and with your files attached, in the browser on your server. You answer the captcha
+   or code and press Submit there, from this browser.</small></div>
+ <p class="sub3">Or on your Mac</p>
+ {% elif finish_box %}<p class="ink2">The browser on your server isn't answering, so use your Mac for now.</p>
+ {% endif %}
  <ol class="steps">
   <li>On your Mac, open Terminal and run:
    <div class="cmd"><code>autoapply-finish {{ job.id }}</code>
-    <button type="button" class="btn primary" onclick="copyText(this,this.dataset.v)" data-v="autoapply-finish {{ job.id }}">Copy command</button></div>
+    <button type="button" class="btn {{ '' if here_ok else 'primary' }}" onclick="copyText(this,this.dataset.v)" data-v="autoapply-finish {{ job.id }}">Copy command</button></div>
    <small>Chrome opens on the form with everything filled in and the files attached. Safari can't be filled this way.</small></li>
   <li>Answer the captcha or code there and press <b>Submit</b>.</li>
   <li>Come back, reload this page and press <b>I sent it with the command</b> in the bar above.</li>
@@ -96,9 +109,9 @@
   <details><summary>All checks</summary><ul class="checks">{% for c in checks %}<li class="{{ 'okc' if c.ok else ('fail' if c.hard else 'warnc') }}"><b>{{ c.group }}:</b> {{ c.name }}{% if c.detail %} <span class="ink2">· {{ c.detail }}</span>{% endif %}</li>{% endfor %}</ul></details>
  </section>
  <style>.pre h2{font-size:16px}.pre.stop{border-color:color-mix(in srgb,var(--bad-dot) 45%,var(--line))}.pre.go h2{color:var(--good)}
-  .checks{list-style:none;margin:4px 0 8px;padding:0;display:grid;gap:6px;font-size:14.5px}
+  .checks{list-style:none;margin:4px 0 8px;padding:0;display:grid;gap:6px;font-size: 14px}
   .checks li{display:flex;gap:8px;align-items:baseline}.checks li::before{flex:none;font-weight:700;width:14px}
-  .checks .okc::before{content:"✓";color:var(--good)}.checks .fail::before{content:"✕";color:var(--bad)}.checks .warnc::before{content:"!";color:var(--warn)}</style>
+  .checks .okc::before{content:"";display:inline-block;width:12px;height:12px;background:var(--good);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='3' d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='3' d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat}.checks .fail::before{content:"";display:inline-block;width:12px;height:12px;background:var(--bad);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='3' d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='3' d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/contain no-repeat}.checks .warnc::before{content:"!";color:var(--warn)}</style>
  {% endif %}
  {% if report.held %}{% set pre = report.held|selectattr('prefilled')|list %}<section class="card check-these" id="check">
   <h2>Check these: consents and self-ID {% if pre %}<span class="pill waiting" style="text-transform:none">{{ pre|length }} pre-filled</span>{% endif %}</h2>
@@ -112,7 +125,7 @@
   {% else %}<input type="text" name="held::{{ h.label }}" value="{{ cur }}">{% endif %}</td></tr>{% endfor %}</table></section>
  <style>.check-these{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn-dot) 45%,transparent)} .check-these h2{color:var(--warn)}
   .check-these td{border-bottom-color:color-mix(in srgb,var(--warn-dot) 35%,transparent)} .check-these tbody tr:hover td,.check-these tr:hover td{background:transparent}
-  .tag{display:inline-block;margin-left:6px;font-size:12.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--warn-dot);color:#1a1200}
+  .tag{display:inline-block;margin-left:6px;font-size: 13px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--warn-dot);color:#1a1200}
   .tag.none{background:var(--bad-soft);color:var(--bad)}</style>{% endif %}
 
  {% if report.unanswered %}<section class="card mt" id="unanswered"><h2>Still unanswered <span class="count">{{ report.unanswered|length }}</span></h2>
@@ -120,7 +133,7 @@
    fill any you want and press <b>Save and refill</b>.</p><table>{% for u in report.unanswered %}<tr><td>{{ u.label }}{% if u.required %} <b>*</b>{% else %} <span class="muted">optional</span>{% endif %}</td><td style="width:45%">
   {% if u.options %}<select name="ans::{{ u.label }}"><option value=""></option>{% for o in u.options %}<option>{{ o }}</option>{% endfor %}</select>
   {% else %}<input type="text" name="ans::{{ u.label }}">{% endif %}</td></tr>{% endfor %}</table></section>{% endif %}
- {% if report.errors %}<section class="card mt" id="problems"><h2>Problems</h2><ul style="margin:0;padding-left:18px">{% for e in report.errors %}<li>{{ e.label }}: {{ e.error }}</li>{% endfor %}</ul></section>{% endif %}
+ {% if errors %}<section class="card mt" id="problems"><h2>Problems</h2><ul style="margin:0;padding-left:18px">{% for e in errors %}<li>{{ e.label }}: {{ e.error }}</li>{% endfor %}</ul></section>{% endif %}
 
  {% if not kitmode %}<section class="card mt" id="answers"><details><summary><b>Filled answers ({{ report.filled|length }})</b> · what the form has now</summary>
   <table style="margin-top:8px">{% for f in report.filled %}<tr><td class="ink2" style="width:40%">{{ f.label }}</td><td>{{ f.value }}</td><td><span class="pill">{{ f.source }}</span></td></tr>{% endfor %}</table>
@@ -168,14 +181,14 @@ It uses credits, roughly 1M tokens of your Claude plan (or OpenRouter credit). N
 {% if letter.can and not letter.busy %}<form id="letter-form" method="post" action="/letter/{{ job.id|urlencode }}"></form>{% endif %}
 <style>
 .jd-card{margin-top:8px;padding:14px 20px}.jd-card summary{display:flex;gap:10px;align-items:baseline;min-width:0}.jd-card summary b{flex:none}
-.jd-peek{flex:1;min-width:0;color:var(--ink-3);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.jd-n{flex:none;font-weight:500;font-size:13.5px}
+.jd-peek{flex:1;min-width:0;color:var(--ink-3);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.jd-n{flex:none;font-weight:500;font-size: 14px}
 .jd-card details[open] .jd-peek{visibility:hidden}.jd{white-space:pre-wrap;line-height:1.55;margin-top:10px;overflow-wrap:anywhere;max-height:60vh;overflow:auto}
 .kit h2{font-size:18px}.kit .files{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.kit .answers td{vertical-align:top;overflow-wrap:anywhere}
-.tried-note{font-size:14.5px;padding:8px 12px;border-radius:12px;background:var(--surface-2)}
+.tried-note{font-size: 14px;padding:8px 12px;border-radius:12px;background:var(--surface-2)}
 .rewrite{margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
-.rewrite summary{cursor:pointer} .rewrite textarea{width:100%;font:inherit;font-size:15.5px;margin-top:8px}
+.rewrite summary{cursor:pointer} .rewrite textarea{width:100%;font:inherit;font-size: 16px;margin-top:8px}
 .rewrite .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:6px}
-.rewrite .small{font-size:13.5px;margin:8px 0 0} .rewrite .busy{margin:0;display:flex;gap:8px;align-items:center}
+.rewrite .small{font-size: 14px;margin:8px 0 0} .rewrite .busy{margin:0;display:flex;gap:8px;align-items:center}
 .rewrite .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35}} @media (prefers-reduced-motion:reduce){.rewrite .dot{animation:none}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -185,15 +198,15 @@ It uses credits, roughly 1M tokens of your Claude plan (or OpenRouter credit). N
 .chip{font-size:14px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
 .chip:hover{text-decoration:none;filter:brightness(.97)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.ok{background:var(--good-soft);color:var(--good)}
 .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .act .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
-.menu{position:relative} .menu summary{list-style:none} .menu summary::-webkit-details-marker{display:none} .menu summary::after{content:"▾";font-size:11.5px;margin-left:2px}
+.menu{position:relative} .menu summary{list-style:none} .menu summary::-webkit-details-marker{display:none} .menu summary::after{content:"▾";font-size: 12px;margin-left:2px}
 .menu-list{position:absolute;right:0;top:40px;z-index:6;display:grid;min-width:180px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-lg)}
 .menu-list .btn{justify-content:flex-start;width:100%}
-.tick{font-size:14.5px;display:inline-flex;gap:6px;align-items:center} .tick.warn{color:var(--warn)}
+.tick{font-size: 14px;display:inline-flex;gap:6px;align-items:center} .tick.warn{color:var(--warn)}
 .ptabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-6px 0 12px}
-.ptabs button{font:inherit;font-size:14.5px;font-weight:600;border:0;background:none;color:var(--ink-2);padding:8px 10px;border-bottom:2px solid transparent;cursor:pointer}
+.ptabs button{font:inherit;font-size: 14px;font-weight:600;border:0;background:none;color:var(--ink-2);padding:8px 10px;border-bottom:2px solid transparent;cursor:pointer}
 .ptabs button[aria-selected="true"]{color:var(--accent-ink);border-bottom-color:var(--accent)}
 .side-tabs{position:sticky;top:16px} .side-tabs .doc{height:calc(100vh - 120px);min-height:520px}
-#preflight,#check,#unanswered,#problems,#answers{scroll-margin-top:90px}
+#preflight,#check,#unanswered,#problems,#answers{scroll-margin-top:90px} #finish{scroll-margin-top:124px}
 @media (max-width:860px){.side-tabs{position:static}.bar{position:static}}
 </style>
 <script>
@@ -202,5 +215,17 @@ document.addEventListener("click",e=>document.querySelectorAll("details.menu[ope
 document.querySelectorAll(".ptabs button").forEach(b=>b.onclick=()=>{const box=b.closest(".card");
  box.querySelectorAll(".ptabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
  box.querySelectorAll(".pane").forEach(p=>p.hidden=p.id!==b.dataset.p)});
+// autoapply-finish marks the job sent from the laptop: check every few seconds and show it without a manual reload.
+// If you've typed in a field, it asks before reloading so your edits aren't lost.
+(()=>{const id={{ job.id|tojson }},was={{ job.status|tojson }};let typed=false,told=false;
+ document.addEventListener("input",()=>typed=true);
+ const check=()=>{if(document.hidden||told)return;fetch("/job-status/"+encodeURI(id),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(!d||d.status===was)return;
+  if(!typed){location.reload();return}
+  told=true;const p=document.createElement("p");p.className="notice";p.setAttribute("role","status");
+  p.innerHTML='<span class="grow">This job changed since you opened it'+(d.status==="submitted"?": it was marked sent":"")+'.</span><button type="button" class="btn sm">Reload</button>';
+  p.querySelector("button").onclick=()=>location.reload();document.querySelector("main,body").prepend(p)}).catch(()=>{})};
+ setInterval(check,5000);document.addEventListener("visibilitychange",check)})();
 </script>
+{% if handoff and finish_box and finish_box.ok %}<form id="finish-here-form" method="post" action="/finish-here/{{ job.id|urlencode }}" hidden></form>{% endif %}
 {% endblock %}

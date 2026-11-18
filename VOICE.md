@@ -77,6 +77,7 @@ suggests", never "science proves", and copy never quotes a research figure.
 | Look-back, no plan | "Last week: {summary}. That all counts. A short plan for this week can help keep the days steady." |
 | Look-back, nothing done | "A quiet week. That happens, and this one is a fresh start." |
 | Look-back note | "What helped, or what got in the way?" (optional, just for you) |
+| Look-back, put away | Card line "Last week: {summary}." (or "a quiet week") with a *Look back* button; *Last week* once this week is planned |
 | Morning email, Sunday | "Last week: {summary}. Plan this week: {url}/#plan" |
 | Morning email, a planned day | "Today's plan: {today_line}" |
 | People you know | "Anyone you know there?" / "One message this week is a good start." |

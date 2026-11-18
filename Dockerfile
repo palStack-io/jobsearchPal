@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3-venv libreoffice-writer-nogui fonts-liberation tzdata curl ca-certificates git \
+ && apt-get install -y --no-install-recommends python3-venv libreoffice-writer-nogui fonts-liberation fonts-crosextra-carlito fonts-crosextra-caladea tzdata curl ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 # Node for the agent CLIs (Ubuntu's is too old for them).
 COPY --from=node /usr/local/bin/node /usr/local/bin/node

@@ -14,7 +14,7 @@
   <div class="meter {{ 'ok' if st.ready }}"><span style="width:{{ (100 * req_done / 4)|round }}%"></span></div></div>
 <nav class="rail" aria-label="Setup steps">
  {% for key, label, req in [('resume','Resume',1),('profile','Contact',1),('interests','Job interests',1),('about','About you',0),('agent','Agent',1),('gmail','Email',0)] %}
- <a href="#{{ key }}" class="{{ 'done' if s[key].done }}"><i aria-hidden="true">{{ '✓' if s[key].done else loop.index }}</i>{{ label }}{% if not req %}<small>optional</small>{% endif %}</a>
+ <a href="#{{ key }}" class="{{ 'done' if s[key].done }}"><i aria-hidden="true">{% if s[key].done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}{{ loop.index }}{% endif %}</i>{{ label }}{% if not req %}<small>optional</small>{% endif %}</a>
  {% endfor %}
 </nav>
 </div>{% endif %}
@@ -32,15 +32,17 @@
 {% endif %}
 
 <section class="card mt checklist" aria-labelledby="cl-h"><h2 id="cl-h"><span>Finished steps</span></h2>
- <ul>{% for key, label, req in done_rows %}<li><span class="ok" aria-hidden="true">✓</span><b>{{ label }}</b>
+ <ul>{% for key, label, req in done_rows %}<li><span class="ok" aria-hidden="true"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span><b>{{ label }}</b>
   <span class="what">{{ s[key].note }}</span><a class="edit-link" href="#{{ key }}" data-open="{{ key }}">Edit<span class="sr"> {{ label }}</span></a></li>{% endfor %}
-  <li class="letters-row"><span class="ok pen" aria-hidden="true">✎</span><b>How your letters sound</b><span class="what">tone, how it opens, length</span>
-   <a class="edit-link" href="/letters">Open</a></li></ul>
+  <li class="letters-row"><span class="ok pen" aria-hidden="true"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-pen"/></svg></span><b>How your letters sound</b><span class="what">tone, how it opens, length</span>
+   <a class="edit-link" href="/letters">Open</a></li>
+  {% if resume %}<li class="letters-row"><span class="ok pen" aria-hidden="true"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-pen"/></svg></span><b>Resume look</b><span class="what">{{ looks[look].label }}{{ ', your own colour #' ~ accent if accent and looks[look].style }}</span>
+   <a class="edit-link" href="#look" data-open="look">Change<span class="sr"> resume look</span></a></li>{% endif %}</ul>
  {% if not done_rows %}<p class="muted small" style="margin:8px 0 0">Steps you finish show up here, with what you saved.</p>{% endif %}
 </section>
 
 <section class="card mt step" id="resume">
- <h2><span><span class="n {{ 'done' if s.resume.done }}">{{ "✓" if s.resume.done else "1" }}</span> Base resume</span><span class="count">{{ s.resume.note }}</span></h2>
+ <h2><span><span class="n {{ 'done' if s.resume.done }}">{% if s.resume.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}1{% endif %}</span> Base resume</span><span class="count">{{ s.resume.note }}</span></h2>
  <p class="lead">Your full, current resume as a Word file. Every tailored resume keeps its layout and only rewords what's already true.</p>
  <form method="post" action="/setup/resume" enctype="multipart/form-data" class="grid g11">
   <label class="fld"><span>Resume (.docx)</span><input type="file" name="docx" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
@@ -50,10 +52,70 @@
   <div class="actions"><button class="btn primary">{{ 'Replace' if resume else 'Upload' }}</button>
    {% if resume %}<span class="muted" style="align-self:center">Current: <code>materials/{{ resume.name }}</code></span>{% endif %}</div>
  </form>
+ <form method="post" action="/setup/look" class="looks" id="look" data-saved-look="{{ look }}" data-saved-accent="{{ accent|upper }}">
+  <h3>How your tailored resumes look</h3>
+  <p class="muted">Pick a look for every resume and cover letter the daily run makes. Each one keeps a single column of
+   plain text with standard headings, so the screening software employers use (applicant tracking systems) reads it the same way.
+   Key figures you or the agent mark, like <b class="fig">10,000+ students</b>, are set in bold.</p>
+  <div class="look-grid" role="radiogroup" aria-label="Resume look">
+  {% for key, l in looks.items() %}
+   <label class="look-opt"><input type="radio" name="look" value="{{ key }}" {{ 'checked' if key == look }}>
+    <span class="thumb {{ l.style or 'plain' }}" style="--a:#{{ l.accent or '1f2937' }}" aria-hidden="true">
+     <i class="nm"></i><i class="ct"></i><i class="hl"></i><i class="tx"></i><i class="tx s"></i>
+     <i class="hd"></i><i class="tx"></i><i class="tx s"></i><i class="hd"></i><i class="tx"></i></span>
+    <span class="lbl"><b>{{ l.label }}</b><small>{{ l.blurb }}</small></span></label>
+  {% endfor %}
+  </div>
+  <label class="fld accent-fld"><span>Your own colour (optional)</span>
+   <span class="row"><input type="color" id="accent-pick" value="#{{ accent or '1F4E79' }}" aria-label="Pick a colour">
+    <input type="text" name="accent" id="accent" value="{{ ('#' ~ accent) if accent }}" placeholder="#1F4E79" maxlength="7" pattern="#?[0-9A-Fa-f]{6}" style="max-width:9em"></span>
+   <small class="muted">Leave empty to use the look's own colour. Dark colours read and print best.</small></label>
+  <div class="actions"><button class="btn primary">Save look</button>
+   {% if resume %}<button class="btn" formaction="/setup/look/preview" formtarget="_blank">Preview with my resume</button>
+   <small class="muted" style="align-self:center">Makes a PDF of your base resume in this look (takes a few seconds).</small>{% endif %}</div>
+  <p class="look-unsaved" id="look-unsaved" role="status" hidden>Not saved yet. Press Save look to use it for new resumes; a preview changes nothing.</p>
+ </form>
+ {% if resume and (remake_n or remake_st.total) %}
+ <form method="post" action="/setup/look/remake" class="remake">
+  {% if remake_st.running %}<p class="muted" role="status">Remaking resumes and letters: {{ remake_st.done }} of {{ remake_st.total }} done.</p>
+  {% else %}
+  {% if remake_st.total %}<p class="muted" role="status">Remade {{ remake_st.done }} of {{ remake_st.total }} in the {{ looks[remake_st.look].label if remake_st.look in looks else looks.navy.label }} look.{% if remake_st.failed %} Couldn't remake: {{ remake_st.failed|join(', ') }}.{% endif %}</p>{% endif %}
+  {% if remake_n %}<button class="btn">Remake {{ 'the waiting resume and letter' if remake_n == 1 else 'the ' ~ remake_n ~ ' waiting resumes and letters' }} in the {{ looks[look].label }} look</button>
+  <small class="muted">Already-made applications keep the look they were made in. This lays out the same text again for the ones you haven't sent; sent ones stay as they went out.</small>{% endif %}
+  {% endif %}
+ </form>
+ {% endif %}
 </section>
+<style>
+.looks{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}.looks h3{margin:0 0 4px}
+.looks .fig{color:var(--accent-ink)}
+.look-unsaved{margin:10px 0 0;font-weight:600;color:var(--accent-ink)}
+.remake{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}.remake p{margin:0;flex-basis:100%}.remake small{flex:1 1 260px}
+.look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
+.look-opt{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.look-opt:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.look-opt input{position:absolute;opacity:0}.look-opt:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.look-opt .lbl{display:grid;gap:3px}.look-opt small{color:var(--ink-3);font-size:13px;line-height:1.35}
+.thumb{display:grid;gap:3px;align-content:start;padding:7px 7px;height:94px;background:#fff;border:1px solid #d6dbe1;border-radius:4px}
+.thumb i{display:block;height:3px;border-radius:2px;background:#c3c9d1}
+.thumb .nm{height:6px;width:60%;margin:0 auto 1px;background:var(--a)}.thumb .ct{width:80%;margin:0 auto;height:2px}
+.thumb .hl{height:4px;width:70%;background:var(--a)}.thumb .tx.s{width:70%}
+.thumb .hd{height:4px;width:45%;margin-top:3px;background:var(--a);box-shadow:0 3px 0 -2px var(--a)}
+.thumb.band .hl{width:100%;height:6px}.thumb.band .hd{width:100%;height:5px;background:color-mix(in srgb,var(--a) 14%,#fff);border-left:3px solid var(--a);box-shadow:none}
+.thumb.plain .nm,.thumb.plain .hl,.thumb.plain .hd{background:#1f2937;box-shadow:none}
+.accent-fld .row{display:flex;gap:8px;align-items:center}.accent-fld input[type=color]{width:42px;height:36px;padding:2px;border-radius:8px}
+</style>
+<script>(()=>{const p=document.getElementById("accent-pick"),t=document.getElementById("accent");if(!p||!t)return;
+ p.addEventListener("input",()=>{t.value=p.value.toUpperCase()});
+ t.addEventListener("input",()=>{const v=t.value.trim().replace(/^#?/,"#");if(/^#[0-9a-f]{6}$/i.test(v))p.value=v})})();</script>
+<script>(()=>{const f=document.getElementById("look"),n=document.getElementById("look-unsaved");if(!f||!n)return;
+ // Picking a look (or previewing it) doesn't keep it: say so until Save look is pressed.
+ const now=()=>{const r=f.querySelector("input[name=look]:checked"),a=(f.elements.accent?f.elements.accent.value:"").trim().replace(/^#/,"").toUpperCase();
+  n.hidden=(r?r.value:"")===f.dataset.savedLook&&a===f.dataset.savedAccent};
+ f.addEventListener("change",now);f.addEventListener("input",now)})();</script>
 
 <section class="card mt step" id="profile">
- <h2><span><span class="n {{ 'done' if s.profile.done }}">{{ "✓" if s.profile.done else "2" }}</span> Contact details and standard answers</span><span class="count">required</span></h2>
+ <h2><span><span class="n {{ 'done' if s.profile.done }}">{% if s.profile.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}2{% endif %}</span> Contact details and standard answers</span><span class="count">required</span></h2>
  <p class="lead">The form filler types these straight into every application.{% if not s.profile.done and resume %} Filled in from your resume where it could; check them.{% endif %}</p>
  <form method="post" action="/setup/profile">
   <div class="grid g3">
@@ -89,7 +151,7 @@
 </section>
 
 <section class="card mt step" id="interests">
- <h2><span><span class="n {{ 'done' if s.interests.done }}">{{ "✓" if s.interests.done else "3" }}</span> Job interests</span><span class="count">required</span></h2>
+ <h2><span><span class="n {{ 'done' if s.interests.done }}">{% if s.interests.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}3{% endif %}</span> Job interests</span><span class="count">required</span></h2>
  <p class="lead">A role is picked up when its title has one of your titles and none of the skipped words, then ranked against "About you".
   <a href="/leads#sources">All job sources</a>.</p>
  <form method="post" action="/setup/interests">
@@ -173,7 +235,7 @@
 </section>
 
 <section class="card mt step" id="about">
- <h2><span><span class="n {{ 'done' if s.about.done }}">{{ "✓" if s.about.done else "4" }}</span> About you</span><span class="count">optional</span></h2>
+ <h2><span><span class="n {{ 'done' if s.about.done }}">{% if s.about.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}4{% endif %}</span> About you</span><span class="count">optional</span></h2>
  <p class="lead">Plain notes the agent uses to rank roles and answer like you would. It never makes up metrics, titles or dates.</p>
  <form method="post" action="/setup/about">
   <div class="grid g11">
@@ -191,7 +253,7 @@
 
 
 <section class="card mt step" id="agent">
- <h2><span><span class="n {{ 'done' if s.agent.done }}">{{ "✓" if s.agent.done else "5" }}</span> Sign in to an AI agent</span><span class="count">{{ s.agent.note }}</span></h2>
+ <h2><span><span class="n {{ 'done' if s.agent.done }}">{% if s.agent.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}5{% endif %}</span> Sign in to an AI agent</span><span class="count">{{ s.agent.note }}</span></h2>
  <p class="lead">Sign in once, right here. No subscription? Choose <b>OpenRouter key</b> on the
   <a href="/settings?tab=daily">Daily run</a> tab and skip this.</p>
  {% set back = "setup" %}{% include "_agent_signin.html" %}
@@ -199,7 +261,7 @@
 </section>
 
 <section class="card mt step" id="gmail">
- <h2><span><span class="n {{ 'done' if s.gmail.done }}">{{ "✓" if s.gmail.done else "6" }}</span> Email</span><span class="count">{{ 'optional' if s.gmail.note.startswith('optional') else s.gmail.note }}</span></h2>
+ <h2><span><span class="n {{ 'done' if s.gmail.done }}">{% if s.gmail.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}6{% endif %}</span> Email</span><span class="count">{{ 'optional' if s.gmail.note.startswith('optional') else s.gmail.note }}</span></h2>
  <p class="lead">Reads job alerts and replies, reminds you to follow up, and sends you a morning brief. Read-only: it never marks
   anything read and only ever sends the brief, to you. Tip: use one address for your whole job search.</p>
  <form method="post" action="/setup/gmail">
@@ -247,29 +309,45 @@
   </details>
  </div>{% endif %}
 </section>
+
+<section class="card mt" id="finish" aria-labelledby="finish-h">
+ <h2 id="finish-h"><span>Finish applications in the browser</span><span class="count">{{ 'on' if finish_on else 'optional' }}</span></h2>
+ <p class="lead">When a site asks for a captcha or a code, jobsearchPal can open the filled-in form in a browser on this
+  server, and you finish it from the job page in whatever browser you're using, even on a phone. Nothing is installed
+  where you sit.</p>
+ <p class="muted" style="font-size:14px">That browser visits the job site through a proxy that can't reach your home
+  network, keeps nothing after it closes, and never presses Submit. It needs Docker on this server.</p>
+ {% if finish_on %}<p><b>It's on.</b> Check it again any time; Settings shows whether it's running.</p>{% endif %}
+ <ol class="steps">
+  <li>In the jobsearchPal folder on this server, run <code class="sel">{{ finish_cmd }}</code></li>
+  <li>Then check it here:
+   <form method="post" action="/setup/finish" style="display:inline"><button class="btn {{ '' if finish_on else 'primary' }} sm">Check and turn it on</button></form></li>
+ </ol>
+ <p class="muted" style="font-size:14px">No Docker? Use <code>autoapply-finish</code> on your Mac instead (the job page shows it).</p>
+</section>
 <style>.tip{background:var(--accent-soft);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:15px}
 .other-mail{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}.other-mail h3{margin:0 0 6px;font-size:17px}
 .fwd-form textarea{width:100%}.fwd-steps{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
-.fwd-steps li{display:grid;gap:2px;background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:14.5px}.fwd-steps span{color:var(--ink-2)}
+.fwd-steps li{display:grid;gap:2px;background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size: 14px}.fwd-steps span{color:var(--ink-2)}
 .more-inbox{margin-top:16px}.more-inbox summary{cursor:pointer;color:var(--accent-ink);font-weight:600}
 .inboxes{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px}.inboxes li{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}</style>
 
 <style>
 .setup-top{display:flex;gap:12px 24px;align-items:center;flex-wrap:wrap;margin-top:14px}
-.prog{min-width:180px;font-size:14.5px;color:var(--ink-2)} .prog b{color:var(--ink);font-size:16px} .prog .meter{margin-top:6px}
+.prog{min-width:180px;font-size: 14px;color:var(--ink-2)} .prog b{color:var(--ink);font-size:16px} .prog .meter{margin-top:6px}
 .rail{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 0}
-.rail a{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);font-size:14.5px;font-weight:600}
+.rail a{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);font-size: 14px;font-weight:600}
 .rail a:hover{text-decoration:none;background:var(--surface-2)}
-.rail i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-size:13.5px}
+.rail i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-size: 14px}
 .rail a.done i{background:var(--good-soft);color:var(--good)} .rail small{font-weight:500;color:var(--ink-3)}
 .step h2>span:first-child{display:flex;align-items:center;gap:10px;font-size:16px}
-.n{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);font-size:14.5px}
+.n{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);font-size: 14px}
 .n.done{background:var(--good-soft);color:var(--good)}
 .lead{color:var(--ink-2);margin:-4px 0 14px;max-width:760px}
-.fld{display:grid;gap:5px;border:0;margin:0;padding:0;min-width:0}.fld>span{font-size:14px;font-weight:600;color:var(--ink-2)}.fld small{font-size:13.5px;line-height:1.45}
+.fld{display:grid;gap:5px;border:0;margin:0;padding:0;min-width:0}.fld>span{font-size:14px;font-weight:600;color:var(--ink-2)}.fld small{font-size: 14px;line-height:1.45}
 .fld.wide{grid-column:1/-1}
 textarea{resize:vertical}
-input[type=file]{font:inherit;font-size:14.5px;max-width:100%}
+input[type=file]{font:inherit;font-size: 14px;max-width:100%}
 .check{display:inline-flex;gap:8px;align-items:center;font-size:15px;cursor:pointer}.check input{width:16px;height:16px;accent-color:var(--accent)}
 .checks{display:flex;gap:6px 18px;flex-wrap:wrap} .check small{font-size:13px} small.bad,.bad{color:var(--bad)}
 .add-rss{margin:4px 4px 0 0}
@@ -282,7 +360,7 @@ input[type=file]{font:inherit;font-size:14.5px;max-width:100%}
 .grp{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
 details.fold{border:1px solid var(--line);border-radius:12px;padding:12px 14px}details.fold>summary{font-size:15px;color:var(--ink)}
 details.fold[open]>summary{margin-bottom:4px}
-.step{scroll-margin-top:16px} .sub3{font-size:14.5px;font-weight:650;margin:20px 0 6px} code.sel{user-select:all;word-break:break-all}
+.step{scroll-margin-top:16px} #finish{scroll-margin-top:76px} #finish code.sel{overflow-wrap:break-word;word-break:normal} .sub3{font-size: 14px;font-weight: 600;margin:20px 0 6px} code.sel{user-select:all;word-break:break-all}
 </style>
 
 <style>
@@ -290,11 +368,11 @@ details.fold[open]>summary{margin-bottom:4px}
 .checklist ul{list-style:none;margin:0;padding:0}
 .checklist li{display:grid;grid-template-columns:26px minmax(130px,190px) minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .checklist li:last-child{border-bottom:0}
-.checklist .ok{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:var(--good-soft);color:var(--good);font-size:13.5px;font-weight:700}
+.checklist .ok{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:var(--good-soft);color:var(--good);font-size: 14px;font-weight:700}
 .checklist .ok.pen{background:var(--accent-soft);color:var(--accent-ink)}
-.checklist .what{color:var(--ink-3);font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.checklist .edit-link{font-size:14.5px;font-weight:600;padding:4px 10px;border-radius:8px}.checklist .edit-link:hover{background:var(--surface-2);text-decoration:none}
-.checklist .small{font-size:13.5px}
+.checklist .what{color:var(--ink-3);font-size: 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.checklist .edit-link{font-size: 14px;font-weight:600;padding:4px 10px;border-radius:8px}.checklist .edit-link:hover{background:var(--surface-2);text-decoration:none}
+.checklist .small{font-size: 14px}
 @media (max-width:600px){.checklist li{grid-template-columns:26px minmax(0,1fr) auto}.checklist .what{grid-column:2/4;grid-row:2;white-space:normal}}
 .step.folded{display:none}.step .done-btn{font-size:14px;margin-left:8px}
 .step h2{justify-content:flex-start}.step h2 .count{margin-left:auto}

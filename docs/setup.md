@@ -63,6 +63,13 @@ doesn't have. Installs from before December 2026 need their free stand-ins (same
 
 Pick how your tailored resumes look (Navy, Teal band, Slate or your own layout, plus your own colour if you like) on
 the Setup page under **Base resume**; **Preview with my resume** shows your resume in that look before you save it.
+Only **Save look** keeps it (the page says "Not saved yet" until you do), and it applies to resumes made from then on.
+To bring the applications you haven't sent yet into the new look, press **Remake the waiting resumes and letters**:
+it lays out the text already written for each one again (no rewriting, a few seconds each); sent ones stay as they
+went out, and a remade letter carries today's date.
+
+If a posting is taken down before you send it, filling or submitting stops with "This posting is closed. The company
+took it down; nothing was sent." (a 404, or the board's own "job not found" / "no longer open" page).
 
 ## Docker (alternative to steps 1, 4 and 6)
 

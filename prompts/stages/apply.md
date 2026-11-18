@@ -17,7 +17,14 @@ first). Work only on this role.
                "experience": {"<heading from the outline>": ["bullet", ...], ...}},
     "cover_letter": {"to": "Hiring Team", "greeting": "Dear Hiring Team,", "paragraphs": ["...", ...]}}
    "skills" is the full list in order. Each "experience" list replaces that block's bullets ([] drops a group);
-   role, company and date lines never change. If it prints "problems" (resume over 2 pages, cover letter over 1),
+   role, company and date lines never change.
+   Show impact with numbers: start each bullet with what changed and how much (users, rows, hours saved, %, $, team
+   size, time to deliver), using only figures that are in materials/, CLAUDE.local.md or the outline. Wrap the one or
+   two figures that matter in **two stars** ("cut audits from **3 days to 2 hours**"): they print in bold colour, so
+   keep it to those. Never invent or estimate a figure. When a strong bullet has no number in the materials, keep it
+   plain and list it in notes.md under "Numbers to ask for" so the person can add the real one.
+   The resume is always 2 pages at most: build-docs first tightens the layout a little on its own ("fit" in its
+   output). If it still prints "problems" (resume over 2 pages, cover letter over 1),
    shorten docs.json and run it again. Don't write a python script to build the documents.
    Write the cover letter the way materials/context/voice.md asks when it's there (tone, length, opening, words to
    avoid, the person's own notes; sample letters set the voice only, never the facts).

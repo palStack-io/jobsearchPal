@@ -168,10 +168,10 @@ def test_dashboard_plan_people_and_reflection_flow(tmp_path, db):
     db.update("gh:globex:2", status="filled")
     c = _app(tmp_path, db)
     html = c.get("/").text
-    assert "Your week, in your words" in html and "Before the hard days" in html
-    assert "/dua?company=Globex#people" in html
+    assert "Before the hard days" in html and "/dua?company=Globex#people" in html
+    assert "Your week, in your words" in c.get("/plan").text   # the planner has its own page (JSP-05)
     c.post("/plan", data={"roles": "data roles", "days": ["Mon", "Thu"], "contact": "Sam"})
-    html = c.get("/").text
+    html = c.get("/plan").text
     assert "Your plan this week" in html and "data roles · Mon, Thu · get in touch with Sam" in html
 
     c.post("/setback", data={"if_then": "send one message, then walk", "key": "pal:setback:early"})

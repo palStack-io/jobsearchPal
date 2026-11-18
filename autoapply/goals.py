@@ -279,15 +279,21 @@ def week_view(db, week: date, today: date | None = None) -> dict:
             "note": str(coach.note(db, f"lookback:{week.isoformat()}") or "")}
 
 
+def last_week(db, today: date) -> dict | None:
+    """Last week's view, all week long (the dashboard keeps it behind a Look back button). None when last week had no
+    plan and nothing done."""
+    v = week_view(db, week_start(today) - timedelta(days=7))
+    if not v["planned"] and not any(v["did"].values()):
+        return None
+    return v
+
+
 def lookback(db, today: date) -> dict | None:
     """Last week, until this week has any plan or is skipped. None when last week had no plan and nothing done."""
     week = week_start(today)
     if coach.plan(db, week) or f"pal:plan-skip:{week.isoformat()}" in db.nudge_states():
         return None
-    v = week_view(db, week - timedelta(days=7))
-    if not v["planned"] and not any(v["did"].values()):
-        return None
-    return v
+    return last_week(db, today)
 
 
 def save_note(db, week: date, text: str) -> None:

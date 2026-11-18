@@ -66,9 +66,10 @@ def last_mark(db, job_id: str) -> dict | None:
 
 
 def undo(db, job_id: str) -> dict | None:
-    """Takes back a command mark ("auto" or "command"). Returns the mark undone, or None if there wasn't one."""
+    """Takes back the latest mark, however it was made ("auto", "command" or "hand"). Returns the mark undone, or None
+    if there wasn't one."""
     m = last_mark(db, job_id)
-    if not m or m["kind"] not in ("auto", "command"):
+    if not m:
         return None
     _add(db, job_id, "undo")
     return m

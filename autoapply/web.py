@@ -1674,11 +1674,19 @@ def make_app(settings, db: DB) -> FastAPI:
         before = {"status": job["status"], "lead": _lead_status(job_id)}  # what a command mark's Undo goes back to
         if action == "unsend":
             from . import finish
-            m = finish.undo(db, job_id) if job["status"] == "submitted" else None
-            if m:
-                prev = m["detail"].get("status") or "filled"
-                db.update(job_id, status=prev if prev != "submitted" else "filled", submitted_at=None)
-                _set_lead(job_id, m["detail"].get("lead"))
+            if job["status"] == "submitted":
+                # Any "sent" can be taken back, however it was marked: Submit here, the command, or by hand.
+                m = finish.undo(db, job_id)
+                prev = (m["detail"].get("status") if m else None) or (
+                    "filled" if old_report else
+                    "prepped" if old_plan.get("files") else "new")
+                prev = prev if prev != "submitted" else "filled"
+                db.update(job_id, status=prev, submitted_at=None,
+                          **({"report_json": {**old_report, "submitted": False}} if old_report.get("submitted") else {}))
+                from . import leads
+                lead = m["detail"].get("lead") if m else None
+                _set_lead(job_id, lead if lead is not None else
+                          (leads.TRACKED.get(prev, "tracked") if _lead_status(job_id) is not None else None))
                 db.delete_event(f"applied:{job_id}")
             return RedirectResponse(f"/job/{job_id}", status_code=303)
         if action in ("skip", "manual", "command"):  # the lead behind this job follows it

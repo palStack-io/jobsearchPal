@@ -64,3 +64,12 @@ def test_phone_check_ignores_a_same_label_consent_answer(tmp_path, monkeypatch):
                          {"label": "Phone", "value": "No - I do not consent to receiving text messages"}]}
     checks = preflight.check({"company": "Kestrel"}, plan, report, PROFILE, tmp_path, [])
     assert next(c for c in checks if c["name"] == "Phone matches your profile")["ok"]
+
+
+def test_consent_saved_under_an_old_percent_22_label_still_counts(tmp_path):
+    # Answers saved before the %22 fix kept a quote as %22 in the label; they must still clear the consent check.
+    label = 'By selecting "I agree", I understand.'
+    report = {"held": [{"label": label, "required": True}]}
+    plan = {"approved": {label.replace('"', "%22"): "I agree"}, "files": {}}
+    checks = preflight.check({"company": "Acme"}, plan, report, {}, tmp_path)
+    assert next(c for c in checks if c["name"] == "Required consents chosen by you")["ok"]

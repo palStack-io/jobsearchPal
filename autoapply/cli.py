@@ -18,6 +18,8 @@
   autoapply export-applications       every application as CSV (also the dashboard's Download CSV)
   autoapply log-run KIND ok|fail [MSG]  record a run (daily.sh uses it) for the dashboard
   autoapply add URL [--company C --title T]   track a role found elsewhere
+  autoapply careers URL [--title T]   job links on a careers page, read in a real browser (finds lists a script
+                                      draws, e.g. an embedded Paycom or iCIMS board, that WebFetch sees as empty)
   autoapply list [--status S]         show tracked roles
   autoapply list --prep               interviews that need a prep pack, with where to write it
   autoapply list --nudges             follow-up reminders that need a draft reply, with where to write it
@@ -120,6 +122,7 @@ def main(argv=None):
     sub.add_parser("export-applications")
     a = sub.add_parser("log-run"); a.add_argument("kind"); a.add_argument("result", choices=["ok", "fail"]); a.add_argument("msg", nargs="?", default="")
     a = sub.add_parser("add"); a.add_argument("url"); a.add_argument("--company", default=""); a.add_argument("--title", default="")
+    a = sub.add_parser("careers"); a.add_argument("url"); a.add_argument("--title", default="")
     a = sub.add_parser("list"); a.add_argument("--status"); a.add_argument("--prep", action="store_true"); a.add_argument("--nudges", action="store_true"); a.add_argument("--limits", action="store_true")
     a = sub.add_parser("show"); a.add_argument("job_id"); a.add_argument("--full", action="store_true", help="every field, including the saved plan and fill report")
     a = sub.add_parser("check"); a.add_argument("job_id")
@@ -434,6 +437,9 @@ def main(argv=None):
         db.upsert_job({"id": jid, "ats": detect(args.url).name, "company": args.company, "title": args.title,
                        "location": "", "url": args.url, "apply_url": args.url, "description": ""})
         print(jid)
+    elif args.cmd == "careers":
+        from . import careers
+        _out(careers.jobs_on_page(args.url, args.title))
     elif args.cmd == "list" and args.limits:
         from .prefs import Prefs
         _out(Prefs(s.data_dir, s.raw).limits())

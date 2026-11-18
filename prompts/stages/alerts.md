@@ -5,6 +5,9 @@ dashboard. Follow AGENTS.md. Be brief and economical: a few minutes.
 2. For each, find the same posting on the company's own careers page (its ATS: Greenhouse, Lever, Ashby,
    Workday...). The email link usually goes to LinkedIn or Indeed; don't log in there. If the role isn't on the
    company's site any more, skip it. Check whether a page is live with WebFetch, not `curl` (refused here).
+   If WebFetch shows the careers page with no jobs listed (many load the list with a script, often an embedded
+   Paycom, iCIMS or UKG board), run `autoapply careers <careers page url> --title "<title>"` before calling it
+   gone: it opens the page in a real browser and lists the job links, best title match first.
    A role that was gone at the last run is still gone: one look is enough.
 3. Track each live one: `autoapply add <ats url> --company <name> --title <title>`.
 4. Print one line: "Tracked N of M alert roles" (and the companies), or "No alert roles still open".

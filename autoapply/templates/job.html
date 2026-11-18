@@ -8,6 +8,7 @@
 .finish .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 4px;padding:10px 12px;background:var(--surface);border-radius:12px;border:1px solid var(--line-2)}
 .finish .cmd code{font-size: 16px;background:none;padding:0;user-select:all;overflow-wrap:anywhere;flex:1 1 220px;min-width:0}
 .finish small{color:var(--ink-2)}
+.finish .finish-opt>summary{cursor:pointer}.finish .finish-opt[open]>summary{margin-bottom:12px}
 .finish .here-start{display:grid;gap:6px;justify-items:start;margin:4px 0 14px} .finish .sub3{margin:0 0 6px;font-weight:600}</style>
 <a class="crumb" href="/">← Dashboard</a>
 <header class="top"><div><h1>{{ job.company|title if job.company.islower() else job.company }} · {{ job.title }}</h1>
@@ -16,6 +17,8 @@
 {% if report.submitted %}<p class="notice" style="background:var(--good-soft)">Sent {{ job.submitted_at }}. That's one more door you knocked on. Confirmation: “{{ report.confirmation }}”</p>{% endif %}
 
 {% set kitmode = job.status in ('new', 'prepped') %}
+{# Finishing on your Mac (or in the server's browser) is offered on every filled form, not only after a captcha. #}
+{% set offer_finish = handoff or job.status == 'filled' %}
 {% set errors = report.errors|rejectattr('label', 'equalto', '(submit)')|list if job.status == 'submitted' else report.errors %}
 {% if lead and lead.note %}<p class="tried-note"><b>Last run {{ lead.tried_at[5:10]|replace('-', '/') }} {{ lead.tried_at[11:16] }}:</b> {{ lead.note }} <a href="/runs">Run log</a></p>{% endif %}
 {% if kitmode and running %}<p class="notice" role="status"><span class="grow">A run is going{% if running.label %}: {{ running.label }}{% endif %}. What it makes shows up on this page.</span><a class="btn sm" href="/runs">See what it's doing</a></p>
@@ -62,8 +65,11 @@
  <button class="btn ghost sm" name="action" value="unsend">Not sent? Undo</button></p>{% endif %}
 {% if job.error %}<p class="notice">{{ job.error }}</p>{% endif %}
 
-{% if handoff %}<section class="card finish" style="margin-bottom:16px" id="finish"><h2>Finish this one yourself</h2>
+{% if offer_finish %}<section class="card finish" style="margin-bottom:16px" id="finish">
+ {% if handoff %}<h2>Finish this one yourself</h2>
  <p class="why">{{ handoff }}</p>
+ {% else %}<details class="finish-opt"><summary><b>Finish it yourself instead</b> <span class="muted">· the form opens filled in, and you press Submit there</span></summary>
+ {% endif %}
  {% set here_ok = finish_box and finish_box.ok %}
  {% if here_ok %}
  <div class="here-start">
@@ -80,7 +86,7 @@
    <div class="cmd"><code>autoapply-finish {{ job.id }}</code>
     <button type="button" class="btn {{ '' if here_ok else 'primary' }}" onclick="copyText(this,this.dataset.v)" data-v="autoapply-finish {{ job.id }}">Copy command</button></div>
    <small>Chrome opens on the form with everything filled in and the files attached. Safari can't be filled this way.</small></li>
-  <li>Answer the captcha or code there and press <b>Submit</b>.</li>
+  <li>Answer anything still open there (a captcha, a code or a consent) and press <b>Submit</b>.</li>
   <li>Come back, reload this page and press <b>I sent it with the command</b> in the bar above.</li>
  </ol>
  <details><summary>No Mac handy? Fill it in by hand</summary>
@@ -88,6 +94,7 @@
  {% if files %}<p>{% for slot, name in files %}<a class="btn" href="/file/{{ slot }}/{{ job.id|urlencode }}" download="{{ name }}">{{ name }}</a> {% endfor %}</p>{% endif %}
  <table>{% for f in report.filled if f.source != 'file' %}<tr><td class="ink2" style="width:40%">{{ f.label }}</td><td>{{ f.value }}</td><td><button type="button" class="btn" onclick="copyText(this,this.dataset.v)" data-v="{{ f.value }}">Copy</button></td></tr>{% endfor %}</table>
 </details>
+{% if not handoff %}</details>{% endif %}
 </section>{% endif %}
 
 {% if job.description %}<section class="card jd-card"><details><summary><b>The job description</b> <span class="jd-peek">{{ job.description|striptags|truncate(140, true, '…') }}</span>
@@ -227,5 +234,5 @@ document.querySelectorAll(".ptabs button").forEach(b=>b.onclick=()=>{const box=b
   p.querySelector("button").onclick=()=>location.reload();document.querySelector("main,body").prepend(p)}).catch(()=>{})};
  setInterval(check,5000);document.addEventListener("visibilitychange",check)})();
 </script>
-{% if handoff and finish_box and finish_box.ok %}<form id="finish-here-form" method="post" action="/finish-here/{{ job.id|urlencode }}" hidden></form>{% endif %}
+{% if offer_finish and finish_box and finish_box.ok %}<form id="finish-here-form" method="post" action="/finish-here/{{ job.id|urlencode }}" hidden></form>{% endif %}
 {% endblock %}

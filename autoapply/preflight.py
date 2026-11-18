@@ -128,8 +128,10 @@ def check(job: dict, plan: dict, report: dict, profile: dict, root: Path, other_
 
     req_open = [u["label"] for u in report.get("unanswered", []) if u.get("required")]
     add("Form", "Every required question answered", not req_open, "; ".join(req_open[:4]))
+    # Answers saved before the %22 fix kept a quote as %22 in their label: still count them.
+    approved = {k.replace("%22", '"'): v for k, v in (plan.get("approved") or {}).items()}
     held_open = [h["label"] for h in report.get("held", []) if h.get("required")
-                 and not ((plan.get("approved") or {}).get(h["label"]) or h.get("value"))]
+                 and not (approved.get(h["label"]) or h.get("value"))]
     add("Form", "Required consents chosen by you", not held_open, "; ".join(held_open[:4]))
     errs = [f"{e.get('label')}: {e.get('error')}" for e in report.get("errors", [])]
     add("Form", "No fill errors", not errs, "; ".join(errs[:3]))

@@ -398,3 +398,11 @@ def test_held_answer_keeps_quotes_in_its_label(tmp_path, base_url, pdfs):
                                     "ans::Say %22hi%22": "hi"})
     saved = json.loads(db.get("manual:gh")["plan_json"])
     assert saved["approved"] == {label: "I agree"} and saved["answers"]['Say "hi"'] == "hi"
+
+
+def test_finish_command_is_offered_on_every_filled_form(tmp_path, base_url, pdfs):
+    # Not only after a captcha: you can always open the filled form yourself and press Submit there.
+    _, c, _ = setup(tmp_path, base_url, pdfs)
+    html = c.get("/job/manual:gh").text
+    assert "Finish it yourself instead" in html and "autoapply-finish manual:gh" in html
+

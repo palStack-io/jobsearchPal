@@ -1,6 +1,7 @@
 """Finish here: one session at a time on the server's browser box. A local headless Chromium with a DevTools port
 stands in for the box (the real box is tested in test_finish_box.py)."""
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -21,15 +22,19 @@ def _start_chromium():
     d = tempfile.mkdtemp()
     # --use-mock-keychain / --password-store=basic: what Playwright adds itself; without them macOS asks for the
     # keychain ("Chromium Safe Storage") every time a fresh Chromium starts.
+    # --no-sandbox on Linux: Playwright adds it there too; CI runners (Ubuntu 24.04) block the sandbox.
+    extra = ["--no-sandbox"] if sys.platform.startswith("linux") else []
+    log = Path(d) / "chromium.log"
     proc = subprocess.Popen([exe, "--headless=new", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1",
                              f"--user-data-dir={d}", "--no-first-run", "--use-mock-keychain", "--password-store=basic",
-                             "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                             *extra, "about:blank"], stdout=subprocess.DEVNULL, stderr=log.open("wb"))
     f = Path(d) / "DevToolsActivePort"
     for _ in range(100):
         if f.exists() and f.read_text().strip():
             return proc, int(f.read_text().split()[0])
         time.sleep(0.1)
-    raise RuntimeError("chromium did not start")
+    proc.kill()
+    raise RuntimeError("chromium did not start:\n" + log.read_text(errors="replace")[-2000:])
 
 
 @pytest.fixture

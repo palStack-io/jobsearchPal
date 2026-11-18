@@ -46,6 +46,8 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 body{font:16px/1.55 "Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01"}
+/* 2026-11-18 (polish audit J-01/J-02): bold is 700, never "bolder" (inside 600 text it computed to 900); small text is a size on the scale, not 13.33px. */
+b,strong{font-weight:700}small{font-size:13px}
 button,input,select,textarea{font-family:inherit}
 a{color:var(--accent-ink);text-decoration:none} a:hover{text-decoration:underline;text-underline-offset:2px}
 :focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r-ctl)}
@@ -62,7 +64,7 @@ code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surf
 .brand:hover{text-decoration:none}.brand svg{flex:none}
 .nav{display:grid;gap:2px}
 .nav a{display:flex;align-items:center;gap:11px;height:40px;padding:0 12px;border-radius:var(--r-ctl);color:var(--rail-ink-2);font-weight: 500;font-size: 16px;
- transition:background .15s,color .15s}
+ transition:background .15s var(--ease-out),color .15s var(--ease-out)}
 .nav a:hover{background:var(--rail-hover);text-decoration:none;color:var(--rail-ink)}
 .nav a[aria-current="page"]{background:var(--rail-active);color:var(--accent-ink);font-weight:700}
 .nav a[aria-current="page"] svg{color:var(--accent)}
@@ -71,7 +73,7 @@ code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surf
 .side .btn{background:var(--surface);border-color:var(--line);color:var(--rail-ink)}.side .btn:hover{background:var(--rail-hover)}
 .side .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .seg{display:flex;background:var(--rail-hover);border-radius:var(--r-ctl);padding:3px}
-.seg button{flex:1;font:inherit;font-size:14px;font-weight: 600;border:0;background:transparent;color:var(--rail-ink-2);padding:5px 0;border-radius:9px;cursor:pointer;transition:background .15s,color .15s}
+.seg button{flex:1;font:inherit;font-size:14px;font-weight: 600;border:0;background:transparent;color:var(--rail-ink-2);padding:5px 0;border-radius:9px;cursor:pointer;transition:background .15s var(--ease-out),color .15s var(--ease-out)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--rail-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .main{padding:32px 40px 80px;max-width:1220px;width:100%}
 .tabbar{display:none}
@@ -85,7 +87,7 @@ code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surf
  /* Bottom tab bar on phones: the five places, always one tap away. */
  .tabbar{display:grid;grid-template-columns:repeat(7,1fr);position:fixed;left:0;right:0;bottom:0;z-index:7;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
  .tabbar a{display:grid;justify-items:center;gap:2px;font-size:12px;font-weight:600;color:var(--ink-3);padding:4px 0;position:relative}
- .tabbar a:hover{text-decoration:none}.tabbar svg{width:21px;height:21px}
+ .tabbar a:hover{text-decoration:none}.tabbar .lbl{max-width:100%;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tabbar svg{width:21px;height:21px}
  .tabbar a[aria-current="page"]{color:var(--accent)}
  .tabbar .badge{position:absolute;top:0;left:calc(50% + 6px);margin:0;font-size: 12px;padding:0 5px}}
 
@@ -188,14 +190,14 @@ tbody tr:hover td{background:color-mix(in srgb,var(--surface-2) 60%,transparent)
 /* buttons & forms: one height, one primary */
 .ic{display:inline-block;vertical-align:-2px;flex:none}
 /* A wide chart keeps readable labels on a phone and scrolls in its card (2026-11-16: the axis text shrank to ~4px). */
-.chart-scroll{overflow-x:auto}@media (max-width:640px){.chart-scroll{display:flex;flex-direction:row-reverse}.chart-scroll .chart{min-width:560px;flex:none}.chart-scroll{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size: 16px;font-weight:700;height:40px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap;box-shadow:0 1px 2px rgba(18,18,10,.05);transition:background .15s,border-color .15s,box-shadow .15s,transform .12s}
+.chart-scroll{overflow-x:auto}@media (max-width:640px){.chart-scroll{display:flex;flex-direction:row-reverse}.chart-scroll .chart{min-width:560px;flex:none}.chart-scroll{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size: 16px;font-weight:700;height:40px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap;box-shadow:0 1px 2px rgba(18,18,10,.05);transition:background .15s var(--ease-out),border-color .15s var(--ease-out),box-shadow .15s var(--ease-out),transform .12s var(--ease-out)}
 .btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .btn:hover{text-decoration:none;background:var(--surface-2)} .btn.sm{height:34px;padding:0 13px;font-size: 14px;border-radius:10px}
 .btn.primary,.btn.go{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(15,110,102,.2),0 6px 16px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
 .btn.primary:hover,.btn.go:hover{background:var(--accent-ink);border-color:var(--accent-ink)}
 .btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--ink-2)} .btn.ghost:hover{background:var(--surface-2);color:var(--ink)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-input[type=text],input[type=search],input[type=password],input[type=number],input[type=email],input[type=url],input[type=date],select,textarea{width:100%;font:inherit;font-size: 16px;min-height:40px;padding:8px 12px;border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);transition:border-color .12s,box-shadow .12s}
+input[type=text],input[type=search],input[type=password],input[type=number],input[type=email],input[type=url],input[type=date],select,textarea{width:100%;font:inherit;font-size: 16px;min-height:40px;padding:8px 12px;border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);transition:border-color .12s var(--ease-out),box-shadow .12s var(--ease-out)}
 input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--ink-3) 45%,var(--line))}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
 input[type=checkbox],input[type=radio]{accent-color:var(--accent);width:16px;height:16px}
@@ -230,7 +232,7 @@ details.adv>.srow:first-of-type{border-top:0}
 .state::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-3)}.state.ok::before{background:var(--good-dot)}.state.no::before{background:var(--warn-dot)}
 .toggle{display:inline-flex;gap:10px;align-items:center;cursor:pointer;font-weight:600}
 .toggle input{appearance:none;-webkit-appearance:none;width:38px!important;height:22px!important;border-radius:999px;background:var(--surface-3);position:relative;cursor:pointer;transition:background .15s var(--ease-out);flex:none;margin:0}
-.toggle input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.toggle input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s var(--ease-out)}
 .toggle input:checked{background:var(--accent)}.toggle input:checked::after{transform:translateX(16px)}
 [data-when][hidden]{display:none!important}
 .savebar{position:sticky;bottom:16px;z-index:5;display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:16px;padding:10px 12px 10px 18px;
@@ -280,12 +282,12 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s var(--e
 </aside>
 <main class="main">{% block body %}{% endblock %}</main>
 <nav class="tabbar" aria-label="Main (phone)">
-  <a href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="lbl">Dashboard</span></a>
-  <a href="/plan" {% if nav == 'plan' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17h6"/></svg><span class="lbl">Your week</span></a>
+  <a href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="lbl">Home</span></a>
+  <a href="/plan" {% if nav == 'plan' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17h6"/></svg><span class="lbl">Week</span></a>
   <a href="/leads" {% if nav == 'leads' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="lbl">Leads</span></a>
   <a href="/stats" {% if nav == 'stats' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Stats</span></a>
   <a href="/emails" {% if nav == 'emails' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="lbl">Emails</span>{% if pending_count is defined and pending_count %}<span class="badge" aria-label="{{ pending_count }} waiting">{{ pending_count }}</span>{% endif %}</a>
-  <a href="/dua" {% if nav == 'work' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 11h8M8 15h5"/></svg><span class="lbl">{{ ws_label|default('Work search') }}</span></a>
+  <a href="/dua" {% if nav == 'work' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 11h8M8 15h5"/></svg><span class="lbl">{{ 'Log' if (ws_label|default('Work search')) == 'Work search' else ws_label }}</span></a>
   <a href="/setup" {% if nav == 'settings' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="lbl">Settings</span>{% if setup_left is defined and setup_left %}<span class="badge" aria-label="Setup: {{ setup_left }} steps left">{{ setup_left }}</span>{% endif %}</a>
  </nav>
 </div>
@@ -293,17 +295,33 @@ html.motion-in .meter>span{transform-origin:0 50%;animation:bar-grow .9s var(--e
 <template id="confirm-applied">Marks this role as applied today. It counts toward your week, and the daily run won't offer it again.
 
 Applied on a different day? Use Applied elsewhere in the menu to pick the date.</template>
-<dialog id="logapp" class="ask" aria-labelledby="logapp-t">
- <h2 id="logapp-t">I applied somewhere else</h2>
- <div class="ask-b"><p>On LinkedIn, a company site or by email? Add it so it counts toward your week, and the daily run never offers you that role again.</p></div>
+<dialog id="logapp" class="ask la" aria-labelledby="logapp-t">
+ <div class="la-head"><div class="la-ht"><h2 id="logapp-t">Log an application</h2>
+  <p>For one you sent yourself. It goes on your list and counts toward this week.</p></div>
+  <button type="button" class="la-x" data-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
  <form method="post" action="/applications/log" class="logapp-f">
   <input type="hidden" name="back" value="">
-  <label class="fld"><span>Company</span><input type="text" name="company" required maxlength="120" autocomplete="off"></label>
-  <label class="fld"><span>Role</span><input type="text" name="title" required maxlength="200" autocomplete="off"></label>
-  <label class="fld"><span>Date applied</span><input type="date" name="applied_on"></label>
-  <label class="fld"><span>Where you applied <i class="muted">(optional)</i></span><input type="text" name="via" maxlength="60" placeholder="e.g. LinkedIn, Workday, email"></label>
-  <label class="fld wide"><span>Link to the posting <i class="muted">(optional)</i></span><input type="url" name="url" maxlength="500" placeholder="https://"></label>
-  <div class="ask-acts wide"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add to my applications</button></div>
+  <input type="hidden" name="applied_on" value="">
+  <div class="la-rows">
+   <label class="la-row"><span class="la-ic la-ic-a" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M8 7h4M8 11h4M8 15h4M2 21h20"/></svg></span>
+    <span class="la-sr">Company</span><input type="text" name="company" required maxlength="120" autocomplete="off" placeholder="Company"></label>
+   <label class="la-row"><span class="la-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></span>
+    <span class="la-sr">Role</span><input type="text" name="title" required maxlength="200" autocomplete="off" placeholder="Role"></label>
+  </div>
+  <div class="la-when"><span id="la-when-l" class="la-lbl">When did you apply?</span>
+   <div class="la-seg" role="radiogroup" aria-labelledby="la-when-l">
+    <button type="button" role="radio" aria-checked="true" data-when="today">Today</button>
+    <button type="button" role="radio" aria-checked="false" data-when="yesterday">Yesterday</button>
+    <button type="button" role="radio" aria-checked="false" data-when="pick">Pick a date</button></div>
+   <input type="date" class="la-date" aria-label="Date applied" hidden></div>
+  <div class="la-chips">
+   <button type="button" class="la-chip" data-reveal="via" aria-expanded="false">+ Where you applied</button>
+   <button type="button" class="la-chip" data-reveal="url" aria-expanded="false">+ Posting link</button></div>
+  <label class="fld la-opt" data-opt="via" hidden><span>Where you applied</span><input type="text" name="via" maxlength="60" placeholder="LinkedIn, Workday, email"></label>
+  <label class="fld la-opt" data-opt="url" hidden><span>Link to the posting</span><input type="url" name="url" maxlength="500" placeholder="https://"></label>
+  {% if log_week %}<div class="la-week" data-n="{{ log_week.n }}" data-min="{{ log_week.min }}" data-start="{{ log_week.start }}">
+   <span class="la-week-t"></span><span class="la-track" aria-hidden="true"><span></span></span></div>{% endif %}
+  <div class="ask-acts la-acts"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add to my applications</button></div>
  </form>
 </dialog>
 <dialog id="ask" class="ask" aria-labelledby="ask-t"><form method="dialog">
@@ -313,8 +331,44 @@ Applied on a different day? Use Applied elsewhere in the menu to pick the date.<
 <style>.ask{border:1px solid var(--line-2);border-radius:var(--radius);background:var(--surface);color:var(--ink);padding:20px 22px;
  width:min(520px,calc(100vw - 32px));box-shadow:var(--shadow-lg,0 12px 32px rgba(0,0,0,.2))}.ask::backdrop{background:rgba(20,16,8,.45)}
 .ask.err h2{color:var(--bad)}.ask .code{color:var(--ink-3);font-size:13px;margin:0}
-.logapp-f{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.logapp-f .wide{grid-column:1/-1}
-.logapp-f .fld{display:grid;gap:4px;font-size:14px;color:var(--ink-2)}@media (max-width:520px){.logapp-f{grid-template-columns:1fr}}
+/* Log an application (form kit, 2026-11-18): one group for who and what, when as three choices, the rest on request. */
+.la{width:min(540px,calc(100vw - 32px));padding:0;overflow:hidden}
+.la-head{display:flex;align-items:flex-start;gap:12px;padding:22px 24px 6px}.la-ht{flex:1}.la-ht h2{margin:0;font-size:20px;font-weight:600}
+.la-ht p{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--ink-2)}
+.la-x{width:36px;height:36px;border-radius:18px;border:none;background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.logapp-f{display:flex;flex-direction:column;gap:18px;padding:16px 24px 0}
+.la-rows{border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.la-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;margin:0}.la-row+.la-row{border-top:1px solid var(--line)}
+.la-row:focus-within{background:var(--surface-2)}.la-row input:focus{box-shadow:none;border:none}.la-row:focus-within{box-shadow:inset 3px 0 0 var(--accent)}
+.la-row input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;font-weight:600;color:var(--ink);padding:0;height:52px}
+.la-ic{width:32px;height:32px;border-radius:9px;background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.la-ic-a{background:var(--accent-soft);color:var(--accent-ink)}
+.la-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.la-when{display:flex;flex-direction:column;gap:8px}.la-lbl{font-size:13px;font-weight:500;color:var(--ink-2)}
+.la-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--surface-2);padding:3px;border-radius:12px}
+.la-seg button{height:36px;border:none;border-radius:9px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--ink-2);cursor:pointer;transition:background-color 150ms var(--ease-out),color 150ms var(--ease-out)}
+.la-seg button[aria-checked=true]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.10),0 0 0 1px rgba(16,24,40,.04)}
+.la-date{height:44px;border:1px solid var(--line-2);border-radius:12px;padding:0 12px;font:inherit;background:var(--surface);color:var(--ink)}
+.la-chips{display:flex;gap:8px;flex-wrap:wrap}.la-chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.la-chip[aria-expanded=true]{display:none}.la-chips:not(:has(.la-chip[aria-expanded=false])){display:none}
+.la-seg button:hover:not([aria-checked=true]){background:transparent;color:var(--ink)}.la-seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.logapp-f .fld{display:grid;gap:4px;font-size:13px;font-weight:500;color:var(--ink-2)}.logapp-f .fld input{height:44px}
+.la-week{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--ink-2)}
+.la-week-t{flex:1}.la-week-t strong{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.la-track{width:120px;height:6px;border-radius:6px;background:var(--track,var(--line));overflow:hidden;flex:none}.la-track span{display:block;height:6px;border-radius:6px;background:var(--accent);transition:width 200ms var(--ease-out)}
+.la-acts{margin:18px -24px 0;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)}
+@media (max-width:520px){.la-head{padding:18px 16px 4px}.logapp-f{padding:12px 16px 0}.la-acts{margin:14px -16px 0;padding:12px 16px}.la-track{width:80px}}
+.la-opt[hidden],.la-date[hidden],.la-week[hidden]{display:none!important}
+.la-kit{display:flex;flex-direction:column;gap:16px}.la-fs{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.la-pills{display:flex;flex-wrap:wrap;gap:8px}.la-pills label{position:relative}.la-pills input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.la-pills span{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line-2);background:var(--surface);font-size:14px;font-weight:500;color:var(--ink-2);transition:background-color 150ms var(--ease-out),border-color 150ms var(--ease-out),color 150ms var(--ease-out)}
+.la-pills input:checked+span{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.la-pills input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.la-kit .acts{display:flex;justify-content:flex-end}
+.la-kv .la-k{width:112px;flex:none;font-size:13px;font-weight:500;color:var(--ink-2)}.la-kv input{font-weight:500}
+.la-kit .la-foot{display:flex;justify-content:flex-end;gap:8px}.lead-form.la-kit{max-width:760px}
+@media (max-width:520px){.la-kv{flex-direction:column;align-items:stretch;gap:0;padding-top:10px}.la-kv .la-k{width:auto}.la-kv input{height:40px}}
+@media (prefers-reduced-motion:reduce){.la-seg button,.la-track span,.la-pills span{transition:none}}
 .ask h2{margin:0 0 10px;font-size:18px;line-height:1.3}.ask-b p{margin:0 0 10px;color:var(--ink-2);font-size: 16px}
 .ask-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .field-err,.fld .field-err{display:block;color:var(--bad);font-size: 14px;margin-top:4px}[aria-invalid=true]{border-color:var(--bad)!important}</style>
@@ -384,14 +438,34 @@ if(ask)document.addEventListener("submit",async e=>{const f=e.target;
  const msg=f.dataset.confirm||(f.dataset.confirmRef&&(document.getElementById(f.dataset.confirmRef)||{}).innerHTML||"").trim();
  if(msg&&!await ask(f.dataset.confirmTitle||"Are you sure?",new DOMParser().parseFromString(msg,"text/html").documentElement.textContent,{ok:f.dataset.confirmOk||"OK"}))return;
  sendInPage(f,by)});
-// "Applied elsewhere": any .applied-open button opens the popup form (data-company/-title/-url prefill it).
+// Form kit on a page (not the Log dialog): Today / Yesterday / Pick a date fill the field named by data-field; + chips reveal fields.
+document.querySelectorAll("form.la-kit").forEach(f=>{const iso=x=>new Date(x-new Date(x).getTimezoneOffset()*6e4).toISOString().slice(0,10);
+ f.querySelectorAll(".la-seg[data-field]").forEach(g=>{const fld=f.elements[g.dataset.field],pick=g.parentNode.querySelector(".la-date"),bs=[...g.querySelectorAll("[data-when]")];
+  const set=w=>{bs.forEach(b=>b.setAttribute("aria-checked",String(b.dataset.when===w)));pick.hidden=w!=="pick";const now=Date.now();
+   fld.value=w==="today"?iso(now):w==="yesterday"?iso(now-864e5):(pick.value||iso(now));if(w==="pick"){pick.value=fld.value;pick.focus()}};
+  bs.forEach(b=>b.addEventListener("click",()=>set(b.dataset.when)));pick.addEventListener("change",()=>{fld.value=pick.value})});
+ f.querySelectorAll("[data-reveal]").forEach(c=>c.addEventListener("click",()=>{const o=f.querySelector('[data-opt="'+c.dataset.reveal+'"]');o.hidden=false;c.setAttribute("aria-expanded","true");o.querySelector("input,textarea,select").focus()}))});
+// "Applied elsewhere": any .applied-open button opens the Log an application form (data-company/-title/-url prefill it).
 (()=>{const d=document.getElementById("logapp");if(!d||!d.showModal)return;const f=d.querySelector("form");
- d.querySelector("[data-close]").onclick=()=>d.close();
+ const iso=x=>new Date(x-new Date(x).getTimezoneOffset()*6e4).toISOString().slice(0,10);
+ const seg=[...d.querySelectorAll(".la-seg [data-when]")],pick=d.querySelector(".la-date"),wk=d.querySelector(".la-week");
+ const week=()=>{if(!wk)return;const n=+wk.dataset.n,min=+wk.dataset.min,inWeek=f.applied_on.value>=wk.dataset.start;
+  wk.hidden=!inWeek||!min;const k=n+1;wk.querySelector(".la-week-t").innerHTML="This makes <strong>"+k+" of "+min+"</strong> applications this week";
+  wk.querySelector(".la-track span").style.width=Math.min(100,Math.round(k/min*100))+"%"};
+ const setWhen=w=>{seg.forEach(b=>b.setAttribute("aria-checked",String(b.dataset.when===w)));const now=Date.now();
+  pick.hidden=w!=="pick";f.applied_on.value=w==="today"?iso(now):w==="yesterday"?iso(now-864e5):(pick.value||iso(now));
+  if(w==="pick"){pick.value=f.applied_on.value;pick.focus()}week()};
+ seg.forEach(b=>b.addEventListener("click",()=>setWhen(b.dataset.when)));
+ pick.addEventListener("change",()=>{f.applied_on.value=pick.value;week()});
+ d.querySelectorAll("[data-reveal]").forEach(c=>c.addEventListener("click",()=>{const o=d.querySelector('[data-opt="'+c.dataset.reveal+'"]');
+  o.hidden=false;c.setAttribute("aria-expanded","true");o.querySelector("input").focus()}));
+ d.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>d.close());
  document.addEventListener("click",e=>{const b=e.target.closest(".applied-open");if(!b)return;e.preventDefault();
-  f.reset();const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
-  f.applied_on.value=t;f.applied_on.max=t;f.back.value=location.pathname+location.search;
+  f.reset();const t=iso(Date.now());pick.max=t;f.back.value=location.pathname+location.search;
+  d.querySelectorAll(".la-opt").forEach(o=>o.hidden=true);d.querySelectorAll("[data-reveal]").forEach(c=>c.setAttribute("aria-expanded","false"));
   for(const k of ["company","title","url"])if(b.dataset[k])f[k].value=b.dataset[k];
-  d.showModal();(f.company.value?f.via:f.company).focus()})})();
+  if(f.url.value){d.querySelector('[data-opt="url"]').hidden=false;d.querySelector('[data-reveal="url"]').setAttribute("aria-expanded","true")}
+  setWhen("today");d.showModal();(f.company.value?f.title:f.company).focus()})})();
 // Put-away panels: any [data-open="<dialog id>"] opens that dialog; [data-close] or a click on the backdrop closes it.
 document.addEventListener("click",e=>{const o=e.target.closest("[data-open]");
  if(o){const d=document.getElementById(o.dataset.open);if(d&&d.showModal){e.preventDefault();d.showModal()}return}

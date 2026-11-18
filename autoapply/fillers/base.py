@@ -78,10 +78,16 @@ class Report:
     submitted: bool = False
     submit_clicked: bool = False   # True once Submit was pressed, even if no confirmation was seen
     confirmation: str = ""
+    closed: bool = False           # the company took the posting down: nothing was filled or sent
 
     @property
     def blocking(self) -> list:
         return [u for u in self.unanswered if u["required"]] + [h for h in self.held if h["required"] and not h.get("value")]
+
+    @property
+    def closed_error(self) -> str | None:
+        """What to store as the job's error after a fill: the closed-posting message, or None (all clear)."""
+        return next((e["error"] for e in self.errors if e["label"] == "(posting)"), None) if self.closed else None
 
     def as_dict(self) -> dict:
         return {k: getattr(self, k) for k in self.__dataclass_fields__} | {"blocking": self.blocking}
@@ -269,15 +275,56 @@ def _set_one(page: Page, f: dict, value) -> str | None:
 
 
 def _open(p, url: str, headless: bool):
+    """-> (browser, page, HTTP status of the form page, 0 if unknown)."""
     # AUTOAPPLY_CHROMIUM points at a system Chromium when Playwright's own download isn't used.
     exe = os.environ.get("AUTOAPPLY_CHROMIUM") or None
     browser = p.chromium.launch(headless=headless, executable_path=exe)
     ctx = browser.new_context(viewport={"width": 1280, "height": 1600})
     page = ctx.new_page()
     page.set_default_timeout(8000)
-    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+    resp = page.goto(url, wait_until="domcontentloaded", timeout=60000)
     page.wait_for_timeout(2500)  # let React forms mount
-    return browser, page
+    return browser, page, (resp.status if resp else 0)
+
+
+CLOSED_MSG = "This posting is closed. The company took it down; nothing was sent."
+# What the boards themselves show for a removed role. Phrased about the page you asked for ("the job you're looking
+# for ...", a sentence that starts "This job ..."), so ordinary ad text like "we are no longer accepting applications
+# from agencies" never counts. Read only on the known boards, and only when no Submit button shows up.
+CLOSED_TEXT = re.compile(
+    r"\bjob not found\b|job you requested was not found"                                             # Ashby
+    r"|(job|position|posting|page) you(?: are|'re) looking for (?:is no longer (?:open|available)"     # Greenhouse, Lever
+    r"|might have closed|doesn'?t exist|does not exist|was not found|could not be found)"
+    r"|(?:^|[.!?]\s+)this (?:job|posting|position) is no longer (?:open|available|accepting applications)\s*[.!]?\s*$"
+    r"|(?:^|[.!?]\s+)this (?:job|posting|position) has (?:been )?(?:closed|expired|removed)\s*[.!]?\s*$",
+    re.I | re.M)
+BOARDS = {"greenhouse", "lever", "ashby"}
+
+
+def closed_reason(page: Page, a: ATS, status: int, wait_ms: int = 5000) -> str:
+    """CLOSED_MSG when the posting is gone (a 404/410, or a known board's own "not found" page), else "".
+    Waits up to wait_ms for a Submit button first: React boards can mount it after the page loads."""
+    if status in (404, 410):
+        return CLOSED_MSG
+    if a.name not in BOARDS:
+        return ""  # a generic careers page's wording is anyone's
+    try:
+        try:
+            page.locator(f"{a.submit} >> visible=true").first.wait_for(state="visible", timeout=max(wait_ms, 1))
+            return ""
+        except Exception:
+            pass  # no button: read the page
+        return CLOSED_MSG if CLOSED_TEXT.search(page.inner_text("body")) else ""
+    except Exception:
+        return ""
+
+
+def _closed(page: Page, a: ATS, status: int, report: Report) -> bool:
+    reason = closed_reason(page, a, status)
+    if reason:
+        report.closed = True
+        report.errors.append({"label": "(posting)", "error": reason})
+    return bool(reason)
 
 
 def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
@@ -293,6 +340,10 @@ def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
         info = {"label": f["label"], "kind": f["kind"], "required": f.get("required", False),
                 "options": [o if isinstance(o, str) else o["text"] for o in f.get("options", [])][:30]}
         if source == "held":
+            if f["kind"] == "combobox" and not info["options"]:
+                # Greenhouse loads a dropdown's choices only when it opens: read them, so the review page offers
+                # "I agree" to pick instead of an empty text box.
+                info["options"] = _combobox_options(page, f)[:30]
             report.held.append(info)
             continue
         if source in ("standing", "approved"):
@@ -328,7 +379,7 @@ def scan(url: str, ats: str | None = None, headless: bool = True) -> list[dict]:
     """Lists the questions on an application form, for whoever writes the plan."""
     a = detect(url, ats)
     with sync_playwright() as p:
-        browser, page = _open(p, a.form_url(url), headless)
+        browser, page, _ = _open(p, a.form_url(url), headless)
         fields = page.evaluate(SCAN_JS)
         for f in fields:
             if f["kind"] == "combobox" and not f.get("options"):
@@ -349,7 +400,12 @@ def fill(plan: dict, profile: dict, shot_dir: Path, headless: bool = True, _subm
     shot_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     with sync_playwright() as p:
-        browser, page = _open(p, url, headless)
+        browser, page, status = _open(p, url, headless)
+        if _closed(page, a, status, report):
+            report.screenshot = str(shot_dir / f"{a.name}-{stamp}-closed.png")
+            page.screenshot(path=report.screenshot, full_page=True)
+            browser.close()
+            return report
         _fill_page(page, plan, profile, report)
         report.screenshot = str(shot_dir / f"{a.name}-{stamp}-filled.png")
         page.screenshot(path=report.screenshot, full_page=True)
@@ -426,12 +482,14 @@ def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None, browser=
         try:
             page = ctx.new_page()
             page.set_default_timeout(8000)
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            resp = page.goto(url, wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(2500)
-            _fill_page(page, plan, profile, report)
+            closed = _closed(page, a, resp.status if resp else 0, report)
+            if not closed:
+                _fill_page(page, plan, profile, report)
             if on_page:
                 on_page(page, report)
-            if wait:
+            if wait and not closed:
                 report.confirmation = watch_for_sent(page, a, on_sent, tick=tick)  # you close the tab when done
                 report.submitted = bool(report.confirmation)
         finally:

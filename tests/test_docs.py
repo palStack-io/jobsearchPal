@@ -264,3 +264,28 @@ def test_type_never_shrinks_below_the_floor(base, tmp_path):
     d.styles["Normal"].font.size = docs.Pt(10)
     docs._tighten(d, 0.5, 0.4, 1.0)
     assert d.styles["Normal"].font.size.pt == docs.MIN_BODY_PT
+
+
+def _blocks(*headings):
+    from autoapply.docs import _Resume
+    r = _Resume.__new__(_Resume)
+    r.blocks = [{"heading": h, "kind": "role", "para": None, "bullets": []} for h in headings]
+    return r
+
+
+def test_a_renamed_heading_at_the_same_place_still_matches():
+    """Harun renamed "Founder & Engineer | palStack.io" in his base resume; older applications' text named the old
+    heading, so remaking them in a new look failed (2026-11-17)."""
+    r = _blocks("Lead Data Scientist | Northeastern University, Research", "Founder & Engineering Lead | palStack.io",
+                "Data Scientist | Northeastern University, SAIL", "DevOps Engineer | Northeastern University, SAIL")
+    assert r.block("Founder & Engineer | palStack.io")["heading"] == "Founder & Engineering Lead | palStack.io"
+
+
+def test_a_different_role_at_the_same_place_is_not_guessed():
+    from autoapply.docs import SpecError
+    r = _blocks("Data Scientist | Northeastern University, SAIL", "DevOps Engineer | Northeastern University, SAIL",
+                "Founder & Engineering Lead | palStack.io")
+    with pytest.raises(SpecError, match="No experience heading"):
+        r.block("Software Engineer | Northeastern University, SAIL")   # two roles there, neither close
+    with pytest.raises(SpecError, match="No experience heading"):
+        r.block("Chief Marketing Officer | palStack.io")              # one role there, but not this one

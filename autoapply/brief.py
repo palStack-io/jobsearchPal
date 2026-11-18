@@ -76,6 +76,8 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     subject = f"Job search brief: {headline(db, news, ready)} · {label} {s['this_week']}/{s['dua_floor']}" + (
         f" · {len(todo)} to do" if todo else "")
     base = review_url.rstrip("/")
+    from . import finish_here
+    here = bool(settings is not None and finish_here.box_from(settings))  # Finish it here is on
 
     t = [g["title"], g["line"], ""]
     if market:
@@ -96,7 +98,8 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     t.append(f"READY FOR YOU ({len(ready)})")
     for j in ready:
         t.append(f"- {_co(j['company'])} · {j['title']}" + (f" · {j['pay']}" if j["pay"] else ""))
-        t.append(f"  review: {base}/job/{j['id']}   finish on Mac: autoapply-finish {j['id']}")
+        t.append(f"  review: {base}/job/{j['id']}   " + (f"finish it here: {base}/job/{j['id']}#finish" if here
+                                                         else f"finish on Mac: autoapply-finish {j['id']}"))
     if not ready:
         t.append("- nothing new today")
     from . import prep
@@ -140,7 +143,9 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     h += [f"<p style='font-size:15px'><b>{escape(label)}:</b> {escape(dua)}</p>",
          f"<h3>Ready for you ({len(ready)})</h3><ul>"]
     h.append(li([f"<b>{escape(_co(j['company']))}</b> · {escape(j['title'])}{' · ' + escape(j['pay']) if j['pay'] else ''}<br>"
-                 f"<a href='{escape(base)}/job/{escape(j['id'])}'>Review</a> · finish on Mac: <code>autoapply-finish {escape(j['id'])}</code>"
+                 f"<a href='{escape(base)}/job/{escape(j['id'])}'>Review</a> · " + (
+                     f"<a href='{escape(base)}/job/{escape(j['id'])}#finish'>Finish it here</a>" if here else
+                     f"finish on Mac: <code>autoapply-finish {escape(j['id'])}</code>")
                  for j in ready]) or "<li>Nothing new today</li>")
     if todo:
         h.append(f"</ul><h3>To do ({len(todo)})</h3><ul>")

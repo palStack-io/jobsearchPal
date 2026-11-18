@@ -27,6 +27,7 @@ services:
     ports:
       # Only this machine by default. Set BIND to your Tailscale IP to reach it from your phone.
       - "${BIND:-127.0.0.1}:${PORT:-8787}:8787"
+    networks: [default, finish-inner]
   scheduler:
     <<: *app
     command: ["python3", "scripts/scheduler.py"]
@@ -34,6 +35,29 @@ services:
       TZ: ${TZ:-America/New_York}
       DAILY_AT: ${DAILY_AT:-06:30}
       DAILY_DAYS: ${DAILY_DAYS:-1-5}
+  # "Finish it here" (optional): a browser on this server you use from the job page. Turn it on with
+  #   docker compose --profile finish up -d
+  # then Setup, "Finish applications in the browser". Neither publishes a port; the browser reaches the web only
+  # through finish-proxy, which refuses home, tailnet and Docker addresses.
+  finish:
+    image: ghcr.io/palstack-io/jobsearchpal-finish:${JSP_VERSION:-latest}
+    build: {context: finish-box/box}
+    profiles: ["finish"]
+    shm_size: 1gb
+    networks: [finish-inner]
+    restart: unless-stopped
+  finish-proxy:
+    image: ghcr.io/palstack-io/jobsearchpal-finish-proxy:${JSP_VERSION:-latest}
+    build: {context: finish-box/proxy}
+    profiles: ["finish"]
+    networks: [default, finish-inner]
+    restart: unless-stopped
+
+networks:
+  # Internal: nothing on it can reach the internet except through finish-proxy. Docker picks its range; on a host
+  # whose address pools are used up, give it one in docker-compose.override.yml (docs/setup.md).
+  finish-inner:
+    internal: true
 
 volumes:
   agent-home:

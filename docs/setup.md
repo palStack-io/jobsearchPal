@@ -45,6 +45,15 @@ the key's usage before and after, and the run is skipped once the month's budget
 7. Open `REVIEW_URL`, create your account (email and password), and sign in on each device. On the **Settings**
    page, pick the daily-run agent and model and the email-sorting order.
 8. Optional, on your laptop: `bash scripts/mac-setup.sh <ssh-host>` installs `autoapply-finish`.
+9. Optional, **Finish it here** (needs Docker on the server): `docker compose -f docker-compose.finish.yml up -d` in
+   `~/auto-apply`, then on the Setup page press **Check and turn it on** under "Finish applications in the browser".
+   It starts two small containers: a browser on a virtual screen, and the proxy that is its only way out (web ports
+   80 and 443, never a home, tailnet or Docker address). Their ports listen on this machine only (9222 and 5900;
+   change them with `FINISH_CDP_PORT` and `FINISH_VNC_PORT` in `.env`). If Docker says the address pools are used
+   up, or the ranges clash with a network you have, set `FINISH_INNER_SUBNET` and `FINISH_EGRESS_SUBNET` in `.env`.
+   Update it with the app: `docker compose -f docker-compose.finish.yml pull && docker compose -f
+   docker-compose.finish.yml up -d`. Turn it off: `docker compose -f docker-compose.finish.yml down` and set
+   `finish: {on_server: false}` in `config.yaml`.
 
 Updating later: `git pull && .venv/bin/pip install -e . && systemctl --user restart autoapply-review`.
 
@@ -64,6 +73,17 @@ installed on the host. Your files stay in the repo folder, which is mounted into
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
 docker compose up -d                        # dashboard + the daily scheduler (pulls the published image)
 # then sign in to Claude or ChatGPT on the dashboard's Setup page (or: docker compose run --rm web claude)
+docker compose --profile finish up -d       # optional: Finish it here; then Setup, "Finish applications in the browser"
+```
+
+If `docker compose up` says "all predefined address pools have been fully subnetted" (a host with many Docker
+networks), give the networks small ranges of their own in a `docker-compose.override.yml` next to
+`docker-compose.yml`, for example:
+
+```
+networks:
+  default: {ipam: {config: [{subnet: "10.251.19.48/28"}]}}
+  finish-inner: {ipam: {config: [{subnet: "10.251.19.32/28"}]}}
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens

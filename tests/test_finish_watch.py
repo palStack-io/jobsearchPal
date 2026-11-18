@@ -134,3 +134,22 @@ def test_job_page_sees_the_mark_and_drops_old_submit_warnings(tmp_path, monkeypa
     assert c.get("/job-status/greenhouse:acme:1").json()["status"] == "submitted"
     html = c.get("/job/greenhouse:acme:1").text
     assert "pressed but not confirmed" not in html and "bad format" in html               # sent: only the stale one goes
+
+
+def test_tick_false_stops_watch(base_url):
+    """Finish here: the session's tick can end the watch (Done, idle, close) from inside the watching thread."""
+    import time as _t
+    calls = []
+
+    def tick():
+        calls.append(1)
+        return len(calls) < 2
+
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_page()
+        page.goto(f"{base_url}/gh/")
+        t0 = _t.monotonic()
+        got = watch_for_sent(page, detect(page.url, "greenhouse"), poll_ms=100, tick=tick)
+        b.close()
+    assert got == "" and len(calls) == 2 and _t.monotonic() - t0 < 2

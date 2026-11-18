@@ -13,7 +13,7 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 from starlette.concurrency import run_in_threadpool
@@ -37,6 +37,15 @@ DECLINE_REASONS = {"fit": "not a fit", "location": "location", "pay": "pay", "ap
 
 def page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(env.get_template(name).render(**ctx))
+
+
+def _app_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return version("autoapply")
+    except PackageNotFoundError:
+        return ""
+
 
 
 KIND_LABELS = [("confirmed", "Received (auto-reply)"), ("interview", "Interview"), ("rejected", "Rejection"), ("offer", "Offer"),
@@ -838,8 +847,18 @@ def make_app(settings, db: DB) -> FastAPI:
                     blocked=preflight.blocking(checks), letter=letter, lead=dict(lead) if lead else None,
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
-                    handoff=_handoff(job, report), command_ran=finish.ran(db, job_id),
+                    handoff=(h := _handoff(job, report)), command_ran=finish.ran(db, job_id),
+                    finish_box=_finish_box(health_check=bool(h), with_version=False),
                     sent_mark=finish.last_mark(db, job_id) if job["status"] == "submitted" else None)
+
+    def _finish_box(health_check: bool = True, with_version: bool = True) -> dict | None:
+        """Finish it here, for a page: None when it's off; else whether the browser box answers (and its version)."""
+        from . import finish_here
+        box = finish_here.box_from(settings)
+        if not box:
+            return None
+        h = finish_here.health(box, timeout=1.5, with_version=with_version) if health_check else {"ok": False, "version": "", "error": ""}
+        return {**h, "app_version": _app_version()}
 
     def _web_link(u: str) -> str:
         from .history import _web
@@ -908,23 +927,27 @@ def make_app(settings, db: DB) -> FastAPI:
         job, _, _ = load(job_id)
         return {"status": job["status"], "submitted_at": job.get("submitted_at")}
 
-    @app.post("/finished/{job_id:path}")
-    async def finished(job_id: str, request: Request):
-        """`autoapply finish` saw the site's confirmation page: mark it sent with the command. Undo is on the job page."""
+    def _mark_finished(job_id: str, confirmation: str) -> dict:
+        """The site's confirmation page showed (`autoapply finish`, or Finish it here): mark it sent with the command.
+        Undo is on the job page."""
         from . import finish
         job, _, _ = load(job_id)
-        try:
-            conf = str((await request.json()).get("confirmation") or "")[:200]
-        except ValueError:
-            conf = ""
         if job["status"] == "submitted":
             return {"ok": True, "already": True}
         before = {"status": job["status"], "lead": _lead_status(job_id)}
         db.update(job_id, status="submitted", error=None, submitted_at=time.strftime("%Y-%m-%d %H:%M"))
         _set_lead(job_id, "applied" if before["lead"] is not None else None)
-        finish.mark(db, job_id, "auto", before, conf)
+        finish.mark(db, job_id, "auto", before, (confirmation or "")[:200])
         _record_applied(job, None)
         return {"ok": True}
+
+    @app.post("/finished/{job_id:path}")
+    async def finished(job_id: str, request: Request):
+        try:
+            conf = str((await request.json()).get("confirmation") or "")
+        except ValueError:
+            conf = ""
+        return _mark_finished(job_id, conf)
 
     @app.get("/bundle/{job_id:path}")
     def bundle(job_id: str):
@@ -946,6 +969,67 @@ def make_app(settings, db: DB) -> FastAPI:
         if not p or not _servable(p):
             raise HTTPException(404)
         return FileResponse(p)
+
+    # ---- Finish it here: the form filled in the browser on this server, finished from any browser ----
+    from . import finish_here
+    _box = finish_here.box_from(settings)
+    app.state.finish_sessions = finish_here.Sessions(_box) if _box else None
+
+    def _sessions():
+        if not finish_here.box_from(settings) or app.state.finish_sessions is None:
+            raise HTTPException(404)
+        return app.state.finish_sessions
+
+    @app.websocket("/finish-here/vnc")
+    async def finish_here_vnc(ws: WebSocket):
+        """The live picture. The HTTP sign-in middleware does not run for WebSockets, so this checks for itself:
+        signed in, opened by a page on this same site, and a session that is open."""
+        from urllib.parse import urlsplit
+        from . import vnc_relay
+        if not auth.valid_cookie(auth.load(settings.data_dir), ws.cookies.get(auth.COOKIE)):
+            return await ws.close(code=4401)
+        origin = urlsplit(ws.headers.get("origin") or "").netloc
+        if not origin or origin != ws.headers.get("host"):
+            return await ws.close(code=4403)
+        box, ss = finish_here.box_from(settings), app.state.finish_sessions
+        if not box or ss is None or ss.status()["state"] not in ("filling", "ready", "sent"):
+            return await ws.close(code=4404)
+        await vnc_relay.relay(ws, box.host, box.vnc_port, ss.touch)
+
+    @app.get("/finish-here/status")
+    def finish_here_status():
+        return _sessions().status()
+
+    @app.post("/finish-here/paste")
+    def finish_here_paste(text: str = Form("")):
+        return {"ok": _sessions().paste(text)}
+
+    @app.post("/finish-here/close")
+    def finish_here_close():
+        ss = _sessions()
+        job_id = ss.status()["job_id"]
+        ss.close()
+        return RedirectResponse(f"/job/{quote(job_id, safe=':/')}" if job_id else "/", status_code=303)
+
+    @app.post("/finish-here/{job_id:path}")
+    def finish_here_start(job_id: str):
+        ss = _sessions()
+        from . import finish
+        job, plan, _ = load(job_id)
+        plan = {**plan, "approved_by_user": False,
+                "files": {k: p for k, p in (plan.get("files") or {}).items() if _servable(p)}}
+        r = ss.start(job_id, plan, settings.profile, mark_sent=_mark_finished)
+        if "busy" in r:  # the same job: back to its view; another job: say one is open
+            extra = "" if r["busy"] == job_id else "?busy=1"
+            return RedirectResponse(f"/finish-here/{quote(r['busy'], safe=':/')}{extra}", status_code=303)
+        finish.record_run(db, job_id)  # counted like a run of the laptop command
+        return RedirectResponse(f"/finish-here/{quote(job_id, safe=':/')}", status_code=303)
+
+    @app.get("/finish-here/{job_id:path}")
+    def finish_here_page(job_id: str, busy: int = 0):
+        st = _sessions().status()
+        job, _, _ = load(job_id)
+        return page("finish_here.html", job=job, st=st, busy=bool(busy), here=st["job_id"] == job_id)
 
     proof_root = settings.data_dir / "proof"
 
@@ -1053,7 +1137,7 @@ def make_app(settings, db: DB) -> FastAPI:
                  "sort_cost": sum(v.get("cost") or 0 for v in sorting) + (daily.get("cost") or 0),
                  "month_spend": db.spend_this_month(), "by_day": db.usage_by_day(14), "by_stage": db.usage_by_stage(30)}
         from . import skills as sk
-        return page("settings.html", agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
+        return page("settings.html", finish_box=_finish_box(), agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
                     skills_usage=db.conn.execute("select count(*), coalesce(sum(tokens),0), coalesce(sum(cost),0), coalesce(sum(emails),0)"
                                                  " from usage where source = 'skills' and at >= date('now', '-30 day')").fetchone(),
                     p=pr.data, prefs=pr, providers=PROVIDERS, status=st, usage=u30, costs=costs,
@@ -1202,7 +1286,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except (OSError, ValueError):
             src_stats = {}
         pr = Prefs(settings.data_dir, settings.raw)
-        return page("setup.html", nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
+        return page("setup.html", finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
                     stand=setup.standing_values(prof), prof=prof, fields=setup.PROFILE_FIELDS, yes_no=setup.YES_NO,
                     titles=", ".join(search.get("title_keywords") or []), exclude=", ".join(search.get("exclude_keywords") or []),
                     us_only=search.get("us_only", True), levels=search.get("levels") or [],
@@ -1215,6 +1299,32 @@ def make_app(settings, db: DB) -> FastAPI:
                     gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
                     msg=msg, err=err)
+
+    @app.post("/setup/finish")
+    def setup_finish():
+        """Finish it here: the person started the browser box; check it answers, then turn it on."""
+        from . import finish_here, setup
+        docker = Path("/.dockerenv").exists()
+        box = finish_here.Box("finish" if docker else "127.0.0.1",
+                              int(os.environ.get("FINISH_CDP_PORT") or 9222) if not docker else 9222,
+                              int(os.environ.get("FINISH_VNC_PORT") or 5900) if not docker else 5900)
+        try:
+            h = finish_here.health(box, timeout=3)
+        except OSError as e:  # the name `finish` doesn't resolve: the profile isn't on
+            h = {"ok": False, "error": str(e)}
+        if not h["ok"]:
+            return RedirectResponse("/setup?err=" + quote("The browser box isn't answering yet. Start it with the "
+                                    "command above, wait a few seconds, then check again.") + "#finish", status_code=303)
+        current = app.state.finish_sessions
+        live = current is not None and current.status()["state"] in finish_here.LIVE
+        if live and getattr(current, "box", box) != box:
+            return RedirectResponse("/setup?err=" + quote("An application is open in the browser. Press Done there "
+                                    "first, then check again.") + "#finish", status_code=303)
+        setup.set_finish(settings, box.host, box.cdp_port, box.vnc_port)
+        if current is None or (not live and getattr(current, "box", None) != box):
+            app.state.finish_sessions = finish_here.Sessions(box)  # an open session is kept, never orphaned
+        return RedirectResponse("/setup?msg=" + quote("Finish it here is on. It shows on any application that needs "
+                                "you to finish it.") + "#finish", status_code=303)
 
     @app.post("/setup/profile")
     async def setup_profile(request: Request):

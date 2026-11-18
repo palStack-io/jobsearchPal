@@ -37,6 +37,14 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
   to add the note to how all your letters sound. The **Notes** tab shows the application's notes (fit/gap table, pay
   ask, form answers, screen prep) as a formatted document; **Open as a page** gives it a page of its own with
   **Print or save as PDF**.
+- **Finish it here:** when a site shows a captcha or asks for a code, and Finish it here is on (Setup, "Finish
+  applications in the browser"), the job page's first step is **Finish it here**. The form opens, filled in and with
+  your files attached, in a browser on your server, and the page shows it live: click and type in it, use **Paste
+  text** for a code you copied, and press Submit on the site. It marks the job sent when the site's confirmation page
+  shows, the same way the command does. One application at a time; it closes when you press **Done**, after 20
+  minutes without you touching it, or 3 minutes after it's sent, and nothing is kept. It never presses Submit. If the
+  server's browser isn't answering, the page says so and shows the Mac command instead. Settings shows whether it's
+  running and when it needs an update.
 - **Finish with the command:** when a site shows a captcha, the review page gives you `autoapply-finish <job>` to
   run on your laptop (**Copy command** works on the plain http address too). Each run is counted, and the job shows
   *Filled with the command*. While Chrome is open the command watches for the site's confirmation page and marks the

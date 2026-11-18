@@ -473,3 +473,23 @@ def test_gmail(user: str, pw: str, provider: str = "gmail") -> str:
     """'' when the login works, else a short reason. Any provider in mailboxes.PROVIDERS (the name is historical)."""
     from . import mailboxes
     return mailboxes.test(provider, user, pw)
+
+
+def set_finish(settings, host: str, cdp_port: int = 9222, vnc_port: int = 5900) -> None:
+    """Turns Finish it here on (Setup's check found the browser box). config.yaml is copied to .bak-<date> first,
+    because writing it again drops any comments in it."""
+    import shutil
+    import time
+    root = settings.root
+    path = root / "config.yaml"
+    if path.exists():
+        shutil.copy2(path, root / f"config.yaml.bak-{time.strftime('%Y-%m-%d-%H%M%S')}")
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    cfg["finish"] = {"on_server": True, "host": host, "cdp_port": int(cdp_port), "vnc_port": int(vnc_port)}
+    keep = {k: settings.raw[k] for k in ("data_dir",) if k in settings.raw and k not in cfg}
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    path.write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update({**cfg, **keep})

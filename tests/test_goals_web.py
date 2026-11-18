@@ -32,7 +32,7 @@ def test_save_week_with_totals_and_today_card(tmp_path, db):
     c = _client(tmp_path, db)
     r = c.post("/plan", data={"apps": "18", "reach_h": "3", "prep_h": "2", "learn_h": "3.5",
                               "days": ALL_DAYS, "roles": "data roles", "contact": "Sam"}, follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"].startswith("/?planned=1")
+    assert r.status_code == 303 and r.headers["location"].startswith("/plan?planned=1")
     p = coach.plan(db, stats.week_start(date.today()))
     assert p["goals"]["apps"] <= 18 and p["roles"] == "data roles"
     html = c.get("/?planned=1").text
@@ -51,7 +51,7 @@ def test_plan_without_totals_is_the_old_plan(tmp_path, db):
 
 def test_dashboard_old_plan_unchanged(tmp_path, db):
     coach.save_plan(db, stats.week_start(date.today()), "data roles", ["Mon"], "Sam")
-    html = _client(tmp_path, db).get("/").text
+    html = _client(tmp_path, db).get("/plan").text
     assert "Your plan this week" in html and "data roles · Mon · get in touch with Sam" in html
     assert 'id="today"' not in html
 
@@ -88,7 +88,7 @@ def test_lookback_and_note(tmp_path, db):
     last = stats.week_start(date.today()) - timedelta(days=7)
     goals.save_week(db, last, {"apps": 5, "reach": 60, "prep": 0, "learn": 0}, ALL_DAYS, "", "", last)
     c = _client(tmp_path, db)
-    html = c.get("/").text
+    html = c.get("/plan").text
     assert "Your week, looking back" in html and "did" in _visible(html)
     assert '<dialog id="lookback"' in html and 'data-open="lookback"' in html and "Last week:" in html
     r = c.post("/plan/note", data={"week": last.isoformat(), "text": "mornings worked better"}, follow_redirects=False)
@@ -102,13 +102,13 @@ def test_last_week_stays_reachable_after_planning(tmp_path, db):
     goals.save_week(db, last, {"apps": 5, "reach": 60, "prep": 0, "learn": 0}, ALL_DAYS, "", "", last)
     c = _client(tmp_path, db)
     c.post("/plan", data={"apps": "10", "days": ALL_DAYS})
-    html = c.get("/").text
+    html = c.get("/plan").text
     assert "Your plan this week" in html and "Plan this week</h2>" not in html
     assert '<dialog id="lookback"' in html and 'data-open="lookback"' in html
 
 
 def test_no_look_back_button_without_a_last_week(tmp_path, db):
-    assert 'data-open="lookback"' not in _client(tmp_path, db).get("/").text
+    assert 'data-open="lookback"' not in _client(tmp_path, db).get("/plan").text
 
 
 def test_stats_shows_planned_weeks(tmp_path, db):
@@ -126,3 +126,15 @@ def test_in_page_post_keeps_the_met_moment_for_the_real_page(tmp_path, db):
     c.post("/plan/day", data={"action": "done", "goal": "learn", "day": date.today().isoformat(), "back": "/#today"},
            headers={"X-In-Page": "1"})   # follows the redirect with the header, as fetch does
     assert 'data-met="goals:met:' in c.get("/").text
+
+
+def test_planner_lives_on_its_own_page_and_the_dashboard_asks_once(tmp_path, db):
+    """JSP-05 (2026-11-17): the planner made the dashboard 3,500px tall. It is "Your week" in the nav now, and the
+    dashboard offers it once a week in a pop-up, only while there is no plan."""
+    c = _client(tmp_path, db)
+    first = c.get("/").text
+    assert '<dialog id="plan-pop"' in first and 'href="/plan"' in first
+    assert 'id="plan-h"' not in first                       # the planner itself is not on the dashboard
+    assert '<dialog id="plan-pop"' not in c.get("/").text   # once: it goes
+    page = c.get("/plan").text
+    assert "Your week, in your words" in page and 'aria-current="page"' in page

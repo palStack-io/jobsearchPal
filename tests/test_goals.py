@@ -243,7 +243,7 @@ def test_brief_sunday_lookback(db):
     goals.save_week(db, WK, _t(apps=5, learn=60), WEEKDAYS, "", "", WK)
     _sent(db, 1, "2026-11-10")
     _, text, html = brief.compose(db, review_url="http://x", today=date(2026, 11, 15))
-    assert "Last week: 1 application. Plan this week: http://x/#plan" in text and "Last week:" in html
+    assert "Last week: 1 application. Plan this week: http://x/plan" in text and "Last week:" in html
     assert "Today's plan" not in text
 
 

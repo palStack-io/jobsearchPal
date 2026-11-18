@@ -1,0 +1,30 @@
+# "Finish it here" for an install that runs jobsearchPal without Docker (a venv). From the repo folder:
+#   docker compose -f docker-compose.finish.yml up -d
+# Then turn it on in Setup ("Finish applications in the browser"). The box's ports listen on this machine only.
+# Docker installs use the `finish` profile in docker-compose.yml instead.
+services:
+  finish:
+    build: {context: finish-box/box}
+    image: ghcr.io/palstack-io/jobsearchpal-finish:${JSP_VERSION:-latest}
+    shm_size: 1gb
+    networks: [finish-inner]
+    restart: unless-stopped
+  finish-proxy:
+    build: {context: finish-box/proxy}
+    image: ghcr.io/palstack-io/jobsearchpal-finish-proxy:${JSP_VERSION:-latest}
+    environment: {FORWARD_BOX: "1"}
+    # The box is on an internal network only, so its two ports are reached through this container.
+    ports:
+      - "127.0.0.1:${FINISH_CDP_PORT:-9222}:9222"
+      - "127.0.0.1:${FINISH_VNC_PORT:-5900}:5900"
+    networks: [finish-inner, egress]
+    restart: unless-stopped
+
+# Small fixed address ranges, so the box starts even where Docker's default pools are used up. If they clash with a
+# network you already have, set FINISH_INNER_SUBNET / FINISH_EGRESS_SUBNET in .env.
+networks:
+  finish-inner:
+    internal: true
+    ipam: {config: [{subnet: "${FINISH_INNER_SUBNET:-10.251.17.0/28}"}]}
+  egress:
+    ipam: {config: [{subnet: "${FINISH_EGRESS_SUBNET:-10.251.17.16/28}"}]}

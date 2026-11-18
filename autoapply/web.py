@@ -13,7 +13,7 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 from starlette.concurrency import run_in_threadpool
@@ -37,6 +37,15 @@ DECLINE_REASONS = {"fit": "not a fit", "location": "location", "pay": "pay", "ap
 
 def page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(env.get_template(name).render(**ctx))
+
+
+def _app_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return version("autoapply")
+    except PackageNotFoundError:
+        return ""
+
 
 
 KIND_LABELS = [("confirmed", "Received (auto-reply)"), ("interview", "Interview"), ("rejected", "Rejection"), ("offer", "Offer"),
@@ -74,6 +83,13 @@ def work_search(settings) -> tuple[str, int]:
     """Label and weekly minimum for the work-search log, e.g. {label: DUA, weekly_minimum: 3}."""
     ws = settings.raw.get("work_search") or {}
     return ws.get("label", "Work search"), int(ws.get("weekly_minimum", 3))
+
+
+def _field_label(name: str) -> str:
+    """A question label back from a form field name. Browsers send a quote in a field name as %22 and a line break as
+    %0D%0A (the HTML form encoding), so a label like 'By selecting "I agree", ...' came back with %22 and never matched
+    the question again: the answer was saved but never filled, and the consent check stayed red."""
+    return name.replace("%22", '"').replace("%0D%0A", "\n").replace("%0A", "\n").replace("%0D", "\r")
 
 
 def make_app(settings, db: DB) -> FastAPI:
@@ -241,10 +257,20 @@ def make_app(settings, db: DB) -> FastAPI:
             return JSONResponse({"detail": "Internal Server Error"}, status_code=500)
         return _error_page(request, 500, str(exc)[:200])
 
+    def log_week() -> dict | None:
+        """This week's applications and the weekly minimum, for the Log an application line ("This makes 4 of 5")."""
+        try:
+            start = stats.week_start(date.today())
+            n = sum(1 for j in db.by_status("submitted") if (j["submitted_at"] or "")[:10] >= start.isoformat())
+            return {"n": n, "min": work_search(settings)[1], "start": start.isoformat()}
+        except Exception:  # a missing figure must never break a page; the line just does not show
+            return None
+
     def page(name: str, **ctx) -> HTMLResponse:  # noqa: F811  every page shows the waiting-email badge
         from . import setup
         return HTMLResponse(env.get_template(name).render(pending_count=len(db.pending_events()),
-                                                          setup_left=len(setup.status(settings, os.environ)["left"]), **ctx))
+                                                          setup_left=len(setup.status(settings, os.environ)["left"]),
+                                                          log_week=log_week(), **ctx))
 
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):
@@ -284,20 +310,22 @@ def make_app(settings, db: DB) -> FastAPI:
         if week_met and not cel:  # the whole weekly plan met: the horizon's light spreads, once
             cel = {"key": week_met["key"], "kind": "week", "title": "Your plan for the week, done",
                    "line": "You set it and you followed through."}
+        # The week planner has its own page (/plan, "Your week" in the nav) since 2026-11-17 (JSP-05): on the dashboard
+        # it made the page 3,500px tall. The dashboard asks once a week, in a pop-up, when there is no plan yet.
+        popup_key = f"pal:plan-popup:{s['this_week_start'].isoformat()}"
+        states = db.nudge_states()
+        plan_popup = (not back and not wk_plan and popup_key not in states
+                      and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in states)
+        if plan_popup:
+            db.set_nudge(popup_key, "done")  # shown once; it goes, and the page stays in the nav
         resp = page("index.html", s=s, shortlist=more, decline_reasons=DECLINE_REASONS, src_on=src["on"], src_total=src["total"], first_name=first_name,
-                    interviews=ivs[:6], greet=greet, plan=wk_plan, plan_line=coach.plan_line(wk_plan), plan_days=coach.DAYS,
-                    plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
+                    interviews=ivs[:6], greet=greet, plan=wk_plan, plan_popup=plan_popup,
                     offer=None if back else coach.offer(db, settings, s, now.date(), bool(ivs)), back=back, if_then=coach.if_then(db),
                     celebrate=cel, rejection=pal.rejection_note(db, now.date()), week_left=_week_left(s, now.date()),
                     todo=todo, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
-                    today_goals=today_goals, lookback=lookback, just_met={m["key"] for m in met}, planned=planned == "1",
-                    goal_totals=goals.week_goals(wk_plan) or goals.prefill(db, s["this_week_start"]),
-                    week_iso=s["this_week_start"].isoformat(),
-                    g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
-                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
-                    last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
-                    lookback_summary=goals.summary(lookback["did"]) if lookback else "")
+                    today_goals=today_goals, just_met={m["key"] for m in met},
+                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "")
         if request.headers.get("x-in-page"):
             return resp  # an in-page form post following its redirect: the page the person sees comes next, so keep these
         if cel:
@@ -490,6 +518,28 @@ def make_app(settings, db: DB) -> FastAPI:
             raise HTTPException(400)
         return RedirectResponse("/#todo", status_code=303)
 
+    @app.get("/plan")
+    def plan_page(planned: str = ""):
+        """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
+        them of it beyond the once-a-week pop-up on the dashboard."""
+        from . import coach, goals, pal
+        now = datetime.now()
+        s = stats.compute(db, floor=work_search(settings)[1])
+        greet = pal.greeting(db, s, now, (settings.profile or {}).get("first_name", ""))
+        back = greet["state"] == "back"
+        wk_plan = coach.plan(db, s["this_week_start"])
+        last_wk = None if back else goals.last_week(db, now.date())
+        lookback = last_wk and goals.lookback(db, now.date())
+        return page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+                    plan_days=coach.DAYS,
+                    plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
+                    lookback=lookback, planned=planned == "1",
+                    goal_totals=goals.week_goals(wk_plan) or goals.prefill(db, s["this_week_start"]),
+                    week_iso=s["this_week_start"].isoformat(),
+                    g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
+                    last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
+                    lookback_summary=goals.summary(lookback["did"]) if lookback else "")
+
     @app.post("/plan")
     async def plan_save(request: Request):
         """The person's own plan for this week. Optional; nothing reminds them of it (reminders added nothing in the trial)."""
@@ -498,7 +548,7 @@ def make_app(settings, db: DB) -> FastAPI:
         week = stats.week_start(date.today())
         if f.get("action") == "skip":
             db.set_nudge(f"pal:plan-skip:{week.isoformat()}", "done")
-            return RedirectResponse("/#plan", status_code=303)
+            return RedirectResponse("/plan", status_code=303)
         from . import goals
         totals = goals.parse_totals(f)
         roles, days, contact = str(f.get("roles") or ""), [str(d) for d in f.getlist("days")], str(f.get("contact") or "")
@@ -506,7 +556,7 @@ def make_app(settings, db: DB) -> FastAPI:
             goals.save_week(db, week, totals, days, roles, contact, date.today())
         else:
             coach.save_plan(db, week, roles, days, contact)
-        return RedirectResponse("/?planned=1#plan", status_code=303)
+        return RedirectResponse("/plan?planned=1", status_code=303)
 
     @app.post("/plan/day")
     async def plan_day(request: Request):
@@ -527,7 +577,7 @@ def make_app(settings, db: DB) -> FastAPI:
             for g, v in vals.items():
                 if goals.set_day(db, week, day, g, v if g == "apps" else goals.parse_totals({f"{g}_h": v})[g]) is None:
                     raise HTTPException(400)
-            return RedirectResponse("/#plan", status_code=303)
+            return RedirectResponse("/plan", status_code=303)
         try:
             day = date.fromisoformat(str(f.get("day") or ""))
         except ValueError:
@@ -558,7 +608,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except ValueError:
             raise HTTPException(400)
         goals.save_note(db, wk, text)
-        return RedirectResponse("/#plan", status_code=303)
+        return RedirectResponse("/plan", status_code=303)
 
     @app.post("/contacts")
     def contact_action(action: str = Form("add"), name: str = Form(""), company: str = Form(""), how: str = Form(""),
@@ -810,12 +860,22 @@ def make_app(settings, db: DB) -> FastAPI:
         lead = db.conn.execute("select * from leads where job_id = ?", (job_id,)).fetchone()
         docx = {slot: Path(p).with_suffix(".docx").name for slot, p in plan.get("files", {}).items()
                 if _servable(str(Path(p).with_suffix(".docx")))}
-        return page("job.html", nav="", job=job, report=report, approved=plan.get("approved", {}), files=files, checks=checks,
+        return page("job.html", nav="", job=job, report=report, approved={_field_label(k): v for k, v in (plan.get("approved") or {}).items()}, files=files, checks=checks,
                     blocked=preflight.blocking(checks), letter=letter, lead=dict(lead) if lead else None,
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
-                    handoff=_handoff(job, report), command_ran=finish.ran(db, job_id),
+                    handoff=(h := _handoff(job, report)), command_ran=finish.ran(db, job_id),
+                    finish_box=_finish_box(health_check=bool(h), with_version=False),
                     sent_mark=finish.last_mark(db, job_id) if job["status"] == "submitted" else None)
+
+    def _finish_box(health_check: bool = True, with_version: bool = True) -> dict | None:
+        """Finish it here, for a page: None when it's off; else whether the browser box answers (and its version)."""
+        from . import finish_here
+        box = finish_here.box_from(settings)
+        if not box:
+            return None
+        h = finish_here.health(box, timeout=1.5, with_version=with_version) if health_check else {"ok": False, "version": "", "error": ""}
+        return {**h, "app_version": _app_version()}
 
     def _web_link(u: str) -> str:
         from .history import _web
@@ -884,23 +944,27 @@ def make_app(settings, db: DB) -> FastAPI:
         job, _, _ = load(job_id)
         return {"status": job["status"], "submitted_at": job.get("submitted_at")}
 
-    @app.post("/finished/{job_id:path}")
-    async def finished(job_id: str, request: Request):
-        """`autoapply finish` saw the site's confirmation page: mark it sent with the command. Undo is on the job page."""
+    def _mark_finished(job_id: str, confirmation: str) -> dict:
+        """The site's confirmation page showed (`autoapply finish`, or Finish it here): mark it sent with the command.
+        Undo is on the job page."""
         from . import finish
         job, _, _ = load(job_id)
-        try:
-            conf = str((await request.json()).get("confirmation") or "")[:200]
-        except ValueError:
-            conf = ""
         if job["status"] == "submitted":
             return {"ok": True, "already": True}
         before = {"status": job["status"], "lead": _lead_status(job_id)}
         db.update(job_id, status="submitted", error=None, submitted_at=time.strftime("%Y-%m-%d %H:%M"))
         _set_lead(job_id, "applied" if before["lead"] is not None else None)
-        finish.mark(db, job_id, "auto", before, conf)
+        finish.mark(db, job_id, "auto", before, (confirmation or "")[:200])
         _record_applied(job, None)
         return {"ok": True}
+
+    @app.post("/finished/{job_id:path}")
+    async def finished(job_id: str, request: Request):
+        try:
+            conf = str((await request.json()).get("confirmation") or "")
+        except ValueError:
+            conf = ""
+        return _mark_finished(job_id, conf)
 
     @app.get("/bundle/{job_id:path}")
     def bundle(job_id: str):
@@ -922,6 +986,69 @@ def make_app(settings, db: DB) -> FastAPI:
         if not p or not _servable(p):
             raise HTTPException(404)
         return FileResponse(p)
+
+    # ---- Finish it here: the form filled in the browser on this server, finished from any browser ----
+    from . import finish_here
+    _box = finish_here.box_from(settings)
+    app.state.finish_sessions = finish_here.Sessions(_box) if _box else None
+    from . import remake as _remake
+    app.state.remaker = _remake.Remaker()
+
+    def _sessions():
+        if not finish_here.box_from(settings) or app.state.finish_sessions is None:
+            raise HTTPException(404)
+        return app.state.finish_sessions
+
+    @app.websocket("/finish-here/vnc")
+    async def finish_here_vnc(ws: WebSocket):
+        """The live picture. The HTTP sign-in middleware does not run for WebSockets, so this checks for itself:
+        signed in, opened by a page on this same site, and a session that is open."""
+        from urllib.parse import urlsplit
+        from . import vnc_relay
+        if not auth.valid_cookie(auth.load(settings.data_dir), ws.cookies.get(auth.COOKIE)):
+            return await ws.close(code=4401)
+        origin = urlsplit(ws.headers.get("origin") or "").netloc
+        if not origin or origin != ws.headers.get("host"):
+            return await ws.close(code=4403)
+        box, ss = finish_here.box_from(settings), app.state.finish_sessions
+        if not box or ss is None or ss.status()["state"] not in ("filling", "ready", "sent"):
+            return await ws.close(code=4404)
+        await vnc_relay.relay(ws, box.host, box.vnc_port, ss.touch)
+
+    @app.get("/finish-here/status")
+    def finish_here_status():
+        return _sessions().status()
+
+    @app.post("/finish-here/paste")
+    def finish_here_paste(text: str = Form("")):
+        return {"ok": _sessions().paste(text)}
+
+    @app.post("/finish-here/close")
+    def finish_here_close():
+        ss = _sessions()
+        job_id = ss.status()["job_id"]
+        ss.close()
+        return RedirectResponse(f"/job/{quote(job_id, safe=':/')}" if job_id else "/", status_code=303)
+
+    @app.post("/finish-here/{job_id:path}")
+    def finish_here_start(job_id: str):
+        ss = _sessions()
+        from . import finish
+        job, plan, _ = load(job_id)
+        plan = {**plan, "approved_by_user": False,
+                "files": {k: p for k, p in (plan.get("files") or {}).items() if _servable(p)}}
+        r = ss.start(job_id, plan, settings.profile, mark_sent=_mark_finished)
+        if "busy" in r:  # the same job: back to its view; another job: say one is open
+            extra = "" if r["busy"] == job_id else "?busy=1"
+            return RedirectResponse(f"/finish-here/{quote(r['busy'], safe=':/')}{extra}", status_code=303)
+        finish.record_run(db, job_id)  # counted like a run of the laptop command
+        return RedirectResponse(f"/finish-here/{quote(job_id, safe=':/')}", status_code=303)
+
+    @app.get("/finish-here/{job_id:path}")
+    def finish_here_page(job_id: str, busy: int = 0):
+        st = _sessions().status()
+        job, _, _ = load(job_id)
+        return page("finish_here.html", job=job, st=st, busy=bool(busy), here=st["job_id"] == job_id)
 
     proof_root = settings.data_dir / "proof"
 
@@ -1029,7 +1156,7 @@ def make_app(settings, db: DB) -> FastAPI:
                  "sort_cost": sum(v.get("cost") or 0 for v in sorting) + (daily.get("cost") or 0),
                  "month_spend": db.spend_this_month(), "by_day": db.usage_by_day(14), "by_stage": db.usage_by_stage(30)}
         from . import skills as sk
-        return page("settings.html", agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
+        return page("settings.html", finish_box=_finish_box(), agent_login=_agent_login_ctx(), skills_est=sk.estimate(pr), skills_text=sk.to_lines(sk.mine(settings)),
                     skills_usage=db.conn.execute("select count(*), coalesce(sum(tokens),0), coalesce(sum(cost),0), coalesce(sum(emails),0)"
                                                  " from usage where source = 'skills' and at >= date('now', '-30 day')").fetchone(),
                     p=pr.data, prefs=pr, providers=PROVIDERS, status=st, usage=u30, costs=costs,
@@ -1178,7 +1305,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except (OSError, ValueError):
             src_stats = {}
         pr = Prefs(settings.data_dir, settings.raw)
-        return page("setup.html", nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
+        return page("setup.html", finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
                     stand=setup.standing_values(prof), prof=prof, fields=setup.PROFILE_FIELDS, yes_no=setup.YES_NO,
                     titles=", ".join(search.get("title_keywords") or []), exclude=", ".join(search.get("exclude_keywords") or []),
                     us_only=search.get("us_only", True), levels=search.get("levels") or [],
@@ -1186,9 +1313,38 @@ def make_app(settings, db: DB) -> FastAPI:
                     keys={k: pr.key_hint(k) for k in ("ADZUNA_APP_ID", "ADZUNA_APP_KEY", "USAJOBS_API_KEY", "USAJOBS_EMAIL")}, feeds=setup.FEED_LABELS,
                     feeds_on=cfg.get("feeds", list(FEEDS)) if cfg else [*FEEDS, "themuse", "himalayas", "jobicy"], ws=cfg.get("work_search") or {}, states=state_rules(),
                     about=setup.load_about(settings.data_dir), about_fields=setup.ABOUT_FIELDS,
-                    resume=setup.base_resume(settings.root), gmail_user=os.environ.get("GMAIL_USER", ""),
+                    resume=setup.base_resume(settings.root), looks=__import__("autoapply.docs", fromlist=["x"]).LOOKS,
+                    look=(lambda v: v if v in __import__("autoapply.docs", fromlist=["x"]).LOOKS else "navy")(str(prof.get("resume_look") or "").lower()), accent=str(prof.get("resume_accent") or "").lstrip("#"),
+                    gmail_user=os.environ.get("GMAIL_USER", ""),
                     gmail_env=pr.from_env("GMAIL_APP_PASSWORD"), mail=_mail_ctx(), agent_login=_agent_login_ctx(),
+                    remake_n=len(__import__("autoapply.remake", fromlist=["x"]).waiting(db)), remake_st=app.state.remaker.status(),
                     msg=msg, err=err)
+
+    @app.post("/setup/finish")
+    def setup_finish():
+        """Finish it here: the person started the browser box; check it answers, then turn it on."""
+        from . import finish_here, setup
+        docker = Path("/.dockerenv").exists()
+        box = finish_here.Box("finish" if docker else "127.0.0.1",
+                              int(os.environ.get("FINISH_CDP_PORT") or 9222) if not docker else 9222,
+                              int(os.environ.get("FINISH_VNC_PORT") or 5900) if not docker else 5900)
+        try:
+            h = finish_here.health(box, timeout=3)
+        except OSError as e:  # the name `finish` doesn't resolve: the profile isn't on
+            h = {"ok": False, "error": str(e)}
+        if not h["ok"]:
+            return RedirectResponse("/setup?err=" + quote("The browser box isn't answering yet. Start it with the "
+                                    "command above, wait a few seconds, then check again.") + "#finish", status_code=303)
+        current = app.state.finish_sessions
+        live = current is not None and current.status()["state"] in finish_here.LIVE
+        if live and getattr(current, "box", box) != box:
+            return RedirectResponse("/setup?err=" + quote("An application is open in the browser. Press Done there "
+                                    "first, then check again.") + "#finish", status_code=303)
+        setup.set_finish(settings, box.host, box.cdp_port, box.vnc_port)
+        if current is None or (not live and getattr(current, "box", None) != box):
+            app.state.finish_sessions = finish_here.Sessions(box)  # an open session is kept, never orphaned
+        return RedirectResponse("/setup?msg=" + quote("Finish it here is on. It shows on any application that needs "
+                                "you to finish it.") + "#finish", status_code=303)
 
     @app.post("/setup/profile")
     async def setup_profile(request: Request):
@@ -1245,6 +1401,47 @@ def make_app(settings, db: DB) -> FastAPI:
         made = " and ".join(x for x in (r["docx"], r["pdf"]) if x)
         return _back(f"Saved {made} in materials/." + ("" if r["pdf"] or p else
                      " No PDF was made (LibreOffice isn't installed here), so upload one too."), "profile")
+
+    @app.post("/setup/look")
+    async def setup_look(request: Request):
+        from . import setup
+        f = dict(await request.form())
+        err = setup.save_look(settings, str(f.get("look") or ""), str(f.get("accent") or ""))
+        if err:
+            return _back(err, "look")
+        from .docs import LOOKS
+        return _back(f"Saved. New tailored resumes and letters use the {LOOKS[settings.profile['resume_look']]['label']} look.", "look")
+
+    @app.post("/setup/look/remake")
+    def setup_look_remake():
+        """Lays out the waiting applications' resumes and letters again in the saved look (in the background)."""
+        from .docs import LOOKS
+        if not app.state.remaker.start(settings, db):
+            return _back("Already remaking them; this page shows when it's done.", "look")
+        label = LOOKS.get(settings.profile.get("resume_look") or "navy", LOOKS["navy"])["label"]
+        return _back(f"Remaking them in the {label} look. It takes a few seconds each; reload to see how far it got.", "look")
+
+    @app.post("/setup/look/preview")
+    async def setup_look_preview(request: Request):
+        """Your base resume in the chosen look, as a PDF, without saving the choice."""
+        from . import docs, setup
+        f = dict(await request.form())
+        base = setup.base_resume(settings.root)
+        if base is None:
+            return _back("Upload your resume first.", "resume")
+        out = settings.data_dir / "look-preview"
+        shutil.rmtree(out, ignore_errors=True)
+        try:
+            r = await run_in_threadpool(docs.build, base, {"company": "Preview"}, out,
+                                        settings.profile.get("last_name", ""), True, None,
+                                        str(f.get("look") or ""), str(f.get("accent") or "").strip())
+        except docs.SpecError as e:
+            return _back(str(e), "look")
+        pdf = (r.get("pdf") or {}).get("resume")
+        if pdf:
+            return FileResponse(pdf, media_type="application/pdf", content_disposition_type="inline",
+                                filename=Path(pdf).name)
+        return FileResponse(r["resume"], filename=Path(r["resume"]).name)  # no LibreOffice here: the Word file
 
     @app.post("/setup/about")
     async def setup_about(request: Request):
@@ -1468,9 +1665,9 @@ def make_app(settings, db: DB) -> FastAPI:
         new_plan.setdefault("answers", {})
         for k, v in form.items():
             if k.startswith("ans::") and v:
-                new_plan["answers"][k[5:]] = v
+                new_plan["answers"][_field_label(k[5:])] = v
         # Held answers come only from this form, never from the JSON box.
-        new_plan["approved"] = {k[6:]: v for k, v in form.items() if k.startswith("held::") and v}
+        new_plan["approved"] = {_field_label(k[6:]): v for k, v in form.items() if k.startswith("held::") and v}
         new_plan["held_reviewed"] = True  # from now on a blank consent stays blank: no standing answer fills it
         new_plan["approved_by_user"] = False
 
@@ -1499,7 +1696,8 @@ def make_app(settings, db: DB) -> FastAPI:
             _record_applied(job, None)
         elif action == "refill":
             r = await run_in_threadpool(fill, new_plan, settings.profile, shots, headless)  # sync Playwright can't share the event loop
-            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot, error=None)
+            db.update(job_id, status="filled", plan_json=new_plan, report_json=r.as_dict(), screenshot=r.screenshot,
+                      error=r.closed_error)
         elif action == "submit":
             if old_report.get("submit_clicked") and not old_report.get("submitted") and form.get("resubmit") != "yes":
                 db.update(job_id, plan_json=new_plan,

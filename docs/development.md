@@ -7,6 +7,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]" && .venv/bin/playwrig
 .venv/bin/pytest
 python3 scripts/demo-data.py /tmp/demo && cd /tmp/demo && autoapply serve   # http://127.0.0.1:8799
 python3 scripts/screenshots.py                                              # refresh docs/*.png
+JSP_FINISH_DOCKER=1 .venv/bin/pytest tests/test_finish_box.py               # the browser box, as real containers (Docker host)
 ```
 
 The filler is tested against local copies of each ATS's form layout (`tests/fixtures/`). Real
@@ -56,6 +57,10 @@ autoapply/coach.py       what helps a search: weekly plan, contacts, related tit
 autoapply/goals.py       weekly goals: totals spread over your days, the Today card, the Sunday look-back
 autoapply/voice.py       how your cover letters sound: the Letters page choices, samples, voice.md, recent letters
 autoapply/web.py         dashboard, review page, work-search log
+autoapply/finish_here.py Finish it here: one session at a time on the browser box (Playwright over CDP), idle close
+autoapply/vnc_relay.py   the viewer's WebSocket to the box's VNC port (route /finish-here/vnc checks sign-in itself)
+autoapply/static/novnc/  noVNC 1.5.0 (MPL-2.0), the in-page viewer; VERSION has the source and checksum
+finish-box/              the browser box (Xvfb, Chromium, x11vnc) and its proxy (Squid); images jobsearchpal-finish(-proxy)
 autoapply/templates/     HTML (no build step, no JavaScript framework)
 prompts/stages/          the daily run's steps (rank, apply, prep, drafts, letter), one agent session each
 AGENTS.md                standing rules for the agent (CLAUDE.md imports it; personal facts go in CLAUDE.local.md)

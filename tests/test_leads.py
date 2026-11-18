@@ -81,7 +81,7 @@ def test_leads_page_star_and_dismiss(tmp_path):
     assert "Hooli" in html and "Initech" in html and "To look at" in html
     k = leads.rows(db)[0]["key"]
     c.post("/leads", data={"key": k, "status": "starred"})
-    assert "★" in c.get("/leads?show=starred").text
+    assert 'title="Unstar"' in c.get("/leads?show=starred").text  # the star is an icon since 2026-11-16
     c.post("/leads", data={"key": k, "status": "dismissed"})
     assert k not in [r["key"] for r in leads.rows(db) if r["status"] != "dismissed"]
     assert c.post("/leads", data={"key": k, "status": "approved"}).status_code == 400

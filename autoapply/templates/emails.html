@@ -19,10 +19,10 @@
     <pre class="body">{{ (e.body or "No text saved for this email.")[:3000] }}</pre></details></td>
   <td colspan="2"><form method="post" action="/emails/{{ e.id|urlencode }}" class="eform">
     <input type="hidden" name="show" value="{{ show }}">
-    <select name="kind" aria-label="Category" onchange="this.form.submit()">
+    <span class="kind k-{{ e.kind if e.reviewed else 'none' }}"><select name="kind" aria-label="Category" onchange="this.form.submit()">
      {% if not e.reviewed %}<option value="" selected>Not sorted{% if e.guess %} ({{ e.guess }}?){% endif %}</option>{% endif %}
      {% for k, label in kinds %}<option value="{{ k }}" {% if e.reviewed and e.kind == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
-    </select>
+    </select></span>
     <select name="job" aria-label="Application" class="hide-sm" onchange="this.form.submit()">
      <option value="none" {% if not e.job_id %}selected{% endif %}>Not about an application</option>
      {% for j in jobs %}<option value="{{ j.id }}" {% if e.job_id == j.id %}selected{% endif %}>{{ co(j.company) }} · {{ j.title|truncate(40) }}</option>{% endfor %}
@@ -41,6 +41,10 @@
 .eform select{border-color:transparent;background-color:var(--surface-2);color:var(--ink-2);border-radius:999px;transition:border-color .15s var(--ease-out),background-color .15s var(--ease-out)}
 .eform select:hover,.eform select:focus-visible{border-color:var(--line-2);background-color:var(--surface);color:var(--ink)}
 .eform select[name="job"]:has(option[value="none"]:checked){color:var(--ink-3);background-color:transparent}
+/* A dot per category, the same colours as the dashboard's replies (11/19); a no is neutral, never red. */
+.kind{position:relative;display:block}.kind::before{content:"";position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--ink-3);pointer-events:none}
+.kind select{width:100%;padding-left:24px}.k-interview::before,.k-offer::before{background:var(--violet-dot)}.k-recruiter::before{background:var(--accent)}
+.k-confirmed::before{background:var(--good-dot)}.k-agency::before{background:var(--sun)}.k-none::before{background:var(--warn-dot)}.k-rejected::before,.k-ignored::before{background:var(--line-2)}
 pre.body{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14px;background:var(--surface-2);border-radius:10px;padding:10px 12px;max-height:320px;overflow:auto;margin:0}
 @media (max-width:640px){.eform{grid-template-columns:minmax(0,1fr)}.emails th:nth-child(3){width:auto}}
 </style>

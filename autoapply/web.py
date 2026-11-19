@@ -690,7 +690,7 @@ def make_app(settings, db: DB) -> FastAPI:
             coach.delete_contact(db, cid)
         elif action == "counts":
             coach.set_note(db, "ws:count_contacts", counts == "yes")
-        return RedirectResponse("/dua#people", status_code=303)
+        return RedirectResponse("/dua?tab=people#people", status_code=303)
 
     @app.get("/reflect")
     def reflect_page(back: str = ""):
@@ -1790,7 +1790,7 @@ def make_app(settings, db: DB) -> FastAPI:
         return _back(f"{label} works. Job alerts and replies will be read (read-only), and the brief sent from it.", "other-emails")
 
     @app.get("/dua")
-    def dua(company: str = ""):
+    def dua(company: str = "", tab: str = ""):
         from . import benefits
         from . import coach
         rule = my_state(settings)
@@ -1798,13 +1798,15 @@ def make_app(settings, db: DB) -> FastAPI:
                     prefill_company=company[:80], weeks=stats.dua_weeks(db), floor=work_search(settings)[1], rule=rule, nav="work", today=date.today(),
                     claim=benefits.claim(settings), runway=benefits.runway(settings, rule), days=benefits.DAYS,
                     tasks=benefits.tasks(db, include_done=True), resources=benefits.RESOURCES, general=general_notes(),
-                    letters=benefits.letters(db)[:20])
+                    letters=benefits.letters(db)[:20],
+                    tab=tab if tab in ("log", "claim", "people", "rule") else ("people" if company else "log"),
+                    ws_rule_label=(f"{rule['name']}'s rule" if rule else "Your state's rule"))
 
     @app.post("/dua/claim")
     async def dua_claim(request: Request):
         from . import benefits
         benefits.save_claim(settings, dict(await request.form()))
-        return RedirectResponse("/dua#claim", status_code=303)
+        return RedirectResponse("/dua?tab=claim#claim", status_code=303)
 
     @app.post("/dua/task")
     def dua_task(action: str = Form(...), title: str = Form(""), due: str = Form(""), task_id: int = Form(0)):
@@ -1819,7 +1821,7 @@ def make_app(settings, db: DB) -> FastAPI:
             db.conn.commit()
         elif action in ("done", "undo", "delete") and task_id:
             benefits.set_task(db, task_id, done=action == "done" if action != "delete" else None, delete=action == "delete")
-        return RedirectResponse("/dua#tasks", status_code=303)
+        return RedirectResponse("/dua?tab=claim#tasks", status_code=303)
 
     @app.get("/dua/{week}.zip")
     def dua_zip(week: str):

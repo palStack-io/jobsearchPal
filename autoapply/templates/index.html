@@ -99,13 +99,13 @@ html.intro .welcome-t{animation:hero-up .8s var(--ease-out) backwards}
   <div class="body"><div class="t">{{ co(j.company) }} · {{ j.title }}</div>
    <div class="m">{{ j.location or "Location not listed" }}{% if j.pay %} · {{ j.pay }}{% endif %}{% if j.error %} · <span style="color:var(--bad)">{{ j.error|truncate(80) }}</span>{% endif %}</div>
    {% if j.skill_line %}<div class="m skillm">{{ j.skill_line }}</div>{% endif %}
-   <div class="m"><a class="know" href="/dua?company={{ co(j.company)|striptags|trim|urlencode }}#people">Anyone you know there?</a></div></div>
+   <div class="m"><a class="know" href="/dua?tab=people&company={{ co(j.company)|striptags|trim|urlencode }}#people">Anyone you know there?</a></div></div>
   <div class="acts">{{ decline(j) }}{{ applied_btn(j.company, j.title, j.apply_url or j.url, "/#ready-h") }}<a class="btn sm" href="/job/{{ j.id|urlencode }}">Review</a></div></div>
  {% endfor %}{% endif %}
  {% if shortlist %}<div class="group-h"><b>Shortlist</b><span>Good matches from today's search, not tailored yet. Prepare the ones you want, decline the rest.</span></div>
  {% for j in shortlist %}<div class="ready short"><div class="avatar todo-av" style="--h:{{ j.company|hue }}" aria-hidden="true">{{ (j.company or '?')[:1]|upper }}</div>
   <div class="body"><div class="t">{{ co(j.company) }} · {{ j.title }}</div>
-   <div class="m">{{ j.location or "Location not listed" }}{% if j.pay %} · {{ j.pay }}{% endif %}{% if j.why %} · {{ j.why|truncate(90) }}{% endif %} · <a href="/job/{{ j.id|urlencode }}">details</a> · <a class="know" href="/dua?company={{ co(j.company)|striptags|trim|urlencode }}#people">anyone you know there?</a></div>
+   <div class="m">{{ j.location or "Location not listed" }}{% if j.pay %} · {{ j.pay }}{% endif %}{% if j.why %} · {{ j.why|truncate(90) }}{% endif %} · <a href="/job/{{ j.id|urlencode }}">details</a> · <a class="know" href="/dua?tab=people&company={{ co(j.company)|striptags|trim|urlencode }}#people">anyone you know there?</a></div>
    {% if j.skill_line %}<div class="m skillm">{{ j.skill_line }}</div>{% endif %}</div>
   <div class="acts">{{ decline(j) }}{{ applied_btn(j.company, j.title, j.apply_url or j.url, "/#ready-h") }}<form method="post" action="/board/add" style="margin:0"><input type="hidden" name="job" value="{{ j.id }}"><input type="hidden" name="back" value="/#ready-h"><button class="btn ghost sm" title="Work it step by step on your board">Add to board</button></form>{% if not running %}<form method="post" action="/prepare/{{ j.id|urlencode }}" class="prepare" data-confirm-title="Prepare: {{ j.company }} · {{ j.title }}" data-confirm-ok="Prepare"
    data-confirm="This runs the agent now: it tailors your resume and cover letter and fills the form.

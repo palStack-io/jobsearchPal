@@ -9,7 +9,7 @@ import re
 import shutil
 import time
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -995,8 +995,34 @@ def make_app(settings, db: DB) -> FastAPI:
     def skills_page():
         from . import learn
         from . import coach
-        return page("learn.html", g=learn.gaps(db, settings), nav="skills", related=coach.related_titles(db, settings),
+        lp = learn.plan(db)
+        if lp and lp.get("status") == "writing" and lp.get("made_at", "") < (datetime.now() - timedelta(minutes=4)).strftime("%Y-%m-%d %H:%M"):
+            lp = {**lp, "status": "failed"}  # the thread died (a restart): say so instead of waiting forever
+        return page("learn.html", g=learn.gaps(db, settings), lp=lp, nav="skills", related=coach.related_titles(db, settings),
                     my_titles=(settings.raw.get("search") or {}).get("title_keywords") or [])
+
+    @app.post("/skills/plan")
+    async def skills_plan(request: Request):
+        """A learning plan for up to three picked skills: one model call, in a thread; the page shows it when it lands."""
+        from . import learn
+        picks = [str(x) for x in (await request.form()).getlist("picks")]
+        try:
+            learn.start_plan(db, settings, picks)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        return RedirectResponse("/skills#plan", status_code=303)
+
+    @app.post("/skills/plan/start")
+    def skills_plan_start():
+        """Start this plan: its skills move to Learning now (the same mark as before), and the plan says it started."""
+        from . import coach, learn
+        lp = learn.plan(db)
+        if not lp or lp.get("status") != "ready":
+            raise HTTPException(400)
+        for sk in lp.get("skills") or []:
+            learn.set_mark(settings, sk, "learning")
+        coach.set_note(db, learn.PLAN_KEY, {**lp, "started": datetime.now().strftime("%Y-%m-%d")})
+        return RedirectResponse("/skills#plan", status_code=303)
 
     @app.post("/skills/mark")
     def skills_mark(skill: str = Form(...), mark: str = Form(...)):

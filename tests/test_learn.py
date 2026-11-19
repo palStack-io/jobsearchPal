@@ -41,7 +41,7 @@ def test_keyword_gaps_page_and_marks(tmp_path):
     assert {"SQL", "Python", "dbt"} <= {i["name"] for i in g["have"]}
     assert ("payments domain knowledge", 1) in g["other_notes"]
     c = client(s, db)
-    assert "Skills to learn" in c.get("/skills").text
+    assert "Not on your resume yet" in c.get("/skills").text
     c.post("/skills/mark", data={"skill": "Airflow", "mark": "learning"})
     c.post("/skills/mark", data={"skill": "Kubernetes", "mark": "have"})
     g = learn.gaps(db, s)

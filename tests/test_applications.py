@@ -117,7 +117,7 @@ def test_dashboard_log_import_and_export(tmp_path):
     s = Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data")}, profile={"first_name": "Alex"})
     db = DB(s.data_dir / "t.db")
     c = client(s, db)
-    html = c.get("/").text
+    html = c.get("/leads?view=applied").text  # the list moved off the dashboard (11/18)
     assert "Log one you sent elsewhere" in html and "Bring in your old tracker" in html
     r = c.post("/applications/log", data={"company": "Globex", "title": "Analytics Engineer", "applied_on": "2026-11-03"},
                follow_redirects=False)
@@ -161,7 +161,7 @@ def test_hand_logged_rows_are_a_record_not_a_review_page(tmp_path):
     c = client(s, db)
     a = history.log(db, "Globex", "Analytics Engineer")
     b = history.log(db, "Initech", "Data Lead", url="https://initech.example/jobs/3")
-    html = c.get("/").text
+    html = c.get("/leads?view=applied").text  # the list moved off the dashboard (11/18)
     assert f'/job/{a["id"]}' not in html and f'/job/{b["id"]}' not in html
     assert 'href="https://initech.example/jobs/3"' in html
 

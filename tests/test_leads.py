@@ -63,7 +63,12 @@ def test_save_dedupes_and_tracks(tmp_path, capsys):
     assert rows["Hooli"]["score"] > 0
     leads.set_status(db, rows["Initech"]["key"], "starred")
     cli.main(["--config", str(cfg), "leads", "lookup"])
+    assert capsys.readouterr().out.strip() == "0"  # a star alone no longer starts the paid lookup (11/18)
+    leads.want_lookup(db, rows["Initech"]["key"])  # "Find it on their site" on the board card
+    cli.main(["--config", str(cfg), "leads", "lookup"])
     assert capsys.readouterr().out.strip() == "1"
+    assert not leads.get(db, rows["Initech"]["key"])["want_lookup"]  # handed over once, not every run
+    leads.want_lookup(db, rows["Initech"]["key"])
     picked = json.loads((s.data_dir / "daily" / "alert-roles.json").read_text())
     assert picked[0]["company"] == "Initech" and picked[0]["link"].endswith("/222/")
     db.upsert_job({"id": "gh:initech:9", "ats": "greenhouse", "company": "Initech", "title": "Staff Data Engineer, Platform",

@@ -2,17 +2,30 @@
 {% block title %}Leads{% endblock %}
 {% block body %}{% from "macros.html" import applied_btn %}
 <div class="ph ph-leads"><div><h1>Leads</h1>
- <div class="sub">Roles from your job-alert emails, best fit first. Star the ones that feel right; you don't have to look at all of them.</div>
- <details class="how"><summary>How leads work</summary><p>After each email sync, the top leads are looked up on the company's own job board
-  (Greenhouse, Lever, Ashby, Workable; no AI). Matches join the roles the daily run can tailor. <b>Star</b> a lead and the next run searches the web for it;
-  <b>Auto apply</b> does that for one role right away and uses credits. <b>Score</b> is a rough fit from your titles and resume; point at a score to see what made it up.</p></details></div>
+ <div class="sub">{% if view == 'board' %}The roles you starred, worked one step at a time. A handful in play is plenty.
+  {% elif view == 'applied' %}Everything you've sent, newest first. Many companies never write back; it isn't about you.
+  {% else %}Roles from your job-alert emails, best fit first. Star the ones that feel right and they go on your board; you don't have to look at all of them.{% endif %}</div>
+ {% if view == 'inbox' %}<details class="how"><summary>How leads work</summary><p>After each email sync, the top leads are looked up on the company's own job board
+  (Greenhouse, Lever, Ashby, Workable; no AI). Matches join the roles the daily run can tailor. <b>Star</b> a lead to put it on your board, free;
+  on the board, <b>Find it on their site</b> has the next run search the web for it, and <b>Auto apply</b> does everything for one role right away. Both use credits.
+  <b>Score</b> is a rough fit from your titles and resume; point at a score to see what made it up.</p></details>{% endif %}</div>
  <details class="addmenu"><summary class="btn primary" aria-haspopup="menu">+ Add job</summary><div class="addmenu-list" role="menu">
   <button type="button" class="btn ghost" role="menuitem" data-open-paste><b>Paste a job post</b><span>A LinkedIn page, a careers page, an email or a link</span></button>
   <button type="button" class="btn ghost applied-open" role="menuitem" title="Log an application you sent on LinkedIn, a company site or by email"><b>Applied elsewhere</b><span>Log one you already sent</span></button>
  </div></details></div>
 <style>.how{margin-top:6px;font-size: 14px;color:var(--ink-2)}.how summary{cursor:pointer;color:var(--accent-ink);font-weight:600}.how p{margin:6px 0 0;max-width:760px}</style>
 
-{% with open=false %}{% include "_sources.html" %}{% endwith %}
+<nav class="views" aria-label="Leads views">
+ <a href="/leads" {% if view == 'inbox' %}aria-current="page"{% endif %}>Inbox<span class="n">{{ n_inbox }}</span></a>
+ <a href="/leads?view=board" {% if view == 'board' %}aria-current="page"{% endif %}>Board<span class="n">{{ n_board }}</span></a>
+ <a href="/leads?view=applied" {% if view == 'applied' %}aria-current="page"{% endif %}>Applied<span class="n">{{ s.applications|length }}</span></a>
+</nav>
+<style>.views{display:flex;gap:24px;border-bottom:1px solid var(--line-2);margin:0 0 18px;overflow-x:auto}
+.views a{padding:10px 0;font-size:14px;font-weight:600;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color 150ms var(--ease-out),border-color 150ms var(--ease-out)}
+.views a:hover{text-decoration:none;color:var(--ink)}.views a[aria-current]{color:var(--ink);border-bottom-color:var(--accent)}
+.views .n{font-weight:400;color:var(--ink-3);margin-left:6px;font-variant-numeric:tabular-nums}
+.done-line{margin:0 0 14px;padding:10px 14px;border-radius:var(--r-ctl);background:var(--accent-soft);color:var(--ink)}</style>
+{% if view == 'inbox' %}{% with open=false %}{% include "_sources.html" %}{% endwith %}{% endif %}
 <script>if(location.hash==="#sources"){const s=document.getElementById("sources");if(s)s.open=true}</script>
 {% if running %}<p class="notice" role="status" style="margin:0 0 14px"><span class="grow">A run is going{% if running.at %} (since {{ running.at }}){% endif %}{% if running.label %}: {{ running.label }}{% endif %}. Auto apply is available again when it finishes, and what it found shows under the role.</span><a class="btn sm" href="/runs">See what it's doing</a></p>
  <script>setTimeout(()=>location.reload(),20000)</script>{% endif %}
@@ -42,6 +55,9 @@
 It uses credits: roughly 1M tokens of your Claude plan (or OpenRouter credit, if the daily run uses it). Nothing is submitted until you press Submit.
 
 You can follow it on the Run log page.{% endset %}<template id="confirm-auto">{{ auto_msg }}</template>
+{% if view == 'board' %}{% if done %}<p class="done-line" role="status">{{ done }}</p>{% endif %}{% include "_board.html" %}
+{% elif view == 'applied' %}{% include "_applications.html" %}
+{% else %}
 <nav class="tabs" aria-label="Filter">
  {% for key, label, n in tabs %}<a href="/leads?show={{ key }}" {% if key == show %}aria-current="page"{% endif %}>{{ label }} <span class="count">{{ n }}</span></a>{% endfor %}
 </nav>
@@ -57,7 +73,7 @@ You can follow it on the Run log page.{% endset %}<template id="confirm-auto">{{
   <td><b style="font-weight:600">{{ r.company }}</b> · <a href="/lead/{{ r.key|urlencode }}">{{ r.title }}</a>{% if r.apply_url or r.url %} <a class="ext" href="{{ r.apply_url or r.url }}" target="_blank" rel="noopener" title="Open the posting" aria-label="Open the posting"><svg width="14" height="14" aria-hidden="true"><use href="#i-ext"/></svg></a>{% endif %}
    {% if r.description and 'pasted' in (r.source or '') %}<span class="pill" style="text-transform:none">pasted</span>{% endif %}
    {% if r.apply_url %}<div class="ink2" style="font-size:14px"><span class="pill submitted" style="text-transform:none">company site</span>{% if r.url %} · <a href="{{ r.url }}" target="_blank" rel="noopener">{{ (r.source or 'alert').split(', ')[0] }} link</a>{% endif %}</div>
-   {% elif r.ats_checked and not r.job_id and not r.note %}<div class="ink2" style="font-size:14px">company page not found yet{% if r.status != 'starred' %}: star it to look further{% endif %}</div>{% endif %}
+   {% elif r.ats_checked and not r.job_id and not r.note %}<div class="ink2" style="font-size:14px">company page not found yet{% if r.status == 'starred' %}: on your board, Find it on their site looks further{% endif %}</div>{% endif %}
    {% if r.note %}<div class="tried{{ ' found' if r.job_id }}"><b>Auto apply {{ r.tried_at[5:10]|replace('-', '/') }} {{ r.tried_at[11:16] }}:</b> {{ r.note|truncate(260) }} <a href="/runs">Run log</a></div>{% endif %}
    {% if r.salary %}<div class="ink2" style="font-size:14px">{{ r.salary }}</div>{% endif %}
    {% if r.applied %}<div><span class="pill waiting" style="text-transform:none" title="{{ r.applied }}">applied there</span></div>{% endif %}
@@ -78,7 +94,7 @@ Heads up: {{ r.applied }}."{% else %}data-confirm-ref="confirm-auto"{% endif %}>
    {% if r.status != 'applied' %}{{ applied_btn(r.company, r.title, r.apply_url or r.url, "/leads?show=" ~ show ~ "#leads") }}{% endif %}
    <form method="post" action="/leads" class="lead-acts"><input type="hidden" name="key" value="{{ r.key }}"><input type="hidden" name="show" value="{{ show }}">
    {% if r.status == 'starred' %}<button class="btn sm star on" name="status" value="new" aria-label="Unstar" title="Unstar"><svg width="16" height="16" aria-hidden="true"><use href="#i-star-on"/></svg></button>
-   {% elif not r.job_id %}<button class="btn sm star" name="status" value="starred" aria-label="Star" title="Star: look this up next run"><svg width="16" height="16" aria-hidden="true"><use href="#i-star"/></svg></button>{% endif %}
+   {% elif not r.job_id %}<button class="btn sm star" name="status" value="starred" aria-label="Star" title="Star: put it on your board"><svg width="16" height="16" aria-hidden="true"><use href="#i-star"/></svg></button>{% endif %}
    {% if r.status == 'dismissed' %}<button class="btn ghost sm" name="status" value="new">Restore</button>
    {% elif not r.job_id %}<button class="btn ghost sm" name="status" value="dismissed" title="Not interested">Dismiss</button>{% endif %}</form></div></td>
  </tr>{% endfor %}</tbody></table>
@@ -114,4 +130,5 @@ td.num:hover .tip,td.num:focus-within .tip{display:grid;gap:4px}.tip b{font-weig
  const q=document.getElementById("q");q.oninput=()=>{const s=q.value.toLowerCase();[...tb.rows].forEach(r=>r.hidden=!!s&&!r.textContent.toLowerCase().includes(s))};
 })();
 </script>
+{% endif %}
 {% endblock %}

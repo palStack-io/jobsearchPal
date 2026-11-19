@@ -89,6 +89,10 @@ def ensure(db):
     for col in ("apply_url", "ats_checked", "tried_at", "note", "description", "work_setting"):
         if col not in have:
             db.conn.execute(f"alter table leads add column {col} text")
+    # want_lookup (11/18): "Find it on their site" on a board card. Only these go to the paid agent lookup; a star
+    # alone no longer does (the free company-board lookup, resolve(), still tries starred leads first).
+    if "want_lookup" not in have:
+        db.conn.execute("alter table leads add column want_lookup integer default 0")
 
 
 def save(db, found: list[dict], source: str, when: datetime, search: dict, terms: set) -> int:
@@ -268,15 +272,21 @@ def get(db, k: str) -> dict | None:
     return dict(r) if r else None
 
 
+def want_lookup(db, k: str, on: bool = True):
+    ensure(db)
+    db.conn.execute("update leads set want_lookup = ? where key = ?", (1 if on else 0, k))
+    db.conn.commit()
+
+
 def starred_for_lookup(db, limit: int = 8, only: str = "") -> list[dict]:
-    """Starred leads not tracked yet, in the shape the alerts step reads (data/daily/alert-roles.json).
+    """Leads you asked to find on the company's site ("Find it on their site"), not tracked yet, in the shape the alerts step reads (data/daily/alert-roles.json).
     only: one lead's key (Auto apply on the Leads page), starred or not."""
     link_tracked(db)
     if only:
         r = get(db, only)
         return [{"company": r["company"], "title": r["title"], "link": r["url"], "why": "you asked to apply"}] if r and not r["job_id"] else []
-    return [{"company": r["company"], "title": r["title"], "link": r["url"], "why": "you starred it"}
-            for r in db.conn.execute("select * from leads where status = 'starred' and job_id is null "
+    return [{"company": r["company"], "title": r["title"], "link": r["url"], "why": "you asked to find it on their site"}
+            for r in db.conn.execute("select * from leads where want_lookup = 1 and job_id is null and status != 'dismissed' "
                                      "order by score desc limit ?", (limit,))]
 
 

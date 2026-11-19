@@ -32,6 +32,21 @@ env.filters["label"] = lambda k: {"confirmed": "received", "rejected": "closed",
 env.filters["pillcls"] = lambda k: {"rejected": "closed"}.get(k, k)  # a closed application is a neutral fact, not an alarm (red)
 
 
+
+
+def _dayname(iso: str, today: str) -> str:
+    """A board card's due day, said the way a person would: Today, Tomorrow, Thu (this week), else Nov 24."""
+    try:
+        d, t = date.fromisoformat(str(iso)[:10]), date.fromisoformat(str(today)[:10])
+    except ValueError:
+        return str(iso or "")
+    n = (d - t).days
+    if n < 0:
+        return d.strftime("%b %-d")
+    return "Today" if n == 0 else "Tomorrow" if n == 1 else d.strftime("%a") if n < 7 else d.strftime("%b %-d")
+
+
+env.filters["dayname"] = _dayname
 SHORTLIST = 5  # roles on "Ready for you" each day: the prepared ones plus the next best to triage
 DECLINE_REASONS = {"fit": "not a fit", "location": "location", "pay": "pay", "applied": "already applied", "other": "other"}
 
@@ -378,7 +393,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except ValueError as e:
             if back or request.headers.get("x-in-page"):
                 raise HTTPException(400, str(e))
-            return RedirectResponse(f"/?log=1&msg={quote(str(e))}#applications", status_code=303)
+            return RedirectResponse(f"/leads?view=applied&log=1&msg={quote(str(e))}#applications", status_code=303)
         from . import leads
         leads.link_tracked(db)  # a lead for this role now shows as applied
         db.conn.execute("update leads set status = 'applied' where job_id = ?", (r["id"],))
@@ -393,14 +408,14 @@ def make_app(settings, db: DB) -> FastAPI:
         if back:
             path, _, frag = back.partition("#")
             return RedirectResponse(f"{path}{'&' if '?' in path else '?'}done={quote(msg)}{'#' + frag if frag else ''}", status_code=303)
-        return RedirectResponse(f"/?msg={quote(msg)}#applications", status_code=303)
+        return RedirectResponse(f"/leads?view=applied&msg={quote(msg)}#applications", status_code=303)
 
     @app.post("/applications/import")
     async def import_applications(file: UploadFile = File(...)):
         from . import history
         raw = await file.read()
         if len(raw) > 2_000_000:
-            return RedirectResponse(f"/?msg={quote('That file is over 2 MB. Export just the tracker sheet as CSV.')}#applications",
+            return RedirectResponse(f"/leads?view=applied&msg={quote('That file is over 2 MB. Export just the tracker sheet as CSV.')}#applications",
                                     status_code=303)
         try:
             text = raw.decode("utf-8-sig")
@@ -410,13 +425,13 @@ def make_app(settings, db: DB) -> FastAPI:
         try:
             added = history.import_csv(db, text)
         except Exception as e:  # a malformed CSV shouldn't take the dashboard down
-            return RedirectResponse(f"/?msg={quote('Could not read that CSV: ' + str(e)[:120])}#applications", status_code=303)
+            return RedirectResponse(f"/leads?view=applied&msg={quote('Could not read that CSV: ' + str(e)[:120])}#applications", status_code=303)
         marked = len(db.by_status("submitted")) - before - added
         msg = (f"Imported {added} application{'' if added == 1 else 's'}"
                + (f", and marked {marked} the tool already knew as applied" if marked > 0 else "")
                + ". Ones you already had were left as they were." if added or marked > 0 else
                "Nothing new in that file: every application in it is already here, or it has no Company, Position and Date Applied columns.")
-        return RedirectResponse(f"/?msg={quote(msg)}#applications", status_code=303)
+        return RedirectResponse(f"/leads?view=applied&msg={quote(msg)}#applications", status_code=303)
 
     @app.get("/applications.csv")
     def export_applications():
@@ -731,10 +746,29 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse(_auth.safe_next(back), status_code=303)
 
     @app.get("/leads")
-    def leads_page(show: str = "open", more: int = 0):
-        from . import leads
+    def leads_page(show: str = "open", more: int = 0, view: str = "inbox", card: str = "", moved: str = "", done: str = "",
+                   msg: str = "", log: str = ""):
+        """Leads has three views (11/18): Inbox (every lead, as before), Board (the roles you starred, worked step by
+        step) and Applied (the applications list that used to sit on the dashboard)."""
+        from . import board, leads
         from .prefs import Prefs
         from .rank import Applied
+        view = view if view in ("inbox", "board", "applied") else "inbox"
+        cols = board.columns(db)
+        n_board = sum(len(c["cards"]) for c in cols)
+        common = dict(nav="leads", view=view, n_board=n_board, running=run_state(), done=done[:300], msg=(msg or done)[:300], open_log=log == "1",
+                      today=date.today().isoformat())
+        if view == "board":
+            every = [k for c in cols for k in c["cards"]]
+            for k in every:
+                k["want_lookup"] = (leads.get(db, k["key"]) or {}).get("want_lookup")
+            sel = next((k for k in every if k["key"] == card), every[0] if every else None)
+            return page("leads.html", cols=cols, sel=sel, card=card, moved=moved, steps=board.STEPS,
+                        n_inbox=len(leads.rows(db, "new")) + len(leads.rows(db, "starred")),
+                        s=stats.compute(db, floor=work_search(settings)[1]), **common)
+        if view == "applied":
+            s = stats.compute(db, floor=work_search(settings)[1])
+            return page("leads.html", s=s, n_inbox=len(leads.rows(db, "new")) + len(leads.rows(db, "starred")), **common)
         every = leads.rows(db)
         applied = Applied(db, int(Prefs(settings.data_dir, settings.raw).data.get("reapply_after_days", 90) or 0))
         for r in every:
@@ -750,8 +784,82 @@ def make_app(settings, db: DB) -> FastAPI:
         cap = 2000 if more else 150  # 500 rows made the page 1.2-1.4 MB (11/10)
         shown = groups[show][:cap]
         leads.explain_scores(shown, settings)  # what each score is made of, for the hover on the Score column
-        return page("leads.html", rows=shown, total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show, nav="leads",
-                    running=run_state(), src=src, src_open=src["on"] < src["total"] // 2 or not every)
+        return page("leads.html", rows=shown, total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show,
+                    src=src, src_open=src["on"] < src["total"] // 2 or not every, n_inbox=len(groups["open"]),
+                    s=stats.compute(db, floor=work_search(settings)[1]), **common)
+
+    # ---------- the board (11/18): plain forms, each back to the board with the card still picked ----------
+
+    def _to_board(key: str, moved: bool = False, msg: str = "") -> RedirectResponse:
+        q = f"/leads?view=board&card={quote(key, safe='')}" + ("&moved=" + quote(key, safe="") if moved else "")
+        return RedirectResponse(q + (f"&done={quote(msg)}" if msg else ""), status_code=303)
+
+    @app.post("/board/add")
+    def board_add(key: str = Form(""), job: str = Form(""), back: str = Form("")):
+        from . import board
+        if job:
+            j = db.get(job)
+            if not j:
+                raise HTTPException(404)
+            key = board.add_job(db, j)
+        elif not board.add(db, key):
+            raise HTTPException(404)
+        if back.startswith("/") and not back.startswith("//"):
+            return RedirectResponse(back, status_code=303)
+        return _to_board(key, moved=True)
+
+    @app.post("/board/remove")
+    def board_remove(key: str = Form(...)):
+        from . import board
+        board.remove(db, key)
+        return RedirectResponse("/leads?view=board", status_code=303)
+
+    @app.post("/board/move")
+    def board_move(key: str = Form(...), col: int = Form(...)):
+        from . import board
+        board.move(db, key, col)
+        return _to_board(key, moved=True)
+
+    @app.post("/board/step")
+    def board_step(key: str = Form(...), i: int = Form(...)):
+        from . import board
+        try:
+            board.toggle_step(db, key, i)
+        except ValueError:
+            raise HTTPException(400)
+        return _to_board(key)
+
+    @app.post("/board/save")
+    def board_save(key: str = Form(...), next_step: str = Form(""), due: str = Form(""), notes: str = Form("")):
+        from . import board
+        board.save(db, key, next_step, due, notes)
+        return _to_board(key)
+
+    @app.post("/board/lookup")
+    def board_lookup(key: str = Form(...)):
+        from . import leads
+        leads.want_lookup(db, key)
+        return _to_board(key)
+
+    @app.post("/board/applied")
+    def board_applied(key: str = Form(...)):
+        """The card's role, logged as sent (the same path as Applied elsewhere); the card leaves for Applied."""
+        from . import board, history, leads
+        r = leads.get(db, key)
+        if not r:
+            raise HTTPException(404)
+        try:
+            done = history.log(db, r["company"], r["title"], url=(r.get("apply_url") or r.get("url") or "").strip())
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        leads.link_tracked(db)
+        db.conn.execute("update leads set status = 'applied', job_id = coalesce(job_id, ?) where key = ?", (done["id"], key))
+        db.conn.commit()
+        board.sync_stars(db)
+        j = done["job"]
+        msg = (f"Sent. Added {j['title']} at {j['company']} to Applied. That's one more door you knocked on, and it counts "
+               "toward your week.") if done["status"] != "already" else f"{j['title']} at {j['company']} was already in Applied."
+        return RedirectResponse(f"/leads?view=board&done={quote(msg)}", status_code=303)
 
     @app.post("/leads/apply")
     def lead_apply(key: str = Form(...)):
@@ -842,11 +950,15 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.post("/leads")
     def lead_action(key: str = Form(...), status: str = Form(...), show: str = Form("open")):
-        from . import leads
+        from . import board, leads
         try:
             leads.set_status(db, key, status)
         except ValueError:
             raise HTTPException(400)
+        if status == "starred":
+            board.add(db, key)  # a star is the way onto the board
+        else:
+            board.remove(db, key)
         return RedirectResponse(f"/leads?show={show}#leads", status_code=303)
 
     @app.get("/stats")

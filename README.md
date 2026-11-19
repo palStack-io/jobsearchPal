@@ -42,6 +42,11 @@ The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them
   Your laptop, Claude desktop and any chat app can be closed; they're only for setup and fixes.
 - **Prepares, never sends.** Each morning a few applications are tailored and filled in, follow-up replies
   are drafted, and a brief arrives by email. You read them on the dashboard and press Submit yourself.
+- **A board for the roles you pick.** Star a lead and it lands on your board: Shortlist, Research, Reach out,
+  Ready to apply, with small steps to tick, a next step with a day, and notes. Starring costs nothing.
+- **A plan for what you're missing.** Skills shows what the roles found for you ask for that your resume doesn't;
+  tick up to three and get a four-week learning plan built on what you already know, with links to each tool's
+  own docs or free course.
 - **Sounds like you.** Pick how your cover letters read (tone, opening, length, words to avoid), and rewrite
   any one letter with a short note.
 - **Your AI, your order.** Pick the models on the Settings page: your Claude or ChatGPT subscription first,

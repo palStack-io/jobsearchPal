@@ -16,21 +16,28 @@
   {% else %}<div class="lbl">Next deadline</div><div class="sub">None yet. Add seminars, RESEA meetings or documents below.</div>{% endif %}
   {% if cur %}<a class="btn sm" href="/dua/{{ cur.start.isoformat() }}.zip">Download this week's proof</a>{% endif %}</div>
 </section>
-{% if rule %}<section class="card" style="margin-bottom:16px"><h2><span>{{ rule.name }}'s rule</span>
-  <span class="pill {{ 'rejected' if rule.confidence == 'low' else ('submitted' if rule.source == 'official' else 'waiting') }}" style="text-transform:none">{% if rule.confidence == 'low' %}not confirmed · {% endif %}checked {{ rule.checked }}</span></h2>
- {% if rule.agency %}<p class="muted" style="margin:-6px 0 8px;font-size:14px">{{ rule.agency }}</p>{% endif %}
- <p style="margin:0 0 6px">{% if rule.weekly_minimum is not none %}<b>{{ rule.weekly_minimum }} a week.</b>{% elif rule.varies %}<b>The number is set for each claimant.</b>{% else %}<b>No set number.</b>{% endif %} {{ rule.rule.rstrip('. ') }}.</p>
- {% if rule.report %}<p class="ink2" style="margin:0 0 6px">How it's reported: {{ rule.report.rstrip('. ') }}.</p>{% endif %}
- {% if rule.minimum_note %}<p class="ink2" style="margin:0 0 6px">{{ rule.minimum_note }}</p>{% endif %}
- {% if rule.must_register %}<p class="ink2" style="margin:0 0 6px"><b>Register:</b> {{ rule.must_register }}</p>{% endif %}
- {% if rule.keep_records %}<p class="ink2" style="margin:0 0 6px"><b>Keep your log:</b> {{ rule.keep_records }}</p>{% endif %}
- {% if rule.exemptions %}<p class="ink2" style="margin:0 0 6px"><b>Usually excused:</b> {{ rule.exemptions|join('; ') if rule.exemptions is not string else rule.exemptions }}</p>{% endif %}
- {% if rule.weekly_benefit or rule.max_weeks %}<p class="ink2" style="margin:0 0 6px"><b>Benefits:</b> {% if rule.weekly_benefit %}{{ rule.weekly_benefit }} a week{% endif %}{% if rule.weekly_benefit and rule.max_weeks %}, {% endif %}{% if rule.max_weeks %}up to {{ rule.max_weeks }} weeks{% endif %}.</p>{% endif %}
- {% if rule.waiting_week %}<p class="ink2" style="margin:0 0 6px"><b>Waiting week:</b> {{ rule.waiting_week_note or "the first week of a claim is unpaid" }}{% if not (rule.waiting_week_note or '').endswith('.') %}.{% endif %}</p>{% endif %}
- {% if rule.part_time_earnings_allowed %}<p class="ink2" style="margin:0 0 6px"><b>Part-time work:</b> you can earn up to {{ rule.part_time_earnings_allowed }} in a week before your benefit is reduced. Report it for the week you worked.</p>{% endif %}
- <p class="muted" style="margin:0;font-size:14px">Rules change{% if rule.source != 'official' %}, and this one comes from a summary, not the agency's own site{% elif rule.confidence == 'low' %}, and this one couldn't be confirmed on the agency's site{% elif rule.confidence == 'medium' %}, and the agency gives no exact number online{% endif %}. Your agency's letters to you are what counts.
-  <a href="{{ rule.url }}" target="_blank" rel="noopener">Check the official rules</a>. This page counts toward {{ floor }} a week; change it on <a href="/setup#interests">Setup</a>.</p></section>
-{% elif floor %}<p class="muted" style="margin:0 0 14px">Collecting unemployment? Pick your state on <a href="/setup#ws_state">Setup</a> to see its work-search rule.</p>{% endif %}
+{% macro week_card(w, first) %}<section class="card {% if not first %}mt{% endif %}">
+ <h2><span>{{ w.start.strftime("%b %-d") }} – {{ w.end.strftime("%b %-d, %Y") }}{% if w.current %} <span class="pill filled" style="margin-left:6px">this week</span>{% endif %}
+   <span class="pill {{ 'submitted' if w.count >= floor else 'waiting' }}" style="margin-left:6px">{{ w.count }} / {{ floor }} activities</span></span>
+  <a class="btn sm" href="/dua/{{ w.start.isoformat() }}.zip">Download proof (.zip)</a></h2>
+ <table><thead><tr><th>Date</th><th class="hide-sm">Activity</th><th>Company</th><th class="hide-sm">Position</th><th>Result</th><th>Proof</th></tr></thead><tbody>
+ {% for r in w.rows %}<tr><td class="ink2" style="white-space:nowrap">{{ r.date.strftime("%a %-m/%-d") }}</td><td class="hide-sm">{{ r.type }}{% if not r.counts %} <span class="muted">(not counted)</span>{% endif %}</td>
+  <td><b style="font-weight:600">{{ co(r.company) }}</b></td><td class="hide-sm ink2">{{ r.position }}</td><td><span class="pill {{ r.result|lower|pillcls }}" style="text-transform:none">{{ (r.result|lower|label)|capitalize }}</span></td>
+  <td>{% for p in r.proof %}<a href="/proof/{{ w.start.isoformat() }}/{{ p.split('/')[-1] }}" target="_blank">{{ 'screenshot' if p.endswith('.png') else 'email' }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="muted" title="No saved email or screenshot for this one">—</span>{% endfor %}</td></tr>{% endfor %}
+ </tbody></table></section>{% endmacro %}
+{# Four tabs, each about one screen (11/19): the page was ~3,100 px. Every panel is in the page; the script only switches
+   which one shows. A link to #people, #claim, #tasks, #letters or #rule opens that panel. #}
+{% set ws_tabs = [('log', 'Weekly log'), ('claim', 'Claim and deadlines'), ('people', 'People'), ('rule', ws_rule_label)] %}
+<div class="st-tabs" role="tablist" aria-label="{{ ws_label }} sections">
+ {% for k, label in ws_tabs %}<a role="tab" id="t-{{ k }}" href="?tab={{ k }}" aria-controls="p-{{ k }}" aria-selected="{{ 'true' if k == tab else 'false' }}" data-tab="{{ k }}">{{ label }}</a>{% endfor %}
+ <span class="st-ind" aria-hidden="true"></span>
+</div>
+<div class="st-pane" role="tabpanel" id="p-log" aria-labelledby="t-log" {% if tab != 'log' %}hidden{% endif %}>
+
+{% for w in weeks[:4] %}{{ week_card(w, loop.first) }}{% else %}<p class="empty">Your log fills itself as you apply, talk to recruiters and interview. You don't have to write any of it down.</p>{% endfor %}
+{% if weeks|length > 4 %}<details class="older"><summary>Show {{ weeks|length - 4 }} older weeks</summary>{% for w in weeks[4:] %}{{ week_card(w, false) }}{% endfor %}</details>{% endif %}
+</div>
+<div class="st-pane" role="tabpanel" id="p-claim" aria-labelledby="t-claim" {% if tab != 'claim' %}hidden{% endif %}>
 <div class="grid g2 benefits">
 <section class="card" id="claim"><h2><span>Your claim</span>{% if runway %}<span class="count">week {{ runway.week_no }}</span>{% endif %}</h2>
  {% if runway %}<div class="runway"><div class="num">{{ runway.left }}<small> of {{ runway.allowed }} weeks left</small></div>
@@ -73,7 +80,8 @@
  {% for e in letters[:5] %}{{ letter_row(e) }}{% else %}<p class="muted" style="margin:0;font-size:14px">None yet. Letters from your state's unemployment agency or career center show up here after an email sync.</p>{% endfor %}
  {% if letters|length > 5 %}<details class="more-letters"><summary>Show all {{ letters|length }}</summary>{% for e in letters[5:] %}{{ letter_row(e) }}{% endfor %}</details>{% endif %}
 </section>
-
+</div>
+<div class="st-pane" role="tabpanel" id="p-people" aria-labelledby="t-people" {% if tab != 'people' %}hidden{% endif %}>
 <section class="card people" id="people" aria-labelledby="people-h"><h2 id="people-h"><span>People you've been in touch with</span><span class="count">{{ people|length }}</span></h2>
  <p class="ink2 lead">A short note to a former colleague or a friend of a friend is real search work. Each one goes in your log as a networking contact{% if not contacts_count %}, not counted toward your weekly number unless you turn that on below{% endif %}.</p>
  <form method="post" action="/contacts" class="add-person la-kit"><input type="hidden" name="action" value="add">
@@ -102,10 +110,27 @@
   <noscript><button class="btn sm ghost">Save</button></noscript>
   <span class="muted">Off until you turn it on. Many states accept networking and contacting employers; some don't.{% if rule %} Check {{ rule.name }}'s rule above.{% endif %} Your agency's notice is what counts.</span></form>
 </section>
-
-<details class="card mt help-box"><summary><h2 style="margin:0">Help you're entitled to, that people often miss</h2><span class="muted">taxes, waiting week, severance, RESEA, health coverage, SNAP, 211, legal aid</span></summary>
+</div>
+<div class="st-pane" role="tabpanel" id="p-rule" aria-labelledby="t-rule" {% if tab != 'rule' %}hidden{% endif %}>
+{% if rule %}<section class="card" id="rule" style="margin-bottom:16px"><h2><span>{{ rule.name }}'s rule</span>
+  <span class="pill {{ 'rejected' if rule.confidence == 'low' else ('submitted' if rule.source == 'official' else 'waiting') }}" style="text-transform:none">{% if rule.confidence == 'low' %}not confirmed · {% endif %}checked {{ rule.checked }}</span></h2>
+ {% if rule.agency %}<p class="muted" style="margin:-6px 0 8px;font-size:14px">{{ rule.agency }}</p>{% endif %}
+ <p style="margin:0 0 6px">{% if rule.weekly_minimum is not none %}<b>{{ rule.weekly_minimum }} a week.</b>{% elif rule.varies %}<b>The number is set for each claimant.</b>{% else %}<b>No set number.</b>{% endif %} {{ rule.rule.rstrip('. ') }}.</p>
+ {% if rule.report %}<p class="ink2" style="margin:0 0 6px">How it's reported: {{ rule.report.rstrip('. ') }}.</p>{% endif %}
+ {% if rule.minimum_note %}<p class="ink2" style="margin:0 0 6px">{{ rule.minimum_note }}</p>{% endif %}
+ {% if rule.must_register %}<p class="ink2" style="margin:0 0 6px"><b>Register:</b> {{ rule.must_register }}</p>{% endif %}
+ {% if rule.keep_records %}<p class="ink2" style="margin:0 0 6px"><b>Keep your log:</b> {{ rule.keep_records }}</p>{% endif %}
+ {% if rule.exemptions %}<p class="ink2" style="margin:0 0 6px"><b>Usually excused:</b> {{ rule.exemptions|join('; ') if rule.exemptions is not string else rule.exemptions }}</p>{% endif %}
+ {% if rule.weekly_benefit or rule.max_weeks %}<p class="ink2" style="margin:0 0 6px"><b>Benefits:</b> {% if rule.weekly_benefit %}{{ rule.weekly_benefit }} a week{% endif %}{% if rule.weekly_benefit and rule.max_weeks %}, {% endif %}{% if rule.max_weeks %}up to {{ rule.max_weeks }} weeks{% endif %}.</p>{% endif %}
+ {% if rule.waiting_week %}<p class="ink2" style="margin:0 0 6px"><b>Waiting week:</b> {{ rule.waiting_week_note or "the first week of a claim is unpaid" }}{% if not (rule.waiting_week_note or '').endswith('.') %}.{% endif %}</p>{% endif %}
+ {% if rule.part_time_earnings_allowed %}<p class="ink2" style="margin:0 0 6px"><b>Part-time work:</b> you can earn up to {{ rule.part_time_earnings_allowed }} in a week before your benefit is reduced. Report it for the week you worked.</p>{% endif %}
+ <p class="muted" style="margin:0;font-size:14px">Rules change{% if rule.source != 'official' %}, and this one comes from a summary, not the agency's own site{% elif rule.confidence == 'low' %}, and this one couldn't be confirmed on the agency's site{% elif rule.confidence == 'medium' %}, and the agency gives no exact number online{% endif %}. Your agency's letters to you are what counts.
+  <a href="{{ rule.url }}" target="_blank" rel="noopener">Check the official rules</a>. This page counts toward {{ floor }} a week; change it on <a href="/setup#interests">Setup</a>.</p></section>
+{% elif floor %}<p class="muted" style="margin:0 0 14px">Collecting unemployment? Pick your state on <a href="/setup#ws_state">Setup</a> to see its work-search rule.</p>{% endif %}
+<details class="card help-box"><summary><h2 style="margin:0">Help you're entitled to, that people often miss</h2><span class="muted">taxes, waiting week, severance, RESEA, health coverage, SNAP, 211, legal aid</span></summary>
  {% if general %}<ul class="general">{% for g in general %}<li>{{ g }}</li>{% endfor %}</ul>{% endif %}
  <div class="grid g3 res" style="margin-top:12px">{% for name, what, url in resources %}<a class="res-item" href="{{ url }}" target="_blank" rel="noopener"><b>{{ name }}</b><span>{{ what }}</span></a>{% endfor %}</div></details>
+</div>
 <style>.thisweek{display:flex;gap:24px;align-items:stretch;margin-bottom:16px;border-color:color-mix(in srgb,var(--sun) 55%,var(--line));box-shadow:var(--shadow-lg)}
 .thisweek .tw-main{flex:1.4;min-width:0}.thisweek .tw-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start;border-left:1px solid var(--line);padding-left:24px}
 .thisweek .lbl{font-size:15px;font-weight:700;color:var(--ink-2)}.thisweek .num{font-size:40px;line-height:1.1;font-weight:700;margin:2px 0 6px;font-variant-numeric:tabular-nums}
@@ -133,16 +158,23 @@
 .add-person .acts{margin:0}.people-list{margin-top:12px}.people-list li{display:flex;gap:10px;align-items:center}.people-list li>div{flex:1}.people-list form{margin:0}
 .counts-form{display:grid;gap:4px;margin-top:12px;font-size: 14px}.counts-form .muted{font-size: 14px}
 .res-item span{font-size:14px;color:var(--ink-2)}</style>
-{% macro week_card(w, first) %}<section class="card {% if not first %}mt{% endif %}">
- <h2><span>{{ w.start.strftime("%b %-d") }} – {{ w.end.strftime("%b %-d, %Y") }}{% if w.current %} <span class="pill filled" style="margin-left:6px">this week</span>{% endif %}
-   <span class="pill {{ 'submitted' if w.count >= floor else 'waiting' }}" style="margin-left:6px">{{ w.count }} / {{ floor }} activities</span></span>
-  <a class="btn sm" href="/dua/{{ w.start.isoformat() }}.zip">Download proof (.zip)</a></h2>
- <table><thead><tr><th>Date</th><th class="hide-sm">Activity</th><th>Company</th><th class="hide-sm">Position</th><th>Result</th><th>Proof</th></tr></thead><tbody>
- {% for r in w.rows %}<tr><td class="ink2" style="white-space:nowrap">{{ r.date.strftime("%a %-m/%-d") }}</td><td class="hide-sm">{{ r.type }}{% if not r.counts %} <span class="muted">(not counted)</span>{% endif %}</td>
-  <td><b style="font-weight:600">{{ co(r.company) }}</b></td><td class="hide-sm ink2">{{ r.position }}</td><td><span class="pill {{ r.result|lower }}">{{ r.result }}</span></td>
-  <td>{% for p in r.proof %}<a href="/proof/{{ w.start.isoformat() }}/{{ p.split('/')[-1] }}" target="_blank">{{ 'screenshot' if p.endswith('.png') else 'email' }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="muted" title="No saved email or screenshot for this one">—</span>{% endfor %}</td></tr>{% endfor %}
- </tbody></table></section>{% endmacro %}
-<h2 class="section-h">Weekly log</h2>
-{% for w in weeks[:4] %}{{ week_card(w, loop.first) }}{% else %}<p class="empty">Your log fills itself as you apply, talk to recruiters and interview. You don't have to write any of it down.</p>{% endfor %}
-{% if weeks|length > 4 %}<details class="older"><summary>Show {{ weeks|length - 4 }} older weeks</summary>{% for w in weeks[4:] %}{{ week_card(w, false) }}{% endfor %}</details>{% endif %}
+<style>
+.st-tabs{display:flex;position:relative;border-bottom:1px solid var(--line-2);margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
+.st-tabs a{flex:none;min-width:116px;text-align:center;padding:10px 14px;font-size:14px;font-weight:600;color:var(--ink-3);transition:color 150ms var(--ease-out)}
+.st-tabs a:hover{text-decoration:none;color:var(--ink)}.st-tabs a[aria-selected=true]{color:var(--ink)}
+.st-ind{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:var(--w,116px);transform:translateX(var(--x,0));transition:transform 280ms cubic-bezier(.77,0,.175,1),width 280ms cubic-bezier(.77,0,.175,1)}
+.st-pane{animation:st-in 240ms var(--ease-out) backwards}@keyframes st-in{from{opacity:0;transform:translateY(6px)}}
+@media (max-width:640px){.st-tabs{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent)}}
+@media (prefers-reduced-motion:reduce){.st-pane{animation-name:st-fade}.st-ind{transition:none}@keyframes st-fade{from{opacity:0}}}
+</style>
+<script>(()=>{const bar=document.querySelector(".st-tabs");if(!bar)return;const ind=bar.querySelector(".st-ind"),tabs=[...bar.querySelectorAll("[data-tab]")];
+ const place=t=>{ind.style.setProperty("--x",t.offsetLeft+"px");ind.style.setProperty("--w",t.offsetWidth+"px")};
+ const show=(t,keep)=>{tabs.forEach(x=>{const on=x===t;x.setAttribute("aria-selected",on);document.getElementById("p-"+x.dataset.tab).hidden=!on});place(t);
+  if(!keep){const u=new URL(location.href);u.searchParams.set("tab",t.dataset.tab);u.hash="";history.replaceState(null,"",u)}};
+ const h=location.hash&&document.querySelector(location.hash.replace(/[^#\w-]/g,""));const pane=h&&h.closest(".st-pane");
+ const start=pane?tabs.find(t=>"p-"+t.dataset.tab===pane.id):(tabs.find(t=>t.getAttribute("aria-selected")==="true")||tabs[0]);
+ show(start,true);if(pane)requestAnimationFrame(()=>h.scrollIntoView({block:"start"}));
+ tabs.forEach(t=>t.addEventListener("click",e=>{if(e.metaKey||e.ctrlKey)return;e.preventDefault();show(t)}));
+ bar.addEventListener("keydown",e=>{const i=tabs.findIndex(t=>t.getAttribute("aria-selected")==="true");const j=e.key==="ArrowRight"?i+1:e.key==="ArrowLeft"?i-1:-9;
+  if(tabs[j]){e.preventDefault();show(tabs[j]);tabs[j].focus()}})})();</script>
 {% endblock %}

@@ -112,6 +112,7 @@ def main(argv=None):
     a = sub.add_parser("daily-prompt"); a.add_argument("stage"); a.add_argument("job_id", nargs="?", default="")
     a = sub.add_parser("candidates"); a.add_argument("--limit", type=int, default=12)
     a = sub.add_parser("quick-pick"); a.add_argument("--alerts", action="store_true")
+    a = sub.add_parser("apply-once"); a.add_argument("job_id"); a.add_argument("--try", dest="try_it", action="store_true", help="run even when the setting is off (a test)")
     a = sub.add_parser("log-daily"); a.add_argument("agent"); a.add_argument("model", nargs="?", default="")
     a.add_argument("via", nargs="?", default="subscription"); a.add_argument("--stage", default="")
     sub.add_parser("daily-env")
@@ -304,6 +305,28 @@ def main(argv=None):
         prep_only = (root / "preponly.md").read_text() if os.environ.get("AUTOAPPLY_PREP_ONLY") == "1" else ""
         text = text.replace("{{PREP_ONLY}}", prep_only.strip())
         print(text.replace("{{JOB_ID}}", args.job_id))
+    elif args.cmd == "apply-once":
+        # The apply step in one model call (oneshot.py). Exit 2: not this way, 1: failed; either way daily.sh runs the agent.
+        from . import oneshot
+        from .prefs import Prefs
+        def log(model, u):
+            db.log_usage("daily", model, 0, 0, 0.0, u.get("ms", 0), None, est=u.get("est", 0.0), tokens=u.get("tokens", 0),
+                         split=u.get("split"))
+        try:
+            pr = Prefs(s.data_dir, s.raw)
+            if args.try_it:
+                pr.data["apply_one_call"] = True  # this process only; the saved setting is unchanged
+            if not oneshot.enabled(pr):
+                sys.exit(2)
+            print(oneshot.run(db, s, args.job_id, args.config, prep_only=os.environ.get("AUTOAPPLY_PREP_ONLY") == "1",
+                              log=log, prefs=pr))
+        except oneshot.NotThisWay as e:
+            print(f"one call: not this way ({e})", file=sys.stderr)
+            sys.exit(2)
+        except Exception as e:  # noqa: BLE001  the agent takes over; say why in cron.log
+            print(f"one call failed: {str(e)[:300]}", file=sys.stderr)
+            db.log_usage("daily", f"claude:-:{oneshot.TAG}", 0, 0, 0.0, 0, str(e)[:200])
+            sys.exit(1)
     elif args.cmd == "quick-pick":
         # Picks today's roles with one cheap OpenRouter call. Exits 2 when it's off (daily.sh then runs the rank agent).
         from . import rank

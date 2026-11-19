@@ -39,3 +39,13 @@ roughly 10 cents a month.
 sends it to the paid lookup, once (on one real install each lookup step averaged about 210,000 tokens). A **learning plan** on the Skills page is one short request, only when you press it: about 6,000 tokens on
 OpenRouter (skipped once the monthly budget is reached, then it uses your Claude subscription), about 20,000 through
 Claude Code, most of that Claude Code's own overhead.
+
+**Tailor in one call (Settings > Daily run > Advanced, off by default).** An apply step run as an agent session
+re-reads its whole context on every turn: on one real install that was 360,000 to 780,000 tokens a role over 20 to
+35 turns, about 90% of it re-reads. With this on, the app gathers the posting, your base resume, your notes
+(CLAUDE.local.md, materials/context, voice.md) and the form's questions first, and one request writes the resume,
+the cover letter, the answers and notes.md; the app then builds the files and fills the form as before. Measured on
+the same install: about 20,000 tokens and 90 seconds for a full role, about 12,000 when the kit already exists. At
+most two short follow-up requests (a resume still over two pages, a required question left blank). Consent and
+self-ID questions, and the ones your profile answers, never reach the model. It runs on your Claude subscription;
+roles from a job feed, forms on other sites and anything that fails go to the agent, as before.

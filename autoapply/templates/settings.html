@@ -139,7 +139,13 @@
  <div class="srow"><div class="sl"><b>Look for new companies</b><p>Once a week the run finds about 10 companies hiring for roles like yours and watches their boards.</p></div>
   <div class="sc"><select name="discover_weekday">{% for v, l in [(0, 'Never'), (1, 'Mondays'), (2, 'Tuesdays'), (3, 'Wednesdays'), (4, 'Thursdays'), (5, 'Fridays')] %}<option value="{{ v }}" {% if p.discover_weekday == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div></div>
 
- <details class="adv" {% if p.quick_pick_model %}open{% endif %}><summary>Advanced</summary>
+ <details class="adv" {% if p.quick_pick_model or p.apply_one_call %}open{% endif %}><summary>Advanced</summary>
+  <div class="srow"><div class="sl"><b>Tailor in one call</b><p>Write the resume, cover letter and answers in one request instead of an agent session.</p></div>
+   <div class="sc"><input type="hidden" name="one_call_form" value="1"><label class="toggle"><input type="checkbox" name="apply_one_call" value="1" {% if p.apply_one_call %}checked{% endif %}> <span>Use one call</span></label>
+    <details class="more"><summary>More</summary><p>The app gathers the posting, your resume and notes and the form's questions first, then
+     asks once, instead of letting an agent read files turn by turn. On one install an agent session took 360,000 to 780,000 tokens
+     a role; this takes a few tens of thousands. Your Claude subscription, the daily run's model. Roles that need a web search (a job
+     feed's posting) or a form it doesn't know still go to the agent, and so does anything that fails.</p></details></div></div>
   <div class="srow"><div class="sl"><b>Quick pick</b><p>Pick the day's roles in one cheap OpenRouter call instead of an agent session.</p></div>
    <div class="sc"><input type="text" name="quick_pick_model" value="{{ p.quick_pick_model }}" list="or-quick" placeholder="blank = off (the agent picks)">
     <datalist id="or-quick">{% for m in or_models %}<option value="{{ m.id }}">{{ m.name }} · ${{ '%g'|format(m['in']) }} in / ${{ '%g'|format(m.out) }} out per M</option>{% endfor %}</datalist>

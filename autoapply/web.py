@@ -986,8 +986,10 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse(f"/leads?show={show}#leads", status_code=303)
 
     @app.get("/stats")
-    def stats_page():
-        return page("stats.html", s=stats.detail(db, floor=work_search(settings)[1]), nav="stats")
+    def stats_page(tab: str = "overview"):
+        d = stats.detail(db, floor=work_search(settings)[1])
+        return page("stats.html", s=d, head=stats.headline(d), nav="stats",
+                    tab=tab if tab in ("overview", "pipeline", "sources", "work") else "overview")
 
     @app.get("/skills")
     def skills_page():

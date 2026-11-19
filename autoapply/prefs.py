@@ -66,6 +66,7 @@ class Prefs:
                 # model; each application (tailoring + form) uses the main one above.
                 "daily_light_model": "sonnet", "daily_codex_light_model": "", "daily_or_light_model": "",
                 "quick_pick_model": "",  # an OpenRouter model: picks the day's roles in one call instead of an agent session
+                "apply_one_call": False,  # tailor and answer in one model call instead of an agent session (oneshot.py)
                 "discover_weekday": 1,  # 1 = Monday ... 7 = Sunday; 0 = never look for new companies
                 "ollama_url": PROVIDERS["ollama"]["base_url"],
                 # Cost controls: what the daily run may do per day, and a cap on money spent on paid APIs.

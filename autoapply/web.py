@@ -1406,6 +1406,8 @@ def make_app(settings, db: DB) -> FastAPI:
                 d[k] = max(lo, min(hi, int(f.get(k, d[k]))))
             except (TypeError, ValueError):
                 pass
+        if "one_call_form" in f:
+            d["apply_one_call"] = bool(f.get("apply_one_call"))
         if "skills_form" in f:
             d["skills_enabled"] = bool(f.get("skills_enabled"))
             if f.get("skills_via") in ("openrouter", "claude"):

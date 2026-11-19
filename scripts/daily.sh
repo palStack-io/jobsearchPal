@@ -45,6 +45,15 @@ run_stage() {
   local stage=$1 job=${2:-} agent model via turns last=data/daily/.last-message
   line=""
   progress "$stage${job:+ $job}"
+  # The apply step in one model call (Settings > Daily run > "Tailor in one call", autoapply/oneshot.py). Exit 2 = not
+  # this way (off, a feed posting, an unknown form), 1 = failed: either way the agent below does it as before.
+  if [ "$stage" = apply ] && [ -n "$job" ]; then
+    local rc=0
+    line=$(autoapply apply-once "$job" 2>>data/cron.log) || rc=$?
+    if [ "$rc" = 0 ]; then echo "- $stage $job (one call): $line" >> "$today"; return 0; fi
+    [ "$rc" = 1 ] && echo "- $stage $job (one call failed, the agent takes it)" >> "$today"
+    line=""
+  fi
   read -r agent model via < <(autoapply daily-agent --stage "$stage" 2>/dev/null || echo claude) || true
   agent=${agent:-claude}; via=${via:-subscription}; [ "$model" = - ] && model=
   if [ "$via" = blocked ]; then

@@ -4,6 +4,9 @@ first). Work only on this role.
 
 1. `autoapply show {{JOB_ID}}` for the posting. If its ats is "feed", find the same role on the company's own careers
    page (ATS URL) and work from that; if it's gone there, print "<Company>: posting gone" and stop.
+   If WebFetch shows the careers page with no jobs listed (many load the list with a script, often an embedded
+   Paycom, iCIMS or UKG board), run `autoapply careers <careers page url> --title "<title>"` before calling it
+   gone: it opens the page in a real browser and lists the job links, best title match first.
    If its ats is "manual", the person pasted the post: tailor against its description and finish the way step 3
    does (plan.json and `fill --prep-only`); there's no form to fill.
    `autoapply resume-outline` prints the base resume (headline, summary, skills, each experience block's bullets).

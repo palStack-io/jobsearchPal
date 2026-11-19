@@ -131,7 +131,10 @@ rough edges. Known limits today:
   hand"; captchas and emailed codes are finished by you: **Finish it here** opens the filled form in a browser on your
   server that you use from the job page, or `autoapply-finish` opens it in Chrome on your Mac.
 - **AI usage is real.** A full morning run is roughly 1-2 million tokens on your subscription; caps and a monthly
-  budget for paid APIs are on Settings > Costs & limits.
+  budget for paid APIs are on Settings > Costs & limits. **Tailor in one call** (Settings > Daily run > Advanced,
+  off by default) writes each role's resume, letter and answers in a single model call, about 20K tokens a role
+  instead of several hundred thousand, for Greenhouse, Lever and Ashby forms; see
+  [Costs and limits](docs/costs-and-limits.md).
 
 ## Contributing
 

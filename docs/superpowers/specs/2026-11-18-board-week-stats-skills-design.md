@@ -60,3 +60,17 @@ weekly minimum as a checklist.
 ## Left to the builder
 Exact copy for empty states (from the VOICE phrase bank), phone layout of the board (columns stack, each scrolls),
 the Overview sentence's rules.
+
+## Next PR: the apply step in one call (measured 2026-11-18, not built here)
+Live install, last 12 apply runs: 360K-780K tokens each, ~20-35 turns, and **about 90% of the tokens are cache
+reads**: the same ~25K-token context re-read on every turn. New input (cache write) is only ~35-48K and output ~7-12K.
+So the cost is turns, not content. Plan:
+1. Python gathers everything up front, no model: `show` (the posting), `resume-outline`, materials/context,
+   CLAUDE.local.md, the voice notes, and `scan` of the form (browser, no AI).
+2. **One** model call returns `docs.json` + the plan's answers as JSON (same shapes as today).
+3. Python runs `build-docs` and `fill`, and re-asks once only if a check fails.
+Expected: ~50-60K tokens per role instead of ~600K, and none of the turn-by-turn failure points. The agent session
+stays as the fallback for roles that need the web (feed postings to find on the company site, unusual forms).
+Also found: 2 of today's 4 apply runs stopped on "needed permission for autoapply scan <url>": the link held an
+unquoted `&`, which splits the shell command. Fixed in this PR by telling the agent to quote links (apply.md,
+AGENTS.md); the one-call design removes the shell step entirely.

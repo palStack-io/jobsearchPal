@@ -39,7 +39,8 @@ first). Work only on this role.
    CLAUDE.local.md), start date, notice period, years with the role's key skill. Run
    `autoapply fill data/applications/<slug>/plan.json --job {{JOB_ID}} --prep-only`, say "apply by hand" in
    notes.md, and stop.
-4. `autoapply scan <apply url>` for the form's questions.
+4. `autoapply scan '<apply url>'` for the form's questions. Keep the single quotes: a link with `&` in it (many job
+   boards' links have one) otherwise splits the command, it is refused, and the step stops.
 5. Write data/applications/<slug>/plan.json:
    {"url": "<apply url>", "ats": "<greenhouse|lever|ashby|...>",
     "files": {"resume": "<abs path to resume pdf>", "cover_letter": "<abs path to cover pdf>"},

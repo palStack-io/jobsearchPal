@@ -26,7 +26,8 @@ life a little easier. Like the other pals, it runs on your own computer: no trac
 
 ![Work-search log](docs/work-search.png)
 ![Leads and job sources](docs/leads.png)
-![Skills to learn](docs/skills.png)
+![The Leads board](docs/board.png)
+![Skills and a learning plan](docs/skills.png)
 ![Stats](docs/stats-dark.png)
 ![Emails](docs/emails.png)
 ![Settings](docs/settings.png)

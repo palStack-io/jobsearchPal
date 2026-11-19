@@ -579,7 +579,7 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse("/#todo", status_code=303)
 
     @app.get("/plan")
-    def plan_page(planned: str = ""):
+    def plan_page(request: Request, planned: str = ""):
         """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
         them of it beyond the once-a-week pop-up on the dashboard."""
         from . import coach, goals, pal
@@ -591,8 +591,11 @@ def make_app(settings, db: DB) -> FastAPI:
         last_wk = None if back else goals.last_week(db, now.date())
         lookback = last_wk and goals.lookback(db, now.date())
         today_goals = goals.today_view(db, now.date())
-        return page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+        # A goal or day met plays its moment here, where Done is pressed (11/18); the whole week's stays for the dashboard.
+        met = [m for m in goals.new_met(db, now.date()) if m["scope"] != "week"]
+        resp = page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
                     today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
+                    just_met={m["key"] for m in met},
                     plan_days=coach.DAYS,
                     plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
                     lookback=lookback, planned=planned == "1",
@@ -601,6 +604,10 @@ def make_app(settings, db: DB) -> FastAPI:
                     g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
                     last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
                     lookback_summary=goals.summary(lookback["did"]) if lookback else "")
+        if not request.headers.get("x-in-page"):
+            for m in met:
+                db.set_nudge(m["key"], "done")
+        return resp
 
     @app.post("/plan")
     async def plan_save(request: Request):

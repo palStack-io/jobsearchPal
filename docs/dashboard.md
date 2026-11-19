@@ -9,7 +9,7 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
   step), what's **ready to submit** and a **shortlist** of today's best untailored matches (Prepare, Add to board or
   Decline, with a reason), a to-do list (replies owed, follow-ups, claim day, RESEA and other deadlines), interviews
   with their prep packs, latest replies and recruiters. Charts live on **Stats** and the application list on
-  **Leads > Applied** (since 1.2). **Run now** starts another batch any time.
+  **Leads > Applied**. **Run now** starts another batch any time.
 - **Your week** (`/plan`): today's part of your plan with **Done** for the timed goals, the plan itself (totals, the
   days as chips, roles, one person to get in touch with) and last week's look-back.
 - **Stats:** four tabs, each about one screen: **Overview** opens with one plain sentence on what stands out (counted

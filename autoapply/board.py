@@ -5,7 +5,7 @@ A star puts a lead on the board in Shortlist; Unstar or Remove sends it back to 
 "I applied" logs the application the usual way (history.log) and the card leaves the board for Applied.
 
 Nothing here uses a model, and nothing here touches the work-search count: a person you reached for a card is not
-counted toward the weekly log (Harun, 2026-11-18). Counts only go up; there are no streaks and no reminders.
+counted toward the weekly log (decided 2026-11-18). Counts only go up; there are no streaks and no reminders.
 """
 from __future__ import annotations
 

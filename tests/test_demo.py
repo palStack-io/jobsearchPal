@@ -102,3 +102,19 @@ def test_in_page_posts_get_a_dialog_message(demo_app):
     assert r.status_code == 403 and r.json()["title"] == demo.OFF_TITLE
     r = c.post("/job/manual:gh", data={"action": "refill"}, headers={"X-In-Page": "1"})
     assert r.status_code == 403 and "demo" in r.json()["title"]
+
+
+def test_board_and_learning_plan_work_in_the_demo(demo_app):
+    """11/18: the board is plain data and the learning plan is a sample in the demo (never a model)."""
+    from autoapply import board, learn, leads
+    s, db = demo_app
+    leads.add_pasted(db, s, {"company": "Hooli", "title": "Analytics Engineer", "description": "dbt"})
+    k = leads.key("Hooli", "Analytics Engineer")
+    c = TestClient(make_app(s, db))
+    assert c.post("/board/add", data={"key": k}, headers=HTML).status_code == 200
+    assert c.post("/board/move", data={"key": k, "col": "2"}, headers=HTML).status_code == 200
+    assert board.cards(db)[0]["col"] == 2
+    assert not demo.post_allowed("/board/lookup")  # the paid lookup stays off
+    learn.make_plan(db, s, ["dbt"], ask=lambda p: (_ for _ in ()).throw(AssertionError("no model in the demo")))
+    assert learn.plan(db)["status"] == "ready" and learn.plan(db)["model"] == "sample"
+    assert demo.post_allowed("/skills/plan") and demo.post_allowed("/skills/plan/start")

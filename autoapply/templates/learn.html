@@ -58,14 +58,14 @@
   </li>{% endfor %}</ol>
   <div class="lp-acts">{% if not lp.started %}<form method="post" action="/skills/plan/start" style="margin:0"><button class="btn primary sm">Start this plan</button></form>{% endif %}
    <button class="btn sm" form="pickform" data-plan-btn>Redo with my picks</button>
-   <span class="muted">One short request, about 6K tokens. Links come from a checked list, never from the model.</span></div>
+   <span class="muted">One short request: about 6K tokens on OpenRouter, about 20K through Claude Code. Links come from a checked list, never from the model.</span></div>
  {% else %}
   <h2 id="plan-h">Your learning plan</h2>
   {% if lp and lp.status == 'failed' %}<p class="lp-err" role="status">We couldn't write the plan this time. That's on us, not you. Try again in a moment.</p>{% endif %}
   <p class="ink2">Tick up to three skills on the left, then ask for a plan. You get four weeks of small steps built on what you already know,
    with links to each tool's own docs or free course, and one small piece of work you can show.</p>
   <div class="lp-acts"><button class="btn primary sm" form="pickform" data-plan-btn disabled>Make a plan</button>
-   <span class="muted">One short request when you press it, about 6K tokens. Nothing runs on its own.</span></div>
+   <span class="muted">One short request when you press it: about 6K tokens on OpenRouter (it stops at your monthly budget), about 20K through Claude Code. Nothing runs on its own.</span></div>
  {% endif %}
 </section>
 </div>

@@ -367,7 +367,7 @@ def make_plan(db, settings, picks: list[str], ask=None, now: datetime | None = N
         else:
             prompt = PLAN_PROMPT.format(skills=", ".join(picks), names=", ".join(picks),
                                         about=re.sub(r"\s+", " ", about_you(settings.root))[:2500])
-            text, usage = (ask or _default_ask(Prefs(settings.data_dir, settings.raw)))(prompt)
+            text, usage = (ask or _default_ask(Prefs(settings.data_dir, settings.raw), db))(prompt)
             from .skills import _json
             out = _json(text)
         weeks = []
@@ -392,11 +392,14 @@ def make_plan(db, settings, picks: list[str], ask=None, now: datetime | None = N
     return result
 
 
-def _default_ask(prefs):
+def _default_ask(prefs, db=None):
+    """OpenRouter (billed) only while this month's spend is under the budget on Settings; otherwise your Claude
+    subscription's Haiku, which bills nothing extra (it counts toward the plan's usage limits)."""
     from . import classify
     def ask(prompt: str):
         key = prefs.key("OPENROUTER_API_KEY")
-        if key:
+        under = db is None or db.spend_this_month() < float(prefs.data.get("monthly_api_budget") or 0)
+        if key and under:
             from .skills import DEFAULT_OR_MODEL, CHARS_PER_TOKEN
             model = prefs.data.get("skills_model") or DEFAULT_OR_MODEL
             text, cost = classify._ask_chat(prompt, "https://openrouter.ai/api/v1", model, key)

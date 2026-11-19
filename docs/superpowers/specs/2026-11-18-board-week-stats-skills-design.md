@@ -1,6 +1,6 @@
 # Leads board, calmer dashboard, Your week, Stats tabs, Skills plan, fewer tokens (2026-11-18)
 
-Approved by Harun on 2026-11-18 from the mockup canvas (claude.ai artifact UXfXdW75uPUfYrRTzryYxS): "the mockup looks good",
+Approved on 2026-11-18 from a set of clickable mockups: "the mockup looks good",
 "yes" to the four board columns, "no" to counting a reached person toward the work-search log, "get started building".
 
 ## Why
@@ -18,7 +18,7 @@ averaged ~830K tokens per role (25.7M of ~39M), and every starred lead started a
      Unstar or Remove sends it back to Inbox.
    - Each card: company, title, fit score, pay/location, next step + due day, notes, five steps (read the posting, look up
      the team, find one person, prep files, apply). Ticking steps is free; Prep uses credits as today.
-   - A reached person is **not** counted toward the work-search log (Harun, 2026-11-18). Contacts keep their own switch.
+   - A reached person is **not** counted toward the work-search log (decided 2026-11-18). Contacts keep their own switch.
 2. **Dashboard:** keep the horizon banner exactly (sun, greeting, celebration, market line, rejection note). Remove the
    four stat tiles, Applications per week and the Applications table. Add a compact **Your week** panel (day strip,
    one warm line from the record, three thin tallies, one place to start) and a one-line **On your board** card.
@@ -52,7 +52,7 @@ weekly minimum as a checklist.
 - Skills plan: `pal_notes` key `learn:plan` = {skills, weeks:[{title, body, links:[name,url]}], made_at, model}.
 
 ## Approaches considered
-- Board as the single pipeline (lead to offer): rejected by Harun; he wants a separate planning board.
+- Board as the single pipeline (lead to offer): rejected; the owner wants a separate planning board.
 - Board state on the `leads` row (new columns): rejected; a separate table keeps Inbox queries unchanged and lets a
   card leave cleanly.
 - Skills plan with model-written links: rejected; links come from the checked list so nothing is invented.
@@ -62,7 +62,7 @@ Exact copy for empty states (from the VOICE phrase bank), phone layout of the bo
 the Overview sentence's rules.
 
 ## Next PR: the apply step in one call (measured 2026-11-18, not built here)
-Live install, last 12 apply runs: 360K-780K tokens each, ~20-35 turns, and **about 90% of the tokens are cache
+One real install, last 12 apply runs: 360K-780K tokens each, ~20-35 turns, and **about 90% of the tokens are cache
 reads**: the same ~25K-token context re-read on every turn. New input (cache write) is only ~35-48K and output ~7-12K.
 So the cost is turns, not content. Plan:
 1. Python gathers everything up front, no model: `show` (the posting), `resume-outline`, materials/context,

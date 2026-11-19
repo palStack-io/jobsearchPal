@@ -375,3 +375,38 @@ def today_line(v: Mapping | None) -> str:
         return ""
     return " · ".join(amount("apps", b["planned"]) if b["goal"] == "apps" else f"{b['label']} {fmt_minutes(b['planned'])}"
                       for b in v["blocks"])
+
+
+def panel(db, today: date, this_week: int, floor: int, ws_label: str) -> dict:
+    """The dashboard's compact Your week (11/18): this week's strip, one warm line from the record, and a few thin
+    tallies (each goal you set, plus the work-search log against the state's minimum). Counts only go up; a short day
+    is credit, never a shortfall (VOICE.md rules 2, 6, 7, 8)."""
+    week = week_start(today)
+    v = week_view(db, week, today)
+    t = today_view(db, today)
+    so_far = summary(v["did"])
+    if t and t["met"]:
+        line = "That's today's plan done. The rest of the day is yours." + (f" This week so far: {so_far}." if so_far else "")
+    elif t and t["rest"]:
+        line = "A rest day in your plan. Rest counts too." + (f" This week so far: {so_far}." if so_far else "")
+    elif so_far:
+        line = f"This week so far: {so_far}, and that counts."
+    elif not v["planned"]:
+        line = "No plan this week. That's fine." if today.weekday() != 6 else "New week. Last week's effort still counts."
+    else:
+        line = "New week. Last week's effort still counts."
+    full = {"Sun": "Sunday", "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday"}
+    met_days = [full.get(d["day"], d["day"]) for d in v["strip"] if d["planned"] and d["frac"] >= 1 and d["date"] < today]
+    if met_days and not (t and t["met"]):
+        line = f"{met_days[-1] if len(met_days) == 1 else ', '.join(met_days[:-1]) + ' and ' + met_days[-1]}'s plan, done. " + line
+    tallies = []
+    for r in v["rows"]:
+        if r["planned"] > 0:
+            tallies.append({"label": "applications" if r["goal"] == "apps" else LABELS[r["goal"]].lower(),
+                            "did": r["did"] if r["goal"] == "apps" or not r["did"] else fmt_minutes(r["did"]),
+                            "planned": r["planned"] if r["goal"] == "apps" else fmt_minutes(r["planned"]),
+                            "frac": r["frac"]})
+    if floor:
+        tallies.append({"label": ws_label.lower(), "did": this_week, "planned": floor,
+                        "frac": min(1.0, this_week / floor) if floor else 0.0})
+    return {"strip": v["strip"], "line": line, "tallies": tallies, "planned": v["planned"]}

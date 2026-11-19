@@ -3,8 +3,9 @@
 {% block body %}
 {% import "_goals.html" as g %}{{ g.goals_css() }}
 <div class="ph"><div><h1>Your week</h1>
- <div class="sub">Your plan for the week and last week's look-back. It's yours; nothing reminds you of it.</div></div></div>
-<section class="card plan{{ ' g-saved' if planned }}" id="plan" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
+ <div class="sub">Today's part of the plan, the plan itself and last week's look-back. It's yours; nothing reminds you of it.</div></div></div>
+{% if today_goals %}{{ g.today_card(today_goals, (), so_far) }}{% endif %}
+<section class="card plan mt{{ ' g-saved' if planned }}" id="plan" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
  {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
  {% elif plan %}<div class="plan-row"><div><h2 id="plan-h">Your plan this week</h2>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
    {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>

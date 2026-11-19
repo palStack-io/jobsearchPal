@@ -316,6 +316,8 @@ def make_app(settings, db: DB) -> FastAPI:
         from . import prep
         from . import nudges
         todo = nudges.compute(db, settings.data_dir, settings=settings)
+        # The weekly work-search count lives in Your week on the dashboard (11/18); the claim-day item stays a to-do.
+        todo = [n for n in todo if not (n.get("kind") == "worksearch" and "behind-" in str(n.get("key")))]
         for n in todo:
             n["compose"] = nudges.gmail_compose_url(n)
         from .prefs import Prefs
@@ -362,7 +364,10 @@ def make_app(settings, db: DB) -> FastAPI:
                     todo=todo, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
                     today_goals=today_goals, just_met={m["key"] for m in met},
-                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "")
+                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
+                    week_panel=goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]),
+                    start=_start(s, now.date()), last_wk=last_wk,
+                    last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "")
         if request.headers.get("x-in-page"):
             return resp  # an in-page form post following its redirect: the page the person sees comes next, so keep these
         if cel:
@@ -371,6 +376,23 @@ def make_app(settings, db: DB) -> FastAPI:
             if m["scope"] != "week" or (cel and cel["key"] == m["key"]):
                 db.set_nudge(m["key"], "done")
         return resp
+
+    def _start(s: dict, today: date) -> dict | None:
+        """Your week's one place to start: the board's next due step, then the weekly minimum as a checklist line."""
+        from . import board
+        b = board.summary(db)
+        left = max(0, s["dua_floor"] - s["this_week"])
+        week = _week_left(s, today) if left else ""
+        nxt = b["next"]
+        if nxt:
+            when = _dayname(nxt["due"], today.isoformat())
+            text = f"{nxt['next_step'].rstrip('.')}, for {nxt['company']}" + (f" ({when.lower() if when in ('Today', 'Tomorrow') else when})" if when else "") + "."
+            return {"text": f"{text} {week}".strip(), "href": f"/leads?view=board&card={quote(nxt['key'], safe='')}", "cta": "Open board"}
+        if b["n"]:
+            return {"text": f"{b['n']} role{'' if b['n'] == 1 else 's'} on your board. {week}".strip(), "href": "/leads?view=board", "cta": "Open board"}
+        if week:
+            return {"text": week, "href": "/leads", "cta": "Find a role"}
+        return None
 
     def _week_left(s: dict, today: date) -> str:
         """The pal's line for the weekly minimum: quiet when covered, one gentle line when short."""
@@ -568,7 +590,9 @@ def make_app(settings, db: DB) -> FastAPI:
         wk_plan = coach.plan(db, s["this_week_start"])
         last_wk = None if back else goals.last_week(db, now.date())
         lookback = last_wk and goals.lookback(db, now.date())
+        today_goals = goals.today_view(db, now.date())
         return page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+                    today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
                     plan_days=coach.DAYS,
                     plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
                     lookback=lookback, planned=planned == "1",

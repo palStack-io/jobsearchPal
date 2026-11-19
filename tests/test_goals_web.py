@@ -35,7 +35,7 @@ def test_save_week_with_totals_and_today_card(tmp_path, db):
     assert r.status_code == 303 and r.headers["location"].startswith("/plan?planned=1")
     p = coach.plan(db, stats.week_start(date.today()))
     assert p["goals"]["apps"] <= 18 and p["roles"] == "data roles"
-    html = c.get("/?planned=1").text
+    html = c.get("/plan?planned=1").text  # the Today card lives on Your week since 11/18; the dashboard has the panel
     assert 'id="today"' in html and "Applications" in html and 'class="g-strip"' in html
     assert "This week so far" not in html   # nothing done yet: no line rather than a zero
     vis = _visible(html)

@@ -4,10 +4,20 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
 
 ## Dashboard pages
 
-- **Dashboard:** what's **ready to submit** and a **shortlist** of today's best untailored matches (Prepare or
-  Decline, with a reason), your work-search count for the week, a to-do list (replies owed, follow-ups, claim day,
-  RESEA and other deadlines), interviews with their prep packs, latest replies, recruiters, applications per week
-  and the full application list. **Run now** starts another batch any time.
+- **Dashboard:** the horizon greeting, then **Your week** (this week's day strip, one line from what you did, a thin
+  tally for each goal you set and for the work-search log, and one place to start, usually your board's next due
+  step), what's **ready to submit** and a **shortlist** of today's best untailored matches (Prepare, Add to board or
+  Decline, with a reason), a to-do list (replies owed, follow-ups, claim day, RESEA and other deadlines), interviews
+  with their prep packs, latest replies and recruiters. Charts live on **Stats** and the application list on
+  **Leads > Applied**. **Run now** starts another batch any time.
+- **Your week** (`/plan`): today's part of your plan with **Done** for the timed goals, the plan itself (totals, the
+  days as chips, roles, one person to get in touch with) and last week's look-back.
+- **Stats:** four tabs, each about one screen: **Overview** opens with one plain sentence on what stands out (counted
+  from your record, no AI), then the numbers, applications per week and the funnel; **Pipeline**, **Sources** and
+  **Work search** hold the rest.
+- **Skills:** what the roles found for you ask for that your resume doesn't show yet. **I have this** adds one to your
+  resume list. Tick up to three and **Make a plan**: one short model request writes a four-week learning plan built
+  on what you already know, kept until you ask for another; its links come only from the checked list in the code.
 - **Run log** (`/runs`, linked from the Running badge and the status strip): what each run did, step by step, read
   from `data/daily/*.md`. **Auto apply** on a lead also leaves its result under that lead (for example "the posting
   says it has been filled"). Confirmations and errors show in the app's own dialog, not browser popups.
@@ -17,12 +27,16 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
 - **Applied elsewhere** (sidebar on every page, and the Dashboard and Leads headers): a short popup to log an
   application you sent on LinkedIn, a company site or by email. Each lead and each Ready or Shortlist role also has an
   **Applied** button that marks that exact role as applied today.
-- **Your applications** (bottom of the Dashboard) are the tracker, kept in the local database: no spreadsheet or
+- **Your applications** (Leads > Applied) are the tracker, kept in the local database: no spreadsheet or
   Google account needed. **Log one you sent elsewhere** adds an application you made on LinkedIn, a company site or
   by email, so it counts toward your week and is never offered again. **Bring in your old tracker** imports a CSV
   (Google Sheets: File, Download, CSV; Excel: Save As CSV), finding columns by name. **Download CSV** gives you the
   whole list back, and it imports cleanly again. The same role is only ever kept once, however it arrives.
-- **Leads:** every role from your job-alert emails and the ones you paste, plus *Where your jobs come from* (see
+- **Leads > Board:** the roles you starred, in four columns (Shortlist, Research, Reach out, Ready to apply). Each card
+  has five steps to tick, a next step with a day, and notes; **I applied** logs it and the card leaves for Applied.
+  The board uses no AI and never changes your work-search count. **Find it on their site** has the next run search
+  the web for a role the free lookup couldn't place (that uses credits; a star alone doesn't).
+- **Leads > Inbox:** every role from your job-alert emails and the ones you paste, plus *Where your jobs come from* (see
   [Where jobs come from](how-it-works.md#where-jobs-come-from)). Each lead has its own page: the post and pay, then **Prep only** or **Auto apply**. Once a run has made
   something, the lead's page is the job's page below.
 - **Prep only** (a lead's page, a job's page, or the dashboard shortlist): just the AI help. It tailors the resume and

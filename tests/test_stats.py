@@ -390,3 +390,16 @@ def test_brief_subject_leads_with_good_news(tmp_path):
     subject, text, _ = brief.compose(db, "", today=date.today(), label="DUA")
     assert subject.startswith("Job search brief: An offer from Pinecrest")
     assert text.index("offer: Pinecrest") < text.index("closed: Northwind")
+
+
+def test_headline_counts_from_the_record():
+    from autoapply.stats import headline
+    assert "first application" in headline({"applied": 0})["lead"]
+    h = headline({"applied": 12, "interviews": 3, "responded": 5, "contact_interviews": 2})
+    assert h["lead"] == "People you know were behind 2 of your 3 interviews."
+    h = headline({"applied": 9, "interviews": 2, "responded": 4, "platforms": [
+        {"name": "Greenhouse", "applied": 5, "interviews": 2}, {"name": "Not recorded", "applied": 4, "interviews": 0}]})
+    assert h["lead"].startswith("Greenhouse has brought you the most interviews: 2 from 5 sent")
+    assert "1 reply from 7 sent" in headline({"applied": 7, "interviews": 0, "responded": 1})["lead"]
+    for v in (headline({"applied": 3}), headline({"applied": 3, "responded": 1})):
+        assert "will" not in v["lead"] and "%" not in v["lead"]  # no promises, counts before percentages

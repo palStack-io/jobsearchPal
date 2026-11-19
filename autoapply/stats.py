@@ -236,3 +236,29 @@ def detail(db: DB, today: date | None = None, floor: int = 3, weeks: int = 26) -
             "skip_reasons": skipped.most_common(6),
             "found_total": sum(found_wk.values()),
             "work_weeks": [(wk, wk_counts.get(wk, 0)) for wk in recent]}
+
+
+def headline(s: dict) -> dict:
+    """The one plain sentence that opens Stats (11/18): what stands out, from the record, counts before percentages,
+    never a promise (VOICE.md rules 2 and 7). Plain Python, no model. {"lead": ..., "more": ...}."""
+    applied, ivs, replies = s.get("applied", 0), s.get("interviews", 0), s.get("responded", 0)
+    n = lambda k, one, many: f"{k} {one if k == 1 else many}"
+    if not applied:
+        return {"lead": "Your first application will show up here, and everything on this page starts from it.", "more": ""}
+    viac = s.get("contact_interviews") or 0
+    if viac and ivs:
+        lead = f"People you know were behind {viac} of your {n(ivs, 'interview', 'interviews')}."
+        more = "Reaching out is where an hour tends to count most. Your board's Reach out column is for exactly that."
+        return {"lead": lead, "more": more}
+    best = max((p for p in s.get("platforms") or [] if p.get("applied", 0) >= 3 and p.get("interviews") and p["name"] != "Not recorded"),
+               key=lambda p: (p["interviews"] / p["applied"], p["interviews"]), default=None)
+    if best and ivs:
+        return {"lead": f"{best['name']} has brought you the most interviews: {best['interviews']} from {best['applied']} sent.",
+                "more": f"{n(ivs, 'interview', 'interviews')} from {n(applied, 'application', 'applications')} in all, so employers do pick you out."}
+    if ivs:
+        return {"lead": f"{n(ivs, 'interview', 'interviews')} from {n(applied, 'application', 'applications')}. Employers do pick you out.", "more": ""}
+    if replies:
+        return {"lead": f"{n(replies, 'reply', 'replies')} from {applied} sent. Each one is a real person who read what you wrote.",
+                "more": "Quiet stretches are common right now; it says more about the market than about you."}
+    return {"lead": f"{n(applied, 'application', 'applications')} sent. Each one took reading, tailoring and deciding.",
+            "more": "No news is the hardest part of a search. What you've sent is still out there."}

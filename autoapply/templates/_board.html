@@ -1,0 +1,115 @@
+{# The Leads board (autoapply/board.py). Four columns of roles you chose, a panel for the one you picked, and a
+   shoreline where applied roles leave for Applied. Progress is sun dots, like the week strip's sun. Every action is a
+   plain form (posted in-page by base.html); the panel switch is the only script. Motion: a card that just moved lands
+   once (?moved=), dots fill, the panel slides in; reduced motion keeps only fades. #}
+<div class="bd-wrap">
+ <div class="bd-left">
+ <div class="bd-cols" role="list" aria-label="Your board">
+ {% for c in cols %}<section class="bd-col" role="listitem" aria-labelledby="bd-h{{ c.i }}">
+  <div class="bd-colh"><b id="bd-h{{ c.i }}">{{ c.name }}</b><span>{{ c.cards|length }}</span></div>
+  <p class="bd-hint">{{ c.hint }}</p>
+  {% for k in c.cards %}<a class="bd-card{{ ' sel' if sel and k.key == sel.key }}{{ ' landed' if k.key == moved }}" href="/leads?view=board&card={{ k.key|urlencode }}" data-card="{{ k.key }}" aria-current="{{ 'true' if sel and k.key == sel.key else 'false' }}">
+   <span class="bd-co"><span>{{ k.company }}</span><span class="bd-fit">fit {{ '%.1f'|format(k.score or 0) }}</span></span>
+   <span class="bd-ti">{{ k.title }}</span>
+   <span class="bd-meta">{{ [k.location, k.salary]|select|join(' · ') or 'Location not listed' }}</span>
+   {% if k.next_step %}<span class="bd-next{{ ' due' if k.due and k.due <= today }}"><svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg><span>{{ k.next_step }}{% if k.due %} · {{ k.due|dayname(today) }}{% endif %}</span></span>{% endif %}
+   <span class="bd-dots" aria-label="{{ k.n_done }} of 5 steps done">{% for d in k.done %}<i class="{{ 'on' if d }}"></i>{% endfor %}</span>
+  </a>{% endfor %}
+  {% if not c.cards and c.i == 0 %}<p class="bd-empty">Star a role in Inbox and it lands here.</p>{% endif %}
+ </section>{% endfor %}
+ </div>
+ <section class="bd-shore" aria-label="Applied">
+  <svg width="100%" height="14" viewBox="0 0 160 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8c13-6 27-6 40 0s27 6 40 0 27-6 40 0 27 6 40 0" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+  <p><b>Applied</b> · Press <b>I applied</b> on a card and it leaves the board for <a href="/leads?view=applied">Applied</a>, where replies and interviews are followed.</p>
+ </section>
+ </div>
+
+ {% if sel %}<aside class="bd-panels" aria-label="The role you picked">
+ {% for c in cols %}{% for k in c.cards %}<div class="bd-panel card" data-panel="{{ k.key }}" {% if k.key != sel.key %}hidden{% endif %}>
+  <div class="bd-cap">{{ c.name }} · {{ k.n_done }} of 5 steps</div>
+  <div><div class="bd-pco">{{ k.company }}</div><h2 class="bd-pti">{{ k.title }}</h2>
+   <div class="bd-meta">{{ [k.location, k.salary]|select|join(' · ') }}{% if k.apply_url or k.url %} · <a href="{{ k.apply_url or k.url }}" target="_blank" rel="noopener">The posting</a>{% endif %}{% if k.job_id %} · <a href="/job/{{ k.job_id|urlencode }}">Its page here</a>{% endif %}</div></div>
+  <div class="bd-acts">
+   {% if c.i < 3 %}<form method="post" action="/board/move"><input type="hidden" name="key" value="{{ k.key }}"><input type="hidden" name="col" value="{{ c.i + 1 }}"><button class="btn sm primary">Move to {{ cols[c.i + 1].name }}</button></form>
+   {% else %}<form method="post" action="/board/applied"><input type="hidden" name="key" value="{{ k.key }}"><button class="btn sm primary">I applied</button></form>{% endif %}
+   {% if c.i > 0 %}<form method="post" action="/board/move"><input type="hidden" name="key" value="{{ k.key }}"><input type="hidden" name="col" value="{{ c.i - 1 }}"><button class="btn sm">Move back</button></form>{% endif %}
+   <form method="post" action="/board/remove"><input type="hidden" name="key" value="{{ k.key }}"><button class="btn sm ghost" title="Back to Inbox, unstarred">Remove</button></form>
+  </div>
+  <div>
+   <div class="bd-cap">Steps for this role</div>
+   <ul class="bd-steps">{% for st in steps %}<li><form method="post" action="/board/step"><input type="hidden" name="key" value="{{ k.key }}"><input type="hidden" name="i" value="{{ loop.index0 }}">
+    <button class="bd-step" aria-pressed="{{ 'true' if k.done[loop.index0] else 'false' }}"><span class="bd-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+     <span><span class="bd-st">{{ st[0] }}</span><span class="bd-sn">{{ st[1] }}</span></span></button></form></li>{% endfor %}</ul>
+  </div>
+  {% if not k.job_id %}<div class="bd-find">
+   {% if k.want_lookup %}<p>The next run looks for it on the company's own site.</p>
+   {% else %}<form method="post" action="/board/lookup"><input type="hidden" name="key" value="{{ k.key }}"><button class="btn sm ghost" title="The next daily run searches the web for it. Uses credits.">Find it on their site</button></form>
+   <span>The free lookup runs every sync; this searches the web too and uses credits.</span>{% endif %}
+  </div>{% endif %}
+  <form method="post" action="/board/save" class="bd-form">
+   <input type="hidden" name="key" value="{{ k.key }}">
+   <label class="bd-cap" for="ns-{{ loop.index }}-{{ c.i }}">Next step</label>
+   <div class="bd-row"><input type="text" id="ns-{{ loop.index }}-{{ c.i }}" name="next_step" maxlength="200" value="{{ k.next_step }}" placeholder="e.g. Message Sam about the team">
+    <input type="date" name="due" value="{{ k.due }}" aria-label="When"></div>
+   <label class="bd-cap" for="nt-{{ loop.index }}-{{ c.i }}">Notes</label>
+   <textarea id="nt-{{ loop.index }}-{{ c.i }}" name="notes" rows="3" maxlength="4000" placeholder="What you learned, who you know there">{{ k.notes }}</textarea>
+   <div><button class="btn sm">Save</button></div>
+  </form>
+ </div>{% endfor %}{% endfor %}
+ </aside>{% endif %}
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+<style>
+.bd-wrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.bd-left{flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.bd-cols{display:grid;grid-template-columns:repeat(4,minmax(176px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.bd-col{background:var(--surface-2);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:420px}
+.bd-colh{display:flex;align-items:baseline;gap:8px;padding:6px 6px 0}.bd-colh b{font-size:14px}.bd-colh span{font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.bd-hint{font-size:12px;color:var(--ink-3);margin:0;padding:0 6px 4px;line-height:1.4}
+.bd-empty{font-size:13px;color:var(--ink-3);margin:4px 6px}
+.bd-card{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;color:inherit;
+ transition:border-color 150ms var(--ease-out),box-shadow 150ms var(--ease-out),transform 160ms var(--ease-out)}
+.bd-card:hover{text-decoration:none;border-color:var(--line-2);transform:translateY(-1px)}
+.bd-card.sel{border-color:var(--accent);box-shadow:var(--focus)}
+.bd-card.landed{animation:bd-land 320ms var(--ease-out) backwards}
+@keyframes bd-land{from{opacity:0;transform:translateY(6px) scale(.96)}}
+.bd-co{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.bd-fit{font-size:12px;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.bd-ti{font-size:16px;font-weight:700;line-height:1.25;text-wrap:balance}
+.bd-meta{font-size:13px;color:var(--ink-3)}
+.bd-next{display:flex;gap:6px;align-items:flex-start;font-size:13px;color:var(--ink);line-height:1.35}.bd-next svg{flex:none;margin-top:2px}
+.bd-next.due{color:var(--warn)}
+.bd-dots{display:flex;gap:4px}.bd-dots i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--line-2);box-sizing:border-box;transition:background-color 240ms var(--ease-out),border-color 240ms var(--ease-out)}
+.bd-dots i.on{background:var(--sun);border-color:var(--sun)}
+.bd-shore{border-radius:14px;padding:4px 12px 10px;display:flex;flex-direction:column;gap:4px;color:var(--ink-2);font-size:13px;line-height:1.45}
+.bd-shore svg{color:color-mix(in srgb,var(--accent) 40%,transparent)}.bd-shore b{color:var(--ink)}.bd-shore p{margin:0}
+.bd-panels{flex:1 1 300px;max-width:380px;min-width:0}.bd-panel[hidden]{display:none}
+.bd-panel{display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg);animation:bd-in 260ms cubic-bezier(.32,.72,0,1) backwards}
+@keyframes bd-in{from{opacity:0;transform:translateX(10px)}}
+.bd-cap{font-size:13px;font-weight:600;color:var(--ink-2)}
+.bd-pco{font-size:14px;font-weight:600;color:var(--ink-2);margin-top:2px}.bd-pti{font-size:22px!important;line-height:1.2;margin:0!important;text-wrap:balance}
+.bd-acts{display:flex;gap:8px;flex-wrap:wrap}.bd-acts form{margin:0}
+.bd-steps{list-style:none;margin:2px 0 0;padding:0}.bd-steps form{margin:0}
+.bd-step{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0;cursor:pointer;color:inherit;font:inherit;font-size:14px}
+.bd-steps li:last-child .bd-step{border-bottom:0}
+.bd-box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);flex:none;display:grid;place-items:center;transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out)}
+.bd-box svg{fill:none;stroke:var(--on-accent);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
+.bd-step[aria-pressed=true] .bd-box{background:var(--accent);border-color:var(--accent)}
+.bd-step[aria-pressed=true] .bd-box svg{visibility:visible}
+.bd-step[aria-pressed=true] .bd-box path{stroke-dasharray:24;stroke-dashoffset:24;animation:bd-draw 260ms var(--ease-out) forwards}
+@keyframes bd-draw{to{stroke-dashoffset:0}}
+.bd-st{display:block}.bd-sn{display:block;font-size:12px;color:var(--ink-3)}
+.bd-find{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font-size:12px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:12px}.bd-find .btn{margin-left:-11px}.bd-find form,.bd-find p{margin:0}
+.bd-form{display:grid;gap:6px;margin:0}.bd-row{display:grid;grid-template-columns:1fr;gap:8px}.bd-row input[type=date]{max-width:190px}
+.bd-form textarea{resize:vertical}
+@media (max-width:760px){.bd-cols{grid-template-columns:repeat(4,minmax(230px,86%));scroll-snap-type:x mandatory;-webkit-mask-image:linear-gradient(to right,#000 90%,transparent)}
+ .bd-col{scroll-snap-align:start;min-height:0}.bd-panels{max-width:none;flex-basis:100%}.bd-row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.bd-card.landed,.bd-panel{animation-name:bd-fade}.bd-step[aria-pressed=true] .bd-box path{animation:none;stroke-dashoffset:0}
+ .bd-card:hover{transform:none}@keyframes bd-fade{from{opacity:0}}}
+</style>
+<script>(()=>{const cards=document.querySelectorAll(".bd-card[data-card]");if(!cards.length)return;
+ cards.forEach(a=>a.addEventListener("click",e=>{if(e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();const k=a.dataset.card;
+  cards.forEach(x=>{const on=x===a;x.classList.toggle("sel",on);x.setAttribute("aria-current",on?"true":"false")});
+  document.querySelectorAll(".bd-panel").forEach(p=>{p.hidden=p.dataset.panel!==k});
+  const u=new URL(location.href);u.searchParams.set("card",k);u.searchParams.delete("moved");history.replaceState(null,"",u);
+  if(innerWidth<760){const p=document.querySelector('.bd-panel:not([hidden])');if(p)p.scrollIntoView({block:"start"})}}))})();</script>

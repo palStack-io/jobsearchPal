@@ -35,7 +35,7 @@ def test_save_week_with_totals_and_today_card(tmp_path, db):
     assert r.status_code == 303 and r.headers["location"].startswith("/plan?planned=1")
     p = coach.plan(db, stats.week_start(date.today()))
     assert p["goals"]["apps"] <= 18 and p["roles"] == "data roles"
-    html = c.get("/?planned=1").text
+    html = c.get("/plan?planned=1").text  # the Today card lives on Your week since 11/18; the dashboard has the panel
     assert 'id="today"' in html and "Applications" in html and 'class="g-strip"' in html
     assert "This week so far" not in html   # nothing done yet: no line rather than a zero
     vis = _visible(html)
@@ -138,3 +138,13 @@ def test_planner_lives_on_its_own_page_and_the_dashboard_asks_once(tmp_path, db)
     assert '<dialog id="plan-pop"' not in c.get("/").text   # once: it goes
     page = c.get("/plan").text
     assert "Your week, in your words" in page and 'aria-current="page"' in page
+
+
+def test_met_moment_plays_on_your_week_where_done_is_pressed(tmp_path, db):
+    c = _client(tmp_path, db)
+    c.post("/plan", data={"learn_h": "7", "days": ALL_DAYS})
+    c.post("/plan/day", data={"action": "done", "goal": "learn", "day": date.today().isoformat(), "back": "/plan#today"},
+           follow_redirects=False)
+    assert 'data-met="goals:met:' in c.get("/plan").text
+    assert 'data-met="goals:met:' not in c.get("/plan").text  # once
+    assert 'data-met="goals:met:' not in c.get("/").text       # and not again on the dashboard

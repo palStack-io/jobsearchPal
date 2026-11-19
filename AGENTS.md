@@ -12,7 +12,8 @@ Personal facts (work authorization, titles, pay asks, location, file naming) liv
 agent you are (the file keeps that name for both).
 
 ## Hard rules
-- Run each shell command on its own. Commands chained with `;`, `&&` or `|` are refused and stop the step.
+- Run each shell command on its own. Commands chained with `;`, `&&` or `|` are refused and stop the step. Put every
+  link in single quotes (`autoapply scan 'https://...?a=1&b=2'`): an unquoted `&` splits the command the same way.
 - Open web pages with WebFetch (or WebSearch), never `curl` or `wget`; read PDFs and .docx files with the Read
   tool, never `pdftotext` or `pdfinfo`. Those shell commands are refused, and a refused command marks the whole
   step as stopped.

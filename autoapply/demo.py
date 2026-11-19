@@ -18,7 +18,8 @@ ON = os.environ.get("AUTOAPPLY_DEMO") == "1"
 # Form posts a visitor may make. Everything here only changes the local database or config.
 ALLOWED_POSTS = re.compile(
     r"^/(?:applications/log|pal/seen|decline/.+|nudge/[^/]+|plan|plan/day|plan/note|contacts|reflect|letters|setback"
-    r"|titles/add|leads|leads/add|leads/paste|lead/.+/description|skills/mark|emails/.+|dua/claim|dua/task|job/.+)$"
+    r"|titles/add|leads|leads/add|leads/paste|lead/.+/description|skills/mark|emails/.+|dua/claim|dua/task|job/.+"
+    r"|board/(?:add|remove|move|step|save|applied)|skills/plan|skills/plan/start)$"  # the board is data; the plan is a sample here
 )
 # Job page actions that only change the database; "refill" and "submit" open a real browser on a real site.
 ALLOWED_JOB_ACTIONS = {"skip", "manual", "command", "unsend"}

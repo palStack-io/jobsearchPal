@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Skills{% endblock %}
+{% block title %}Skills<script>(()=>{const boxes=[...document.querySelectorAll('input[name=picks]')],btns=document.querySelectorAll("[data-plan-btn]");if(!boxes.length)return;
+ const sync=()=>{const n=boxes.filter(b=>b.checked).length;boxes.forEach(b=>{b.disabled=!b.checked&&n>=3});
+  btns.forEach(b=>{b.disabled=n===0;if(b.textContent.startsWith("Make"))b.textContent=n?`Make a plan for ${n} skill${n===1?"":"s"}`:"Make a plan"})};
+ boxes.forEach(b=>b.addEventListener("change",sync));sync();
+ document.addEventListener("click",e=>{document.querySelectorAll("details.sk-more[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})})})();</script>
+{% endblock %}
 {% block body %}
-<div class="ph"><div><h1>Skills to learn</h1>
- <div class="sub">What the {{ g.jobs }} roles matched in the last {{ g.days }} days ask for that your resume and notes don't show yet, most asked first. Learning while you search counts as progress too.</div></div></div>
+<div class="ph"><div><h1>Skills</h1>
+ <div class="sub">What the {{ g.jobs }} roles found for you in the last {{ g.days }} days ask for that your resume doesn't show yet, most asked first. Learning while you search counts as progress too.</div></div></div>
 
 {% macro mark(i, label, value, cls="ghost") %}<form method="post" action="/skills/mark" class="inline"><input type="hidden" name="skill" value="{{ i.name }}"><input type="hidden" name="mark" value="{{ value }}"><button class="btn sm {{ cls }}">{{ label }}</button></form>{% endmacro %}
 {% macro row(i, actions) %}
@@ -14,15 +19,56 @@
  <div class="acts">{{ actions }}{% if i.url %}<a class="ext" href="{{ i.url }}" target="_blank" rel="noopener noreferrer">Where to learn it <svg class="ic" width="12" height="12" aria-hidden="true"><use href="#i-ext"/></svg></a>{% endif %}</div>
 </li>{% endmacro %}
 
+{% macro pickrow(i) %}
+<li class="sk pk">
+ <input type="checkbox" name="picks" value="{{ i.name }}" form="pickform" id="pk-{{ i.name|replace(' ', '-')|lower }}" {% if lp and i.name in (lp.skills or []) %}checked{% endif %}>
+ <label class="sk-main" for="pk-{{ i.name|replace(' ', '-')|lower }}"><span class="sk-t"><b>{{ i.name }}</b></span>
+  <span class="m">{{ i.area }}{% if i.count %} · in {{ i.count }} role{{ '' if i.count == 1 else 's' }}{% if i.required %}, required in {{ i.required }}{% endif %}{% if i.applied %}, {{ i.applied }} you applied to{% endif %}{% endif %}{% if i.notes %}{% if i.count %} · {% endif %}a gap in {{ i.notes }} tailoring note{{ '' if i.notes == 1 else 's' }}{% endif %}</span>
+  <span class="sk-bar" aria-hidden="true"><span style="width:{{ [i.pct, 3]|max }}%"></span></span></label>
+ <div class="acts">{{ mark(i, "I have this", "have") }}<details class="sk-more"><summary class="btn sm ghost" aria-label="More for {{ i.name }}">More</summary>
+  <div class="sk-pop">{% if i.url %}<a class="btn ghost sm" href="{{ i.url }}" target="_blank" rel="noopener noreferrer">Where to learn it</a>{% endif %}{{ mark(i, "Hide it", "hidden") }}</div></details></div>
+</li>{% endmacro %}
+
 {% if not g.jobs %}
 <section class="card"><div class="empty-state"><b>Nothing to count yet.</b><span>After a daily run finds roles with full descriptions, the skills they ask for show up here.</span></div></section>
 {% else %}
-<section class="card hero" aria-labelledby="gap-h"><h2 id="gap-h">Not on your resume yet <span class="count">{{ g.gaps|length }}</span></h2>
- <p class="muted lead-p">Some of these you may already know: mark them <b>I have this</b> and add them to your resume, which helps more than any course. For the rest, start at the top.</p>
- {% if g.gaps %}<ul class="sk-list">{% for i in g.gaps[:12] %}{{ row(i, mark(i, "Start learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul>
- {% if g.gaps|length > 12 %}<details class="more"><summary>Show {{ g.gaps|length - 12 }} more</summary><ul class="sk-list">{% for i in g.gaps[12:] %}{{ row(i, mark(i, "Start learning", "learning", "") ~ mark(i, "I have this", "have") ~ mark(i, "Hide", "hidden")) }}{% endfor %}</ul></details>{% endif %}
+<form id="pickform" method="post" action="/skills/plan"></form>
+<div class="lp-wrap">
+<section class="card" aria-labelledby="gap-h" style="flex:2 1 360px;min-width:0">
+ <h2 id="gap-h">Not on your resume yet <span class="count">{{ g.gaps|length }}</span></h2>
+ <p class="muted lead-p">Already know one? <b>I have this</b> adds it to your resume list, which helps more than any course. Tick up to three to learn and get a plan for them.</p>
+ {% if g.gaps %}<ul class="sk-list">{% for i in g.gaps[:12] %}{{ pickrow(i) }}{% endfor %}</ul>
+ {% if g.gaps|length > 12 %}<details class="more"><summary>Show {{ g.gaps|length - 12 }} more</summary><ul class="sk-list">{% for i in g.gaps[12:] %}{{ pickrow(i) }}{% endfor %}</ul></details>{% endif %}
  {% else %}<div class="empty-state"><b>Nothing missing.</b><span>Your resume covers everything these roles ask for.</span></div>{% endif %}
 </section>
+
+<section class="card lp" id="plan" aria-labelledby="plan-h" style="flex:3 1 440px;min-width:0">
+ {% if lp and lp.status == 'writing' %}
+  <h2 id="plan-h">Your learning plan</h2>
+  <div class="lp-writing" role="status"><span class="lp-sun" aria-hidden="true"></span>Writing a plan for {{ lp.skills|join(', ') }}. It takes up to a minute; this page checks back by itself.</div>
+  <script>setTimeout(()=>location.reload(),4000)</script>
+ {% elif lp and lp.status == 'ready' %}
+  <h2 id="plan-h">Your learning plan <span class="count">4 weeks · about 5 hours a week</span></h2>
+  <p class="muted lp-for">For {{ lp.skills|join(', ') }}. Written {{ lp.made_at[5:10]|replace('-', '/') }} from your resume and these roles, and kept here. It's only rewritten if you ask.</p>
+  <ol class="lp-path">{% for w in lp.weeks %}<li style="--i:{{ loop.index0 }}"{% if loop.last %} class="last"{% endif %}>
+   <span class="lp-dot" aria-hidden="true"></span>
+   <div><div class="lp-wk">Week {{ loop.index }}</div><p class="lp-step"><b>{{ w.title }}.</b> {{ w.body }}</p>
+    {% if w.link %}<a class="lp-res" href="{{ w.link }}" target="_blank" rel="noopener noreferrer">{{ w.skill }}: where to learn it <svg width="12" height="12" aria-hidden="true"><use href="#i-ext"/></svg></a>{% endif %}
+    {% if loop.last and lp.show %}<p class="lp-show"><b>Show it:</b> {{ lp.show }} When you finish, press <b>Done, I have this</b> under Learning now and your next tailored resume can use it.</p>{% endif %}</div>
+  </li>{% endfor %}</ol>
+  <div class="lp-acts">{% if not lp.started %}<form method="post" action="/skills/plan/start" style="margin:0"><button class="btn primary sm">Start this plan</button></form>{% endif %}
+   <button class="btn sm" form="pickform" data-plan-btn>Redo with my picks</button>
+   <span class="muted">One short request: about 6K tokens on OpenRouter, about 20K through Claude Code. Links come from a checked list, never from the model.</span></div>
+ {% else %}
+  <h2 id="plan-h">Your learning plan</h2>
+  {% if lp and lp.status == 'failed' %}<p class="lp-err" role="status">We couldn't write the plan this time. That's on us, not you. Try again in a moment.</p>{% endif %}
+  <p class="ink2">Tick up to three skills on the left, then ask for a plan. You get four weeks of small steps built on what you already know,
+   with links to each tool's own docs or free course, and one small piece of work you can show.</p>
+  <div class="lp-acts"><button class="btn primary sm" form="pickform" data-plan-btn disabled>Make a plan</button>
+   <span class="muted">One short request when you press it: about 6K tokens on OpenRouter (it stops at your monthly budget), about 20K through Claude Code. Nothing runs on its own.</span></div>
+ {% endif %}
+</section>
+</div>
 
 <details class="card mt fold-card" id="ai"><summary><b id="ai-h">Where these come from</b></summary>
  {% if g.read_by_ai %}<p class="ink2">{{ g.read_by_ai }} of the {{ g.jobs }} roles were read by <b>Skill matching</b>, so their skills are the
@@ -62,6 +108,35 @@
 <p class="muted mt" style="font-size:14px">{% if g.read_by_ai %}Roles read by Skill matching use the model's list; the rest are{% else %}Counted from job descriptions{% endif %} matched against a fixed list of about 80 skills, so a skill that isn't on it won't show for those. "Your resume" means your skills list from Skill matching, your base resume and the notes you keep about yourself.</p>
 
 <style>
+.lp-wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.pk{grid-template-columns:22px minmax(0,1fr) auto!important;gap:12px!important}
+.pk input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);align-self:start}
+.pk{padding:10px 0!important}.pk .sk-main{display:grid;gap:1px;cursor:pointer}.pk .sk-bar{width:160px;height:6px;margin-top:5px;display:block}.pk .acts{flex-wrap:nowrap!important}
+.pk .sk-bar span{transform-origin:left;animation:lp-bar .7s var(--ease-out) backwards}
+@keyframes lp-bar{from{transform:scaleX(0)}}
+.sk-more{position:relative}.sk-more summary{list-style:none;cursor:pointer}.sk-more summary::-webkit-details-marker{display:none}
+.sk-pop{position:absolute;right:0;top:calc(100% + 4px);z-index:5;display:grid;gap:2px;min-width:170px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg)}
+.sk-pop .btn,.sk-pop form{width:100%;justify-content:flex-start}.sk-pop form{display:block}
+.lp h2 .count{font-size:14px}
+.lp-for{margin:4px 0 14px;font-size:14px}
+.lp-path{list-style:none;margin:0;padding:0;position:relative}
+.lp-path li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:14px;padding:0 0 18px;position:relative;animation:lp-up 360ms var(--ease-out) backwards;animation-delay:calc(var(--i) * 70ms)}
+.lp-path li:not(.last)::before{content:"";position:absolute;left:10.5px;top:20px;bottom:0;border-left:1.5px dashed var(--line-2)}
+.lp-path li.last{padding-bottom:0}
+@keyframes lp-up{from{opacity:0;transform:translateY(8px)}}
+.lp-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);background:var(--surface);margin:4px 0 0 4px;box-sizing:border-box}
+.lp-path li.last .lp-dot{background:var(--sun);border-color:var(--sun)}
+.lp-wk{font-size:13px;font-weight:600;color:var(--ink-3)}
+.lp-step{margin:2px 0 8px;font-size:16px;line-height:1.5;text-wrap:pretty}
+.lp-res{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;border:1px solid var(--line-2);border-radius:9px;padding:5px 9px}
+.lp-res:hover{text-decoration:none;background:var(--surface-2)}
+.lp-show{font-size:14px;background:var(--sun-soft);border-radius:10px;padding:10px 12px;margin:10px 0 0;line-height:1.45}
+.lp-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:14px;margin-top:18px}.lp-acts .muted{font-size:13px}
+.lp-writing{display:flex;gap:12px;align-items:center;padding:24px 0;color:var(--ink-2)}
+.lp-sun{width:28px;height:14px;border-radius:28px 28px 0 0;background:var(--sun);flex:none;animation:lp-rise 1.1s var(--ease-out) infinite alternate}
+@keyframes lp-rise{from{transform:translateY(5px);opacity:.6}}
+.lp-err{margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--surface-2)}
+@media (prefers-reduced-motion:reduce){.lp-path li{animation-name:lp-fade}.lp-sun,.pk .sk-bar span{animation:none}@keyframes lp-fade{from{opacity:0}}}
 .lead-p{margin:0 0 6px}.inline{display:inline;margin:0}.chips{display:flex;flex-wrap:wrap;gap:6px}.chips .pill{text-transform:none}
 ul.sk-list{list-style:none;margin:0;padding:0}
 .sk{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -70,4 +145,9 @@ ul.sk-list{list-style:none;margin:0;padding:0}
 .sk .acts{display:flex;gap:4px 10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}.sk .acts .ext{font-size:14px;white-space:nowrap}
 @media (max-width:640px){.sk{grid-template-columns:minmax(0,1fr)}.sk-bar{width:120px}.sk .acts{justify-content:flex-start}}
 </style>
+<script>(()=>{const boxes=[...document.querySelectorAll('input[name=picks]')],btns=document.querySelectorAll("[data-plan-btn]");if(!boxes.length)return;
+ const sync=()=>{const n=boxes.filter(b=>b.checked).length;boxes.forEach(b=>{b.disabled=!b.checked&&n>=3});
+  btns.forEach(b=>{b.disabled=n===0;if(b.textContent.startsWith("Make"))b.textContent=n?`Make a plan for ${n} skill${n===1?"":"s"}`:"Make a plan"})};
+ boxes.forEach(b=>b.addEventListener("change",sync));sync();
+ document.addEventListener("click",e=>{document.querySelectorAll("details.sk-more[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})})})();</script>
 {% endblock %}

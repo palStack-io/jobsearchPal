@@ -80,3 +80,18 @@ benefits.add_task(db, "Upload ID to the claim portal", (now+timedelta(days=9)).d
 
 (root/"materials"/"context").mkdir(parents=True, exist_ok=True)
 (root/"materials"/"context"/"about.md").write_text("Analytics engineer: SQL, Python, dbt, Snowflake, Tableau, Airflow. Data modeling and stakeholder work.\n")
+
+# The Leads board (11/18): a few starred roles at different steps, so the Board view has something to show.
+from autoapply import board
+for i, (co, t, col, steps, nxt, due) in enumerate([
+        ("Lumen Works", "Analytics Engineering Manager", 0, 1, "", ""),
+        ("Quarry Labs", "Senior Analytics Engineer", 1, 2, "Find who leads data there", 2),
+        ("Tidewater Bank", "Staff Analytics Engineer", 2, 2, "Message Sam Rivera", 0),
+        ("Kestrel Finance", "Head of Data", 3, 4, "Prep files, then apply", 1)]):
+    k = leads.key(co, t)
+    if board.add(db, k, now - timedelta(hours=i)):
+        board.move(db, k, col, now - timedelta(hours=i))
+        for j in range(steps):
+            board.toggle_step(db, k, j)
+        if nxt:
+            board.save(db, k, nxt, (now + timedelta(days=due)).date().isoformat(), "")

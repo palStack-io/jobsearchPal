@@ -9,7 +9,7 @@ import re
 import shutil
 import time
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -32,6 +32,21 @@ env.filters["label"] = lambda k: {"confirmed": "received", "rejected": "closed",
 env.filters["pillcls"] = lambda k: {"rejected": "closed"}.get(k, k)  # a closed application is a neutral fact, not an alarm (red)
 
 
+
+
+def _dayname(iso: str, today: str) -> str:
+    """A board card's due day, said the way a person would: Today, Tomorrow, Thu (this week), else Nov 24."""
+    try:
+        d, t = date.fromisoformat(str(iso)[:10]), date.fromisoformat(str(today)[:10])
+    except ValueError:
+        return str(iso or "")
+    n = (d - t).days
+    if n < 0:
+        return d.strftime("%b %-d")
+    return "Today" if n == 0 else "Tomorrow" if n == 1 else d.strftime("%a") if n < 7 else d.strftime("%b %-d")
+
+
+env.filters["dayname"] = _dayname
 SHORTLIST = 5  # roles on "Ready for you" each day: the prepared ones plus the next best to triage
 DECLINE_REASONS = {"fit": "not a fit", "location": "location", "pay": "pay", "applied": "already applied", "other": "other"}
 
@@ -301,6 +316,8 @@ def make_app(settings, db: DB) -> FastAPI:
         from . import prep
         from . import nudges
         todo = nudges.compute(db, settings.data_dir, settings=settings)
+        # The weekly work-search count lives in Your week on the dashboard (11/18); the claim-day item stays a to-do.
+        todo = [n for n in todo if not (n.get("kind") == "worksearch" and "behind-" in str(n.get("key")))]
         for n in todo:
             n["compose"] = nudges.gmail_compose_url(n)
         from .prefs import Prefs
@@ -347,7 +364,10 @@ def make_app(settings, db: DB) -> FastAPI:
                     todo=todo, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
                     today_goals=today_goals, just_met={m["key"] for m in met},
-                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "")
+                    so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
+                    week_panel=goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]),
+                    start=_start(s, now.date()), last_wk=last_wk,
+                    last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "")
         if request.headers.get("x-in-page"):
             return resp  # an in-page form post following its redirect: the page the person sees comes next, so keep these
         if cel:
@@ -356,6 +376,23 @@ def make_app(settings, db: DB) -> FastAPI:
             if m["scope"] != "week" or (cel and cel["key"] == m["key"]):
                 db.set_nudge(m["key"], "done")
         return resp
+
+    def _start(s: dict, today: date) -> dict | None:
+        """Your week's one place to start: the board's next due step, then the weekly minimum as a checklist line."""
+        from . import board
+        b = board.summary(db)
+        left = max(0, s["dua_floor"] - s["this_week"])
+        week = _week_left(s, today) if left else ""
+        nxt = b["next"]
+        if nxt:
+            when = _dayname(nxt["due"], today.isoformat())
+            text = f"{nxt['next_step'].rstrip('.')}, for {nxt['company']}" + (f" ({when.lower() if when in ('Today', 'Tomorrow') else when})" if when else "") + "."
+            return {"text": f"{text} {week}".strip(), "href": f"/leads?view=board&card={quote(nxt['key'], safe='')}", "cta": "Open board"}
+        if b["n"]:
+            return {"text": f"{b['n']} role{'' if b['n'] == 1 else 's'} on your board. {week}".strip(), "href": "/leads?view=board", "cta": "Open board"}
+        if week:
+            return {"text": week, "href": "/leads", "cta": "Find a role"}
+        return None
 
     def _week_left(s: dict, today: date) -> str:
         """The pal's line for the weekly minimum: quiet when covered, one gentle line when short."""
@@ -378,7 +415,7 @@ def make_app(settings, db: DB) -> FastAPI:
         except ValueError as e:
             if back or request.headers.get("x-in-page"):
                 raise HTTPException(400, str(e))
-            return RedirectResponse(f"/?log=1&msg={quote(str(e))}#applications", status_code=303)
+            return RedirectResponse(f"/leads?view=applied&log=1&msg={quote(str(e))}#applications", status_code=303)
         from . import leads
         leads.link_tracked(db)  # a lead for this role now shows as applied
         db.conn.execute("update leads set status = 'applied' where job_id = ?", (r["id"],))
@@ -393,14 +430,14 @@ def make_app(settings, db: DB) -> FastAPI:
         if back:
             path, _, frag = back.partition("#")
             return RedirectResponse(f"{path}{'&' if '?' in path else '?'}done={quote(msg)}{'#' + frag if frag else ''}", status_code=303)
-        return RedirectResponse(f"/?msg={quote(msg)}#applications", status_code=303)
+        return RedirectResponse(f"/leads?view=applied&msg={quote(msg)}#applications", status_code=303)
 
     @app.post("/applications/import")
     async def import_applications(file: UploadFile = File(...)):
         from . import history
         raw = await file.read()
         if len(raw) > 2_000_000:
-            return RedirectResponse(f"/?msg={quote('That file is over 2 MB. Export just the tracker sheet as CSV.')}#applications",
+            return RedirectResponse(f"/leads?view=applied&msg={quote('That file is over 2 MB. Export just the tracker sheet as CSV.')}#applications",
                                     status_code=303)
         try:
             text = raw.decode("utf-8-sig")
@@ -410,13 +447,13 @@ def make_app(settings, db: DB) -> FastAPI:
         try:
             added = history.import_csv(db, text)
         except Exception as e:  # a malformed CSV shouldn't take the dashboard down
-            return RedirectResponse(f"/?msg={quote('Could not read that CSV: ' + str(e)[:120])}#applications", status_code=303)
+            return RedirectResponse(f"/leads?view=applied&msg={quote('Could not read that CSV: ' + str(e)[:120])}#applications", status_code=303)
         marked = len(db.by_status("submitted")) - before - added
         msg = (f"Imported {added} application{'' if added == 1 else 's'}"
                + (f", and marked {marked} the tool already knew as applied" if marked > 0 else "")
                + ". Ones you already had were left as they were." if added or marked > 0 else
                "Nothing new in that file: every application in it is already here, or it has no Company, Position and Date Applied columns.")
-        return RedirectResponse(f"/?msg={quote(msg)}#applications", status_code=303)
+        return RedirectResponse(f"/leads?view=applied&msg={quote(msg)}#applications", status_code=303)
 
     @app.get("/applications.csv")
     def export_applications():
@@ -542,7 +579,7 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse("/#todo", status_code=303)
 
     @app.get("/plan")
-    def plan_page(planned: str = ""):
+    def plan_page(request: Request, planned: str = ""):
         """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
         them of it beyond the once-a-week pop-up on the dashboard."""
         from . import coach, goals, pal
@@ -553,7 +590,12 @@ def make_app(settings, db: DB) -> FastAPI:
         wk_plan = coach.plan(db, s["this_week_start"])
         last_wk = None if back else goals.last_week(db, now.date())
         lookback = last_wk and goals.lookback(db, now.date())
-        return page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+        today_goals = goals.today_view(db, now.date())
+        # A goal or day met plays its moment here, where Done is pressed (11/18); the whole week's stays for the dashboard.
+        met = [m for m in goals.new_met(db, now.date()) if m["scope"] != "week"]
+        resp = page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+                    today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
+                    just_met={m["key"] for m in met},
                     plan_days=coach.DAYS,
                     plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
                     lookback=lookback, planned=planned == "1",
@@ -562,6 +604,10 @@ def make_app(settings, db: DB) -> FastAPI:
                     g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
                     last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
                     lookback_summary=goals.summary(lookback["did"]) if lookback else "")
+        if not request.headers.get("x-in-page"):
+            for m in met:
+                db.set_nudge(m["key"], "done")
+        return resp
 
     @app.post("/plan")
     async def plan_save(request: Request):
@@ -731,10 +777,29 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse(_auth.safe_next(back), status_code=303)
 
     @app.get("/leads")
-    def leads_page(show: str = "open", more: int = 0):
-        from . import leads
+    def leads_page(show: str = "open", more: int = 0, view: str = "inbox", card: str = "", moved: str = "", done: str = "",
+                   msg: str = "", log: str = ""):
+        """Leads has three views (11/18): Inbox (every lead, as before), Board (the roles you starred, worked step by
+        step) and Applied (the applications list that used to sit on the dashboard)."""
+        from . import board, leads
         from .prefs import Prefs
         from .rank import Applied
+        view = view if view in ("inbox", "board", "applied") else "inbox"
+        cols = board.columns(db)
+        n_board = sum(len(c["cards"]) for c in cols)
+        common = dict(nav="leads", view=view, n_board=n_board, running=run_state(), done=done[:300], msg=(msg or done)[:300], open_log=log == "1",
+                      today=date.today().isoformat())
+        if view == "board":
+            every = [k for c in cols for k in c["cards"]]
+            for k in every:
+                k["want_lookup"] = (leads.get(db, k["key"]) or {}).get("want_lookup")
+            sel = next((k for k in every if k["key"] == card), every[0] if every else None)
+            return page("leads.html", cols=cols, sel=sel, card=card, moved=moved, steps=board.STEPS,
+                        n_inbox=len(leads.rows(db, "new")) + len(leads.rows(db, "starred")),
+                        s=stats.compute(db, floor=work_search(settings)[1]), **common)
+        if view == "applied":
+            s = stats.compute(db, floor=work_search(settings)[1])
+            return page("leads.html", s=s, n_inbox=len(leads.rows(db, "new")) + len(leads.rows(db, "starred")), **common)
         every = leads.rows(db)
         applied = Applied(db, int(Prefs(settings.data_dir, settings.raw).data.get("reapply_after_days", 90) or 0))
         for r in every:
@@ -750,8 +815,82 @@ def make_app(settings, db: DB) -> FastAPI:
         cap = 2000 if more else 150  # 500 rows made the page 1.2-1.4 MB (11/10)
         shown = groups[show][:cap]
         leads.explain_scores(shown, settings)  # what each score is made of, for the hover on the Score column
-        return page("leads.html", rows=shown, total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show, nav="leads",
-                    running=run_state(), src=src, src_open=src["on"] < src["total"] // 2 or not every)
+        return page("leads.html", rows=shown, total=len(groups[show]), more=more, tabs=[(k, l, len(groups[k])) for k, l in tabs], show=show,
+                    src=src, src_open=src["on"] < src["total"] // 2 or not every, n_inbox=len(groups["open"]),
+                    s=stats.compute(db, floor=work_search(settings)[1]), **common)
+
+    # ---------- the board (11/18): plain forms, each back to the board with the card still picked ----------
+
+    def _to_board(key: str, moved: bool = False, msg: str = "") -> RedirectResponse:
+        q = f"/leads?view=board&card={quote(key, safe='')}" + ("&moved=" + quote(key, safe="") if moved else "")
+        return RedirectResponse(q + (f"&done={quote(msg)}" if msg else ""), status_code=303)
+
+    @app.post("/board/add")
+    def board_add(key: str = Form(""), job: str = Form(""), back: str = Form("")):
+        from . import board
+        if job:
+            j = db.get(job)
+            if not j:
+                raise HTTPException(404)
+            key = board.add_job(db, j)
+        elif not board.add(db, key):
+            raise HTTPException(404)
+        if back.startswith("/") and not back.startswith("//"):
+            return RedirectResponse(back, status_code=303)
+        return _to_board(key, moved=True)
+
+    @app.post("/board/remove")
+    def board_remove(key: str = Form(...)):
+        from . import board
+        board.remove(db, key)
+        return RedirectResponse("/leads?view=board", status_code=303)
+
+    @app.post("/board/move")
+    def board_move(key: str = Form(...), col: int = Form(...)):
+        from . import board
+        board.move(db, key, col)
+        return _to_board(key, moved=True)
+
+    @app.post("/board/step")
+    def board_step(key: str = Form(...), i: int = Form(...)):
+        from . import board
+        try:
+            board.toggle_step(db, key, i)
+        except ValueError:
+            raise HTTPException(400)
+        return _to_board(key)
+
+    @app.post("/board/save")
+    def board_save(key: str = Form(...), next_step: str = Form(""), due: str = Form(""), notes: str = Form("")):
+        from . import board
+        board.save(db, key, next_step, due, notes)
+        return _to_board(key)
+
+    @app.post("/board/lookup")
+    def board_lookup(key: str = Form(...)):
+        from . import leads
+        leads.want_lookup(db, key)
+        return _to_board(key)
+
+    @app.post("/board/applied")
+    def board_applied(key: str = Form(...)):
+        """The card's role, logged as sent (the same path as Applied elsewhere); the card leaves for Applied."""
+        from . import board, history, leads
+        r = leads.get(db, key)
+        if not r:
+            raise HTTPException(404)
+        try:
+            done = history.log(db, r["company"], r["title"], url=(r.get("apply_url") or r.get("url") or "").strip())
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        leads.link_tracked(db)
+        db.conn.execute("update leads set status = 'applied', job_id = coalesce(job_id, ?) where key = ?", (done["id"], key))
+        db.conn.commit()
+        board.sync_stars(db)
+        j = done["job"]
+        msg = (f"Sent. Added {j['title']} at {j['company']} to Applied. That's one more door you knocked on, and it counts "
+               "toward your week.") if done["status"] != "already" else f"{j['title']} at {j['company']} was already in Applied."
+        return RedirectResponse(f"/leads?view=board&done={quote(msg)}", status_code=303)
 
     @app.post("/leads/apply")
     def lead_apply(key: str = Form(...)):
@@ -842,23 +981,55 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.post("/leads")
     def lead_action(key: str = Form(...), status: str = Form(...), show: str = Form("open")):
-        from . import leads
+        from . import board, leads
         try:
             leads.set_status(db, key, status)
         except ValueError:
             raise HTTPException(400)
+        if status == "starred":
+            board.add(db, key)  # a star is the way onto the board
+        else:
+            board.remove(db, key)
         return RedirectResponse(f"/leads?show={show}#leads", status_code=303)
 
     @app.get("/stats")
-    def stats_page():
-        return page("stats.html", s=stats.detail(db, floor=work_search(settings)[1]), nav="stats")
+    def stats_page(tab: str = "overview"):
+        d = stats.detail(db, floor=work_search(settings)[1])
+        return page("stats.html", s=d, head=stats.headline(d), nav="stats",
+                    tab=tab if tab in ("overview", "pipeline", "sources", "work") else "overview")
 
     @app.get("/skills")
     def skills_page():
         from . import learn
         from . import coach
-        return page("learn.html", g=learn.gaps(db, settings), nav="skills", related=coach.related_titles(db, settings),
+        lp = learn.plan(db)
+        if lp and lp.get("status") == "writing" and lp.get("made_at", "") < (datetime.now() - timedelta(minutes=4)).strftime("%Y-%m-%d %H:%M"):
+            lp = {**lp, "status": "failed"}  # the thread died (a restart): say so instead of waiting forever
+        return page("learn.html", g=learn.gaps(db, settings), lp=lp, nav="skills", related=coach.related_titles(db, settings),
                     my_titles=(settings.raw.get("search") or {}).get("title_keywords") or [])
+
+    @app.post("/skills/plan")
+    async def skills_plan(request: Request):
+        """A learning plan for up to three picked skills: one model call, in a thread; the page shows it when it lands."""
+        from . import learn
+        picks = [str(x) for x in (await request.form()).getlist("picks")]
+        try:
+            learn.start_plan(db, settings, picks)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        return RedirectResponse("/skills#plan", status_code=303)
+
+    @app.post("/skills/plan/start")
+    def skills_plan_start():
+        """Start this plan: its skills move to Learning now (the same mark as before), and the plan says it started."""
+        from . import coach, learn
+        lp = learn.plan(db)
+        if not lp or lp.get("status") != "ready":
+            raise HTTPException(400)
+        for sk in lp.get("skills") or []:
+            learn.set_mark(settings, sk, "learning")
+        coach.set_note(db, learn.PLAN_KEY, {**lp, "started": datetime.now().strftime("%Y-%m-%d")})
+        return RedirectResponse("/skills#plan", status_code=303)
 
     @app.post("/skills/mark")
     def skills_mark(skill: str = Form(...), mark: str = Form(...)):

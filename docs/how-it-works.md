@@ -55,8 +55,8 @@ you ─► dashboard ─► check answers, decide consents ─► Submit
   Glassdoor, Wellfound, ZipRecruiter and Dice. Every role in them is saved on the **Leads** page with its location,
   salary when given, source and a rough fit score (point at a score, or tap it on a phone, to see what made it up:
   title keywords, level, words shared with your resume, freshness). After each email sync the top leads are looked up on the
-  company's own job board (no AI) and join the roles the daily run can tailor; star others and the next run
-  searches the web for them. Parsing is plain Python, from the "View job" blocks these emails use.
+  company's own job board (no AI) and join the roles the daily run can tailor; star others to put them on your
+  board, and press **Find it on their site** on a card to have the next run search the web for it (a star alone spends no credits). Parsing is plain Python, from the "View job" blocks these emails use.
 - **Any job you paste.** Found a role somewhere else? Open **Add a job** on the Leads page and paste the whole post
   (a LinkedIn job page copied with Cmd+A, a careers page, a job email) or a link to a Greenhouse, Lever or Ashby
   posting. It reads out the company, title, location, work setting and pay range and drops the page clutter; you

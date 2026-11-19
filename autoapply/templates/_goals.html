@@ -29,6 +29,16 @@
 .g-acts input[type=number]{width:70px;height:32px}.g-adj summary{list-style:none;cursor:pointer}.g-adj summary::-webkit-details-marker{display:none}
 .g-adj[open]{flex-basis:100%}.g-adj form{margin-top:6px;justify-content:flex-end}
 .g-line{margin:12px 0 0;max-width:62ch}.g-so-far{margin:12px 0 0;font-size: 14px;color:var(--ink-2)}
+.plan-form{display:grid;gap:16px;max-width:720px}.plan-form .acts{display:flex;gap:8px;align-items:center}
+.plan-form fieldset.days{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px}
+.plan-form fieldset.days legend{padding:0;margin:0 0 8px;font-size:14px;font-weight:600;color:var(--ink-2);float:left;width:100%}
+.plan-form label.day{position:relative;display:inline-flex}
+.plan-form label.day input{position:absolute;opacity:0;width:1px;height:1px}
+.plan-form label.day span{display:inline-grid;place-items:center;min-width:52px;height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);
+ font-size:14px;font-weight:600;color:var(--ink-2);background:var(--surface);cursor:pointer;transition:background-color 150ms var(--ease-out),color 150ms var(--ease-out),border-color 150ms var(--ease-out)}
+.plan-form label.day:hover span{background:var(--surface-2)}
+.plan-form label.day input:checked+span{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+.plan-form label.day input:focus-visible+span{box-shadow:var(--focus)}
 .g-totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-width:640px}
 .g-totals .fld input{width:100%}
 .g-adjust table{border-collapse:collapse;font-size:14px;margin-top:8px}.g-adjust td,.g-adjust th{padding:4px 6px;text-align:left}
@@ -53,7 +63,22 @@
 @media (max-width:620px){.g-totals,.g-back{grid-template-columns:repeat(2,minmax(0,1fr))}
  .g-row{grid-template-columns:44px minmax(0,1fr);row-gap:6px}.g-acts{grid-column:2/-1;justify-content:flex-start}
  .g-weeks li{grid-template-columns:repeat(2,minmax(0,1fr))}.g-weeks li>b{grid-column:1/-1}}
-@media (prefers-reduced-motion:reduce){.g-ring .fl,.g-col .w,.just-met .g-ring,.g-today.just-met-day,.g-saved,.g-lookback[open]{animation:none!important}}
+.g-panel{display:grid;gap:12px;padding:18px 22px;margin:0 0 14px}.g-panel.g-today{margin:0 0 14px}
+.g-panel-top{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.g-panel .g-strip{margin:0;max-width:none;width:auto;grid-template-columns:repeat(7,26px);gap:6px;flex:none}
+.g-panel .g-col{height:42px;border-radius:8px}.g-panel .g-day{font-size:12px;gap:4px}.g-panel .g-day .sun{width:7px;height:7px}
+.g-panel-txt{flex:1 1 300px;min-width:0;display:grid;gap:4px}.g-panel-txt h2{margin:0}
+.g-panel-line{margin:0;font-size:14px;color:var(--ink-2);text-wrap:pretty}
+.g-tally{display:flex;gap:6px 18px;flex-wrap:wrap;list-style:none;margin:4px 0 0;padding:0;font-size:13px;color:var(--ink-3)}
+.g-tally li{display:flex;align-items:center;gap:6px}.g-tally b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g-tb{width:36px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:block}
+.g-tb i{display:block;height:100%;background:var(--accent);border-radius:3px;transform-origin:left;animation:g-bar .7s var(--ease-out) backwards;animation-delay:calc(300ms + var(--i) * 60ms)}
+@keyframes g-bar{from{transform:scaleX(0)}}
+.g-panel-acts{display:flex;gap:2px;align-self:flex-start}
+.g-start{display:flex;gap:10px;align-items:center;background:var(--surface-2);border-radius:12px;padding:8px 8px 8px 12px;font-size:14px;color:var(--ink-2)}
+.g-start svg{color:var(--accent);flex:none}.g-start span{flex:1}.g-start b{color:var(--ink);font-weight:600}
+@media (max-width:620px){.g-panel-txt{order:-1}.g-panel .g-strip{width:100%;grid-template-columns:repeat(7,minmax(0,1fr))}.g-panel-acts{order:3;margin-left:-11px}.g-start{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.g-tb i,.g-ring .fl,.g-col .w,.just-met .g-ring,.g-today.just-met-day,.g-saved,.g-lookback[open]{animation:none!important}}
 </style>{% endmacro %}
 
 {% macro ring(frac, met=False, size=44) %}{% set c = 113.1 %}
@@ -69,6 +94,24 @@
    {% else %}<i class="w" style="--f:{{ (d.frac * 100)|round|int }}%;--i:{{ loop.index0 }}"></i>{% endif %}</span>
   <b>{{ d.day }}</b></li>{% endfor %}
 </ol>{% endmacro %}
+
+
+{# The dashboard's compact Your week (11/18): strip, one warm line, thin tallies, one place to start. #}
+{% macro week_panel(p, start, last_wk, just_met=(), iso='') %}{% set mk = just_met|select('equalto', 'goals:met:' ~ iso)|first %}
+<section class="card g-panel{{ ' g-today just-met-day' if mk }}" id="week" aria-labelledby="week-h"{% if mk %} data-met="{{ mk }}"{% endif %}>
+ <div class="g-panel-top">
+  {{ strip(p.strip) }}
+  <div class="g-panel-txt">
+   <h2 id="week-h">Your week</h2>
+   <p class="g-panel-line">{{ p.line }}</p>
+   {% if p.tallies %}<ul class="g-tally" aria-label="This week">{% for t in p.tallies %}
+    <li><span class="g-tb" aria-hidden="true"><i style="width:{{ (t.frac * 100)|round|int }}%;--i:{{ loop.index0 }}"></i></span><b>{{ t.did }} of {{ t.planned }}</b> {{ t.label }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  <div class="g-panel-acts">{% if last_wk %}{{ lookback_open('Last week') }}{% endif %}<a class="btn sm ghost" href="/plan">{{ 'Your plan' if p.planned else 'Plan your week' }}</a></div>
+ </div>
+ {% if start %}<div class="g-start"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span><b>One place to start:</b> {{ start.text }}</span>{% if start.href %}<a class="btn sm" href="{{ start.href }}">{{ start.cta }}</a>{% endif %}</div>{% endif %}
+</section>{% endmacro %}
 
 {% macro hrs(m) %}{{ '%g'|format(m / 60) }}{% endmacro %}
 
@@ -112,11 +155,11 @@
    <div class="what"><b>{{ b.label }}</b>
     <span>{% if b.met %}Done for today. {% endif %}{{ amount(b.goal, b.done) }} of {{ amount(b.goal, b.planned) }}{% if b.goal == 'apps' %} · counted from what you sent{% elif b.goal == 'reach' and b.people %} · {{ b.people }} {{ 'person' if b.people == 1 else 'people' }}{% endif %}</span></div>
    <div class="g-acts">
-    {% if b.goal != 'apps' and not b.met %}<form method="post" action="/plan/day"><input type="hidden" name="back" value="/#today"><input type="hidden" name="action" value="done"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}"><button class="btn sm primary">Done</button></form>{% endif %}
+    {% if b.goal != 'apps' and not b.met %}<form method="post" action="/plan/day"><input type="hidden" name="back" value="/plan#today"><input type="hidden" name="action" value="done"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}"><button class="btn sm primary">Done</button></form>{% endif %}
     {% if b.goal != 'apps' %}<details class="g-adj"><summary class="btn sm ghost">{{ 'Change' if b.done else 'Some of it' }}</summary>
-     <form method="post" action="/plan/day"><input type="hidden" name="back" value="/#today"><input type="hidden" name="action" value="adjust"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}">
+     <form method="post" action="/plan/day"><input type="hidden" name="back" value="/plan#today"><input type="hidden" name="action" value="adjust"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}">
       <label class="ink2" for="adj-{{ b.goal }}">Hours</label><input id="adj-{{ b.goal }}" type="number" name="hours" min="0" max="16" step="0.5" value="{{ '%g'|format(b.done / 60) }}"><button class="btn sm">Save</button></form></details>{% endif %}
-    {% if b.can_move %}<form method="post" action="/plan/day"><input type="hidden" name="back" value="/#today"><input type="hidden" name="action" value="move"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}"><button class="btn sm ghost" title="Put what's left on {{ v.next_day }}">Move to {{ v.next_day }}</button></form>{% endif %}
+    {% if b.can_move %}<form method="post" action="/plan/day"><input type="hidden" name="back" value="/plan#today"><input type="hidden" name="action" value="move"><input type="hidden" name="goal" value="{{ b.goal }}"><input type="hidden" name="day" value="{{ iso }}"><button class="btn sm ghost" title="Put what's left on {{ v.next_day }}">Move to {{ v.next_day }}</button></form>{% endif %}
    </div></li>
  {% endfor %}</ul>
  {% set apps = v.blocks|selectattr('goal', 'equalto', 'apps')|first %}

@@ -471,11 +471,14 @@ def main(argv=None):
             # The best untracked leads, looked up on the company's own job board (no AI). --days is unused here.
             _out(leads.resolve(db, s, limit=int(args.key or 30)))
         elif args.action == "lookup":
-            # Starred leads for the alerts step to find on the company's own site; prints how many.
+            # Leads you asked to find on the company's own site, for the alerts step; prints how many. Each is
+            # handed over once: the flag clears here, so a role that can't be found doesn't cost a lookup every run.
             todo = leads.starred_for_lookup(db, only=os.environ.get("AUTOAPPLY_LEAD", ""))
             if todo:
                 (s.data_dir / "daily").mkdir(parents=True, exist_ok=True)
                 (s.data_dir / "daily" / "alert-roles.json").write_text(json.dumps(todo, indent=1))
+                for t in todo:
+                    leads.want_lookup(db, leads.key(t["company"], t["title"]), False)
             print(len(todo))
         elif args.action == "job":
             # The tracked job behind a lead, once the alerts step found it on the company's site.

@@ -34,3 +34,8 @@ have rank higher, and the dashboard shows "4 of 5 must-haves · missing Looker".
 reads, and the Settings page says how many before you turn it on. Measured: 8 roles in one call took about 26,000
 tokens through Claude Code (most of it Claude Code's own overhead); a small OpenRouter model reads 25 roles a day for
 roughly 10 cents a month.
+
+**The board:** a star puts a lead on your board and costs nothing; only **Find it on their site** on a board card
+sends it to the paid lookup, once (on one real install each lookup step averaged about 210,000 tokens). A **learning plan** on the Skills page is one short request, only when you press it: about 6,000 tokens on
+OpenRouter (skipped once the monthly budget is reached, then it uses your Claude subscription), about 20,000 through
+Claude Code, most of that Claude Code's own overhead.

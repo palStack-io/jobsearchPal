@@ -61,6 +61,11 @@ autoapply/finish_here.py Finish it here: one session at a time on the browser bo
 autoapply/vnc_relay.py   the viewer's WebSocket to the box's VNC port (route /finish-here/vnc checks sign-in itself)
 autoapply/static/novnc/  noVNC 1.5.0 (MPL-2.0), the in-page viewer; VERSION has the source and checksum
 finish-box/              the browser box (Xvfb, Chromium, x11vnc) and its proxy (Squid); images jobsearchpal-finish(-proxy)
+autoapply/adminpal.py    palStack connection, OFF unless PALSTACK_MANAGER_URL + _SECRET are set: POST /api/support/report
+                         (Report a problem on Settings) and GET /api/admin/stats (adminPal-signed, the one path the
+                         sign-in gate lets through). No error capture. Product id jobsearchpal, issue prefix JS
+autoapply/palstack_admin_kit/  vendored from the palStack monorepo (tools/palstack-admin-kit, `palkit vendor autoapply`);
+                         never edit it here: fix the kit and re-vendor. Imported only when connected (needs requests)
 autoapply/templates/     HTML (no build step, no JavaScript framework)
 prompts/stages/          the daily run's steps (rank, apply, prep, drafts, letter), one agent session each
 AGENTS.md                standing rules for the agent (CLAUDE.md imports it; personal facts go in CLAUDE.local.md)

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
-{% block body %}{% from "_palstack.html" import about_card %}
+{% block body %}{% from "_palstack.html" import about_card %}{% from "_report.html" import report_card %}
 {% set tab_sub = {'sorting': 'Which models read your job emails, and in what order.',
                   'daily': 'The morning pass finds roles, tailors your materials and fills forms. It never submits.',
                   'costs': 'What the daily pass may do each day, and what it costs.'}[tab] %}
@@ -264,5 +264,6 @@
 .pre{color:var(--ink-3)}
 @media (max-width:640px){.src .body{margin-left:0;grid-template-columns:1fr}.src .via{display:none}.src .top{flex-wrap:wrap}.src .top .toggle{flex:1 1 0;min-width:0}.src .top .st{order:5;flex:1 1 100%;margin-left:36px}}
 </style>
+{% if palstack_report %}{{ report_card(app_version|default("")) }}{% endif %}
 {{ about_card() }}
 {% endblock %}

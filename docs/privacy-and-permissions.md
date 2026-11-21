@@ -69,6 +69,14 @@ ChatGPT subscription, or OpenRouter/Jev if you turn them on); Ollama stays local
 public job boards. The form filler types your real name, email and files into the company's own form, and
 nothing is sent until you press Submit.
 
+**Report a problem (installs connected to palStack only).** An install is connected only when its `.env` sets
+`PALSTACK_MANAGER_URL` and `PALSTACK_MANAGER_SECRET`, which palStack gives to installs it runs. A self-hosted install
+without them has no report form, no extra routes and sends nothing. On a connected install, Settings shows
+"Report a problem": when you tick "Send this report to the palStack team" and press Send, we send what you write,
+your app version and which screen you were on, nothing else, and keep it for 12 months. adminPal (palStack's admin
+console) can also ask a connected install for totals: whether the account exists and whether an application was
+sent in the last 30 days, as counts, never names, companies or text. There is no automatic error reporting.
+
 **What stays on disk, unencrypted.** Resumes, tailored documents, answers, copies of job emails and form
 screenshots live in `materials/` and `data/`. Keep the folder private and back it up.
 

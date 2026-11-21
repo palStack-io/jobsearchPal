@@ -1,0 +1,53 @@
+{# "Report a problem": only on installs connected to palStack (PALSTACK_MANAGER_URL and _SECRET set; see autoapply/adminpal.py).
+   Sends what the person writes, the app version and the page, on their tick. Same copy as the other pals. #}
+{% macro report_card(version="") %}
+<section class="card mt" id="report" aria-labelledby="report-h">
+ <h2 id="report-h">Report a problem</h2>
+ <form class="report-form" data-version="{{ version }}" novalidate>
+  <label class="report-l" for="report-text">What went wrong?</label>
+  <textarea id="report-text" name="text" rows="5" maxlength="5000" required></textarea>
+  <p class="report-help">We send what you write, your app version and which screen you were on. No other data. Kept for 12 months.</p>
+  <label class="switch"><input type="checkbox" name="consent"> Send this report to the palStack team</label>
+  <div class="report-acts"><button class="btn primary" type="submit" disabled>Send report</button></div>
+  <p class="report-msg" role="status" aria-live="polite"></p>
+ </form>
+</section>
+<style>
+.report-form{display:grid;gap:10px;max-width:640px}.report-l{font-weight:600}
+.report-form textarea{font:inherit;padding:10px 12px;border-radius:var(--r-ctl);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);resize:vertical}
+.report-help{margin:0;font-size:14px;color:var(--ink-3)}.report-msg{margin:0;font-size:14px}.report-msg:empty{display:none}
+.report-msg.bad{color:var(--bad)}
+</style>
+<script>
+(() => {
+ const f = document.querySelector(".report-form"); if (!f) return;
+ const send = f.querySelector("button[type=submit]"), tick = f.consent, text = f.text, msg = f.querySelector(".report-msg");
+ const ready = () => { send.disabled = !(tick.checked && text.value.trim()); };
+ try { const d = sessionStorage.getItem("report-draft"); if (d && !text.value) text.value = d; sessionStorage.removeItem("report-draft"); } catch (err) {}
+ tick.addEventListener("change", ready); text.addEventListener("input", ready);
+ f.addEventListener("submit", async (e) => {
+  e.preventDefault(); if (send.disabled) return;
+  send.disabled = true; msg.className = "report-msg"; msg.textContent = "";
+  const body = {text: text.value, consent: true, platform: "web", route: location.pathname};
+  if (f.dataset.version) body.app_version = f.dataset.version;
+  let r = null;
+  try { r = await fetch("/api/support/report", {method: "POST", credentials: "same-origin",
+        headers: {"Content-Type": "application/json", "X-In-Page": "1"}, body: JSON.stringify(body)}); } catch (err) {}
+  if (r && r.status === 401) {  // signed out mid-form: keep the text for after sign-in
+   try { sessionStorage.setItem("report-draft", text.value); } catch (err) {}
+   location.href = "/login?next=" + encodeURIComponent(location.pathname + "#report"); return;
+  }
+  const data = r ? await r.json().catch(() => ({})) : {};
+  if (r && r.ok && data.ref) {
+   msg.textContent = "Thanks. We got it. Your reference is " + data.ref + ".";
+   text.value = ""; tick.checked = false;
+  } else {
+   msg.className = "report-msg bad";
+   msg.textContent = (r && [413, 422, 429].includes(r.status) && data.error) ? data.error
+     : "We could not send your report right now. Please try again in a few minutes.";
+  }
+  ready();
+ });
+})();
+</script>
+{% endmacro %}

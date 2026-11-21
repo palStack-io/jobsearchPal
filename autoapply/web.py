@@ -124,8 +124,9 @@ def make_app(settings, db: DB) -> FastAPI:
             return RedirectResponse(to, status_code=303)
         return HTMLResponse("sign in first", status_code=401)
 
-    from . import demo
+    from . import adminpal, demo
     demo_limit = demo.Limiter()
+    palstack_cfg = None if demo.ON else adminpal.install(app, settings, db, _app_version())  # off unless connected
 
     @app.middleware("http")
     async def gate(request: Request, call_next):
@@ -154,6 +155,8 @@ def make_app(settings, db: DB) -> FastAPI:
             return await call_next(request)  # `autoapply finish` on the laptop: machine key, no cookie
         if path in ("/login", "/logout", "/account"):
             return await call_next(request)  # these routes check for themselves
+        if palstack_cfg and path == adminpal.STATS_PATH:
+            return await call_next(request)  # adminPal's signed call: the route checks the signature, not a cookie
         if path.startswith("/static/"):
             return await call_next(request)  # the app's own font: the sign-in page needs it too
         account = auth.load(settings.data_dir)
@@ -307,7 +310,8 @@ def make_app(settings, db: DB) -> FastAPI:
         from . import demo
         return HTMLResponse(env.get_template(name).render(demo=demo.ON, pending_count=len(db.pending_events()),
                                                           setup_left=len(setup.status(settings, os.environ)["left"]),
-                                                          log_week=log_week(), **ctx))
+                                                          log_week=log_week(), palstack_report=bool(palstack_cfg),
+                                                          app_version=_app_version(), **ctx))
 
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):

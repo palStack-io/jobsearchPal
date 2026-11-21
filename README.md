@@ -52,7 +52,8 @@ The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them
 - **Your AI, your order.** Pick the models on the Settings page: your Claude or ChatGPT subscription first,
   then pay-per-token sources (Jev, any OpenRouter model) or a local Ollama model as backups.
 - **Your data stays with you.** Everything lives in one folder on your server, behind your own sign-in.
-  Nothing is sent anywhere except to the models you turn on.
+  Nothing is sent anywhere except to the models you turn on, and, only on an install connected to palStack, a
+  problem report you choose to send and counts (never names or text) for palStack's admin console.
 
 ## How it works
 

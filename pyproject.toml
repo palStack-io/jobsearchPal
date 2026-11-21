@@ -8,6 +8,7 @@ requires-python = ">=3.11"
 dependencies = [
   "playwright>=1.45",
   "httpx>=0.27",
+  "requests>=2.28",  # palstack_admin_kit (Report a problem, adminPal stats); only used when connected
   "pyyaml>=6",
   "fastapi>=0.110",
   "uvicorn>=0.29",
@@ -29,7 +30,7 @@ autoapply = "autoapply.cli:main"
 include = ["autoapply*"]
 
 [tool.setuptools.package-data]
-autoapply = ["fillers/scan.js", "templates/*.html", "work_search_states.yaml", "market.yaml", "static/fonts/*", "static/novnc/*", "static/novnc/*/*", "static/novnc/*/*/*", "static/novnc/*/*/*/*", "static/novnc/*/*/*/*/*"]
+autoapply = ["palstack_admin_kit/VERSION", "fillers/scan.js", "templates/*.html", "work_search_states.yaml", "market.yaml", "static/fonts/*", "static/novnc/*", "static/novnc/*/*", "static/novnc/*/*/*", "static/novnc/*/*/*/*", "static/novnc/*/*/*/*/*"]
 
 [build-system]
 requires = ["setuptools>=68"]

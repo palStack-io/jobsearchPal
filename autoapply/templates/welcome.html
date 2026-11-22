@@ -59,7 +59,7 @@
   <p class="wl-lead">jobsearchPal uses your own AI subscription to tailor each resume and fill each form. Pick the one you have. You only do this once.</p>
   {% if st.agent.done %}<p class="wl-msg" role="status">{{ st.agent.note }}.</p>{% endif %}
   <div class="wl-ai">{% set back = "welcome" %}{% include "_agent_signin.html" %}</div>
-  <form method="post" action="/welcome/ai-done" class="wl-acts"><button class="btn {{ 'primary' if st.agent.done }}">{{ 'Continue' if st.agent.done else "I've signed in" }}</button><a class="btn ghost" href="/welcome?step=3">Back</a></form>
+  <form method="post" action="/welcome/ai-done" class="wl-acts"><button class="btn {{ 'primary' if st.agent.done }}">{{ 'Continue' if st.agent.done else "I've signed in" }}</button>{% if not st.agent.done %}<a class="btn ghost" href="/welcome?step=5">Skip for now</a>{% endif %}<a class="btn ghost" href="/welcome?step=3">Back</a></form>
   <p class="wl-hint">No subscription? An OpenRouter key works too: Settings, then Daily run.</p>
  </section>
 

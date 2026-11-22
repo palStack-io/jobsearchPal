@@ -117,3 +117,13 @@ def test_roles_step_keeps_job_sources(env):
     after = _cfg(s)
     assert after["search"]["title_keywords"] == ["data analyst", "analytics engineer"]
     assert after["feeds"] == ["remoteok", "remotive"] and after["boards"] == [{"ats": "greenhouse", "slug": "acme"}]
+
+
+def test_ai_step_without_an_ai_says_so_and_never_calls_one(env, monkeypatch):
+    from autoapply import resume_rebuild
+    s, db, c = env
+    monkeypatch.setattr(setup, "agent_ready", lambda prefs=None: {"done": False, "note": "", "who": [], "claude": True, "codex": False})
+    monkeypatch.setattr(resume_rebuild, "run_waiting", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no AI call")))
+    r = c.post("/welcome/ai-done", follow_redirects=False)
+    assert r.headers["location"].startswith("/welcome?step=4") and "err=" in r.headers["location"]
+    assert "Skip for now" in c.get("/welcome?step=4").text

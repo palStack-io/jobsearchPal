@@ -1605,7 +1605,10 @@ def make_app(settings, db: DB) -> FastAPI:
     @app.post("/welcome/ai-done")
     async def welcome_ai_done():
         """Step 4 finished: a resume that waited for the AI is put in shape now."""
-        from . import resume_rebuild
+        from . import resume_rebuild, setup
+        if not setup.agent_ready(setup._prefs(settings))["done"]:  # never call an AI that isn't signed in: it hangs
+            return _back("Not signed in yet. Sign in with one of these first, or skip for now and come back to it in "
+                         "Settings.", form={"wizard": "4"}, ok=False)
         msg = await run_in_threadpool(resume_rebuild.run_waiting, settings)
         return _back(msg or "Your AI is connected.", form={"wizard": "4"})
 

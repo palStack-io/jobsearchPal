@@ -236,6 +236,10 @@ def run_waiting(settings, ask=None) -> str:
     p = waiting(settings)
     if not p:
         return ""
+    if ask is None:
+        from .setup import _prefs, agent_ready
+        if not agent_ready(_prefs(settings))["done"]:
+            return ""  # waits for the AI; calling one that isn't signed in hangs
     try:
         rebuild(settings, p, ask=ask)
     except RebuildError as e:

@@ -500,3 +500,67 @@ def drafts(db, settings, ask=None, log=None, now: datetime | None = None) -> tup
         p.write_text(ok.strip() + "\n")
         wrote += 1
     return 0, f"Drafts: {wrote} written" + (f", {len(items) - wrote} left for the agent or you" if wrote < len(items) else "")
+
+
+# ---- outreach state: the person sends; we notice -------------------------------------------------
+
+STATES = ("suggested", "sent", "not_now", "dismissed")
+NOT_NOW_DAYS = 3
+
+
+def set_state(db, key: str, state: str) -> None:
+    if state not in STATES:
+        raise ValueError(f"no outreach state {state}")
+    ensure(db)
+    db.conn.execute("update outreach set state = ?, changed = ? where key = ?",
+                    (state, datetime.now().strftime("%Y-%m-%d %H:%M"), key))
+    db.conn.commit()
+
+
+def mark_sent_from_mail(db) -> int:
+    """A suggestion with an address counts as sent once your Sent mail shows a message to it on or after that day."""
+    ensure(db)
+    sent = [(r["at"] or "", (r["to_addrs"] or "").lower().split()) for r in db.sent()]
+    n = 0
+    for key, day, addr in db.conn.execute("select key, day, lower(email) from outreach where state in ('suggested', 'not_now') "
+                                          "and coalesce(email, '') != ''").fetchall():
+        hit = [at for at, to in sent if addr in to and at[:10] >= day]
+        if hit:
+            db.conn.execute("update outreach set state = 'sent', changed = ? where key = ?", (max(hit)[:16], key))
+            n += 1
+    db.conn.commit()
+    return n
+
+
+def compose_url(row: dict, draft: str, gmail: bool, first_name: str = "") -> str:
+    """Opens the note in the person's own mail, ready to send: Gmail's compose window, or mailto: for anything else."""
+    from urllib.parse import quote
+    subject = f"{row.get('role')} at {row.get('company')}" if row.get("job_id") and row.get("role") else \
+        (f"Hello from {first_name}" if first_name else "Hello")
+    to = row.get("email") or ""
+    if gmail:
+        return (f"https://mail.google.com/mail/?view=cm&fs=1&to={quote(to)}&su={quote(subject)}&body={quote(draft or '')}")
+    return f"mailto:{quote(to)}?subject={quote(subject)}&body={quote(draft or '')}"
+
+
+def rows(db, settings, day: date) -> list[dict]:
+    """Today's outreach suggestions still open (not sent, not dismissed, not hidden for now), each with its draft
+    and the Send link."""
+    from . import mailboxes
+    ensure(db)
+    mark_sent_from_mail(db)
+    soon = (datetime.now() - timedelta(days=NOT_NOW_DAYS)).strftime("%Y-%m-%d %H:%M")
+    gmail = mailboxes.main_provider() == "gmail"
+    first = (settings.profile or {}).get("first_name") or ""
+    out = []
+    for r in db.conn.execute("select * from outreach where day = ? order by rowid", (day.isoformat(),)):
+        r = dict(r)
+        if r["state"] in ("sent", "dismissed") or (r["state"] == "not_now" and (r["changed"] or "") > soon):
+            continue
+        job = db.get(r["job_id"]) if r["job_id"] else None
+        r["role"] = (job or {}).get("title", "")
+        p = Path(r["draft_path"] or "")
+        r["draft"] = p.read_text() if r["draft_path"] and p.is_file() else ""
+        r["send"] = compose_url(r, r["draft"], gmail, first)
+        out.append(r)
+    return out

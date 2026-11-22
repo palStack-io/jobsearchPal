@@ -582,6 +582,42 @@ def make_app(settings, db: DB) -> FastAPI:
             raise HTTPException(400)
         return RedirectResponse("/#todo", status_code=303)
 
+    @app.post("/outreach/{key}")
+    def outreach_action(key: str, action: str = Form(...), email: str = Form(""), link: str = Form(""), draft: str = Form("")):
+        """The coach's suggestion of someone to reach. The person sends from their own mail; this only keeps track."""
+        from pathlib import Path as _P
+        from . import coach, coachday
+        coachday.ensure(db)
+        row = db.conn.execute("select * from outreach where key = ?", (key,)).fetchone()
+        if not row:
+            raise HTTPException(404)
+        row = dict(row)
+        if action in ("sent", "not_now"):
+            coachday.set_state(db, key, action)
+            if action == "sent":
+                coach.touch(db)
+        elif action == "dismiss":
+            coachday.set_state(db, key, "dismissed")
+        elif action == "save":
+            if draft.strip() and row["draft_path"]:
+                p = _P(row["draft_path"])
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(draft.strip()[:5000] + "\n")
+            if email.strip() or link.strip():
+                coach.set_contact_email(db, row["person"], row["company"] or "", email.strip()[:120], link.strip()[:300])
+                db.conn.execute("update outreach set email = ? where key = ?", (email.strip()[:120] or row["email"], key))
+                db.conn.commit()
+        else:
+            raise HTTPException(400)
+        return RedirectResponse("/#coach", status_code=303)
+
+    @app.post("/coach/undo-skip/{job_id:path}")
+    def coach_undo_skip(job_id: str):
+        j = db.get(job_id)
+        if j and j["status"] == "skipped" and str(j.get("error") or "").startswith("coach:"):
+            db.update(job_id, status="new", error=None)
+        return RedirectResponse("/#coach", status_code=303)
+
     @app.get("/plan")
     def plan_page(request: Request, planned: str = ""):
         """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
@@ -685,11 +721,12 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.post("/contacts")
     def contact_action(action: str = Form("add"), name: str = Form(""), company: str = Form(""), how: str = Form(""),
-                       note: str = Form(""), at: str = Form(""), cid: int = Form(0), counts: str = Form("")):
+                       note: str = Form(""), at: str = Form(""), cid: int = Form(0), counts: str = Form(""),
+                       email: str = Form(""), link: str = Form("")):
         """People you got in touch with about work. They go in the work-search log as networking contacts."""
         from . import coach
         if action == "add":
-            coach.add_contact(db, name, company, how, note, at)
+            coach.add_contact(db, name, company, how, note, at, email.strip(), link.strip())
         elif action == "delete" and cid:
             coach.delete_contact(db, cid)
         elif action == "counts":

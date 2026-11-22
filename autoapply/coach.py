@@ -41,6 +41,10 @@ SENIORITY = {"senior", "sr", "junior", "jr", "lead", "principal", "staff", "head
 
 def ensure(db):
     db.conn.executescript(SCHEMA)
+    have = {r[1] for r in db.conn.execute("pragma table_info(contacts)")}
+    for col in ("email", "link"):  # 11/21: the coach's outreach can fill the To from an address the person found
+        if col not in have:
+            db.conn.execute(f"alter table contacts add column {col} text default ''")
 
 
 # ---- notes the person writes ---------------------------------------------------------------------
@@ -121,7 +125,8 @@ def weeks_planned(db) -> int:
 
 # ---- 2. people you know --------------------------------------------------------------------------
 
-def add_contact(db, name: str, company: str = "", how: str = "", note_text: str = "", at: str = "") -> int | None:
+def add_contact(db, name: str, company: str = "", how: str = "", note_text: str = "", at: str = "", email: str = "",
+                link: str = "") -> int | None:
     name = _clip(name, 80)
     if not name:
         return None
@@ -130,11 +135,26 @@ def add_contact(db, name: str, company: str = "", how: str = "", note_text: str 
     except ValueError:
         day = date.today().isoformat()
     ensure(db)
-    cur = db.conn.execute("insert into contacts (at, name, company, how, note) values (?, ?, ?, ?, ?)",
-                          (day, name, _clip(company, 80), how if how in HOW else "Other", _clip(note_text, 200)))
+    cur = db.conn.execute("insert into contacts (at, name, company, how, note, email, link) values (?, ?, ?, ?, ?, ?, ?)",
+                          (day, name, _clip(company, 80), how if how in HOW else "Other", _clip(note_text, 200),
+                           _clip(email, 120), _clip(link, 300)))
     db.conn.commit()
     touch(db)
     return cur.lastrowid
+
+
+def set_contact_email(db, name: str, company: str, email: str, link: str = "") -> int:
+    """The address (and profile link) the person found for someone the coach suggested: updates that contact, or
+    adds one. Returns the contact's id."""
+    ensure(db)
+    row = db.conn.execute("select id from contacts where lower(name) = lower(?) and lower(coalesce(company, '')) = lower(?)",
+                          (_clip(name, 80), _clip(company, 80))).fetchone()
+    if row:
+        db.conn.execute("update contacts set email = ?, link = coalesce(nullif(?, ''), link) where id = ?",
+                        (_clip(email, 120), _clip(link, 300), row[0]))
+        db.conn.commit()
+        return row[0]
+    return add_contact(db, name, company, "Email", "", "", email, link)
 
 
 def contacts(db) -> list[dict]:

@@ -658,3 +658,10 @@ def card(db, settings, day: date) -> dict | None:
     return {"note": row.get("note") or [], "picks": picks, "skips": skips, "prep": prep, "check": row.get("check") or [],
             "people": rows(db, settings, day), "followups": row.get("followups") or [],
             "later": row.get("later") or [], "week": row.get("week") or {}}
+
+
+def with_panel(panel: dict, card_: dict | None) -> dict:
+    """The dashboard's Your week panel speaks with the coach's first line when the coach has run today."""
+    if card_ and card_.get("note"):
+        return {**panel, "line": card_["note"][0], "coach": True}
+    return panel

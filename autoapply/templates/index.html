@@ -9,7 +9,7 @@
    {% if celebrate and celebrate.kind in ('week', 'milestone') %}<div class="cel cel-week" role="status"><b>{{ celebrate.title }}</b><span>{{ celebrate.line }}</span></div>{% endif %}
    <h1 id="hello">{{ greet.title }}</h1>
    {% if celebrate and celebrate.kind not in ('week', 'milestone') %}<p class="hello-line cel-{{ celebrate.kind }}" role="status"><b>{{ celebrate.title }}.</b> {{ celebrate.line }}</p>
-   {% elif not (coach_card and coach_card.note) %}<p class="hello-line">{{ greet.line }}</p>{% endif %}
+   {% else %}<p class="hello-line">{{ greet.line }}</p>{% endif %}
    {% if greet.market %}<p class="market">{{ greet.market.text }} {% set src = greet.market.source ~ ", checked " ~ strptime(greet.market.checked).strftime("%b %-d, %Y") %}{% if greet.market.url %}<a href="{{ greet.market.url }}" target="_blank" rel="noopener" title="{{ src }}">Source</a>{% else %}<span title="{{ src }}">({{ src }})</span>{% endif %}</p>{% endif %}
   </div>
   <div class="welcome-row">
@@ -31,7 +31,6 @@
    <button class="btn sm" name="back" value="/">Put it away</button></form>
  </div>{% endif %}
 </section>
-{% if coach_card %}{% include "_coach.html" %}{% endif %}
 {{ g.week_panel(week_panel, start, last_wk, just_met, today) }}{% if last_wk %}{{ g.lookback_dialog(last_wk, last_wk_summary) }}{% endif %}
 
 <style>.welcome{overflow:hidden;margin-bottom:24px;padding:0}

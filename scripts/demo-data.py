@@ -99,7 +99,9 @@ for i, (co, t, col, steps, nxt, due) in enumerate([
 # The coach (11/21): a morning's note, picks, a person to reach and a skip, so the dashboard card has something to show.
 # Fictional, like everything here; the real card comes from `autoapply coach` on a live install.
 from autoapply import coachday
+from autoapply.coach import DAYS as coach_days
 from autoapply.prefs import Prefs
+today_i = (now.weekday() + 1) % 7  # weeks run Sunday to Saturday
 coachday.ensure(db)
 pr = Prefs(root/"data", {}); pr.data["coach"] = True; pr.save()
 for jid, co, t, loc, d in [
@@ -124,5 +126,7 @@ db.conn.execute("insert or replace into coach_day (day, json) values (?, ?)", (n
               {"id": "ashby:fennel:1", "why": "Remote, dbt with finance stakeholders", "angle": "stakeholder work with finance teams"}],
     "skips": [{"id": "gh:corvid:1", "reason": "On-site five days a week in New York", "company": "Corvid Systems", "title": "Staff Data Engineer"}],
     "outreach": [], "followups": [], "prep": [],
-    "check": ["Fennel doesn't say which time zones it hires in. Confirm before applying."]})))
+    "check": ["Fennel doesn't say which time zones it hires in. Confirm before applying."],
+    "week": {"apps": 4, "reach": 120, "prep": 60, "learn": 0, "why": "Your replies came from Analytics Engineer roles, so four of those, plus time to reach people there."},
+    "later": [{"day": coach_days[min(6, today_i + 2)], "text": "Check in on your Fennel application if there's no reply."}] if today_i < 5 else []})))
 db.conn.commit()

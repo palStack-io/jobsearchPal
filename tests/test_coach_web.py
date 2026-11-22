@@ -152,18 +152,20 @@ def test_card_renders_note_people_and_undo(env):
                    "url": "u", "apply_url": "u", "description": ""})
     db.update("gh:hooli:9", status="skipped", error="coach: On-site in New York")
     _outreach(db, day=date.today().isoformat())
-    html = _client(s, db).get("/").text
+    html = _client(s, db).get("/coach").text
     assert 'id="coach"' in html
     assert "Priya Rao wrote back on Thu 12 Nov." in html
     assert "Dana Wu" in html and ">Send<" in html and "add their address" in html
-    assert 'action="/coach/undo-skip/gh:hooli:9"' in html
+    assert 'action="/coach/undo-skip/gh%3Ahooli%3A9"' in html
+    _client(s, db).post("/coach/undo-skip/gh%3Ahooli%3A9", follow_redirects=False)
+    assert db.get("gh:hooli:9")["status"] == "new"
     assert "Your dbt migration story" in html and "confirm the time zone" in html
     assert html.count("btn sm primary") >= 1
 
 
 def test_no_card_without_row(env):
     s, db = env
-    assert 'id="coach"' not in _client(s, db).get("/").text
+    assert 'id="coach"' not in _client(s, db).get("/coach").text
 
 
 def test_todo_ordered_by_followups():
@@ -192,3 +194,50 @@ def test_settings_toggle_saves(env):
     c.post("/settings", data={"coach_form": "1", "coach_model": "nope"}, follow_redirects=False)
     p = Prefs(s.data_dir, s.raw)
     assert p.data["coach"] is False and p.data["coach_model"] == "opus"
+
+
+
+# ---- Task 13: Your coach page, the nav, a lighter dashboard --------------------------------------
+
+def test_plan_redirects_to_coach(env):
+    s, db = env
+    r = _client(s, db).get("/plan?planned=1", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/coach?planned=1"
+
+
+def test_coach_page_shows_note_today_and_later(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    row = json.loads(db.conn.execute("select json from coach_day").fetchone()[0])
+    row["later"] = [{"day": "Wed", "text": "Thank Priya Rao after your screen."}]
+    db.conn.execute("update coach_day set json = ?", (json.dumps(row),))
+    db.conn.commit()
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    assert "<h1>Your coach</h1>" in html and 'aria-current="page"' in html
+    assert html.index("Priya Rao wrote back") < html.index(">Today<") < html.index("Later this week")
+    assert "Thank Priya Rao after your screen." in html and "Dana Wu" in html
+    assert "Your coach</span>" in html  # the side nav label
+
+
+def test_coach_page_offers_suggested_week_when_no_plan(env):
+    s, db = env
+    _coach_row(db)
+    row = json.loads(db.conn.execute("select json from coach_day").fetchone()[0])
+    row["week"] = {"apps": 4, "reach": 120, "prep": 60, "learn": 0, "why": "Your screens came after reaching people."}
+    db.conn.execute("update coach_day set json = ?", (json.dumps(row),))
+    db.conn.commit()
+    html = _client(s, db).get("/coach").text
+    assert "Here's a week that fits your search" in html and "Your screens came after reaching people." in html
+    import re
+    assert re.search(r'name="apps"[^>]*value="4"', html)
+    assert "Use this plan" in html
+
+
+def test_dashboard_has_no_coach_card_but_panel_line(env):
+    s, db = env
+    _coach_row(db)
+    html = _client(s, db).get("/").text
+    assert 'id="coach"' not in html
+    assert "Priya Rao wrote back on Thu 12 Nov." in html and 'href="/coach"' in html and "Open your coach" in html

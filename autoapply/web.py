@@ -373,7 +373,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
                     today_goals=today_goals, just_met={m["key"] for m in met},
                     so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
-                    week_panel=goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]),
+                    week_panel=coachday.with_panel(goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]), coach_card),
                     start=_start(s, now.date()), last_wk=last_wk,
                     last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "")
         if request.headers.get("x-in-page"):
@@ -623,10 +623,17 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse("/#coach", status_code=303)
 
     @app.get("/plan")
+    def plan_redirect(request: Request):
+        """Your week became Your coach (2026-11-21); old links and the morning email still land."""
+        q = request.url.query
+        return RedirectResponse("/coach" + (f"?{q}" if q else ""), status_code=303)
+
+    @app.get("/coach")
     def plan_page(request: Request, planned: str = ""):
-        """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
-        them of it beyond the once-a-week pop-up on the dashboard."""
-        from . import coach, goals, pal
+        """Your coach: the morning coach's note and today's steps, things for later this week, then the person's own
+        plan for the week, the days, and last week's look-back. The plan stays optional and theirs: a suggested week is
+        saved only when they press Use this plan."""
+        from . import coach, coachday, goals, nudges, pal
         now = datetime.now()
         s = stats.compute(db, floor=work_search(settings)[1])
         greet = pal.greeting(db, s, now, (settings.profile or {}).get("first_name", ""))
@@ -637,13 +644,22 @@ def make_app(settings, db: DB) -> FastAPI:
         today_goals = goals.today_view(db, now.date())
         # A goal or day met plays its moment here, where Done is pressed (11/18); the whole week's stays for the dashboard.
         met = [m for m in goals.new_met(db, now.date()) if m["scope"] != "week"]
-        resp = page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+        coach_card = coachday.card(db, settings, now.date())
+        suggested = None if wk_plan else coachday.suggested_totals(coach_card)
+        follow = []
+        if coach_card:
+            todo = [n for n in nudges.compute(db, settings.data_dir, settings=settings) if n.get("kind") in ("reply", "chase", "application", "interview")]
+            for n in coachday.order_todo(todo, coach_card["followups"])[:3]:
+                n["compose"] = nudges.gmail_compose_url(n)
+                follow.append(n)
+        resp = page("plan.html", nav="coach", coach_card=coach_card, follow=follow, suggested=bool(suggested),
+                    suggested_why=(coach_card or {}).get("week", {}).get("why", "") if suggested else "", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
                     today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
                     just_met={m["key"] for m in met},
                     plan_days=coach.DAYS,
-                    plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
+                    plan_open=bool(suggested) or (not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states()),
                     lookback=lookback, planned=planned == "1",
-                    goal_totals=goals.week_goals(wk_plan) or goals.prefill(db, s["this_week_start"]),
+                    goal_totals=goals.week_goals(wk_plan) or suggested or goals.prefill(db, s["this_week_start"]),
                     week_iso=s["this_week_start"].isoformat(),
                     g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
                     last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",

@@ -1,17 +1,19 @@
-{# The morning coach (coachday.card): the note, today's picks with their angle, people to reach (you send each note
+{# The morning coach on the Your coach page (coachday.card): the note, today's picks with their angle, people to reach (you send each note
    yourself), prep, skips with undo, and what it couldn't confirm. One primary action: the first person's Send. #}
 {% set c = coach_card %}
 <section class="card coach" id="coach" aria-labelledby="coach-h">
- <div class="coach-top"><h2 id="coach-h">Your coach</h2><span class="muted coach-day">{{ s.today.strftime("%a %-d %b") }}</span></div>
+ <div class="coach-top"><h2 id="coach-h">This morning</h2><span class="muted coach-day">{{ s.today.strftime("%a %-d %b") }}</span></div>
  {% for line in c.note %}<p class="coach-line{{ ' first' if loop.first }}">{{ line }}</p>{% endfor %}
 
- {% if c.picks %}<div class="coach-sec"><h3>Today's picks</h3><ul class="coach-list">
-  {% for p in c.picks %}<li><a href="/job/{{ p.id }}"><b>{{ p.job.company }}</b></a> <span class="muted">· {{ p.job.title }}</span>
+ {% if c.picks or c.people or follow %}<div class="coach-sec"><h3>Today</h3>
+  {% if c.picks %}<ul class="coach-list coach-rows">
+  {% for p in c.picks %}<li><span class="pill">Apply</span> <a href="/job/{{ p.id|urlencode }}"><b>{{ p.job.company }}</b></a> <span class="muted">· {{ p.job.title }}</span>
    {% if p.angle %}<div class="coach-sub">Lead with {{ p.angle }}</div>{% elif p.why %}<div class="coach-sub">{{ p.why }}</div>{% endif %}</li>{% endfor %}
- </ul></div>{% endif %}
-
- {% if c.people %}<div class="coach-sec"><h3>People to reach <span class="count">{{ c.people|length }}</span></h3>
-  <p class="coach-sub">Notes are drafted for you. You send each one from your own email; nothing goes out on its own.</p>
+  </ul>{% endif %}
+  {% for n in follow %}<div class="coach-person"><div class="cp-main"><span class="pill">Reply</span> <b>{{ n.title }}</b><div class="coach-sub">{{ n.why }}</div></div>
+   <div class="cp-acts">{% if n.compose %}<a class="btn sm ghost" href="{{ n.compose }}" target="_blank" rel="noopener">Open the draft</a>{% endif %}
+    <form method="post" action="/nudge/{{ n.key }}"><button class="btn sm ghost" name="action" value="done">Done</button></form></div></div>{% endfor %}
+  {% if c.people %}<p class="coach-sub">Notes are drafted for you. You send each one from your own email; nothing goes out on its own.</p>{% endif %}
   {% for o in c.people %}<div class="coach-person">
    <div class="cp-main"><b>{{ o.person }}</b>{% if o.company %} <span class="muted">· {{ o.company }}</span>{% endif %}
     <span class="pill">{{ {'referral': 'Referral', 'hiring_team': 'Hiring team', 'check_in': 'Check-in', 'thank_you': 'Thank-you', 'reply': 'Reply'}[o.kind] }}</span>
@@ -29,19 +31,21 @@
      <button class="btn sm">Save</button></form></details>
   </div>{% endfor %}</div>{% endif %}
 
- {% if c.prep %}<div class="coach-sec"><h3>Prep</h3>{% for p in c.prep %}<p class="coach-sub"><b>{{ p.job.company }}</b>{% if p.job %} <a href="/prep/{{ p.job.id }}">prep pack</a>{% endif %}</p>
+ {% if c.later %}<div class="coach-sec"><h3>Later this week</h3><ul class="coach-list">{% for x in c.later %}<li><b>{{ {"Sun": "Sunday", "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday"}[x.day] }}</b> <span class="muted">·</span> {{ x.text }}</li>{% endfor %}</ul></div>{% endif %}
+
+ {% if c.prep %}<div class="coach-sec"><h3>Prep</h3>{% for p in c.prep %}<p class="coach-sub"><b>{{ p.job.company }}</b>{% if p.job %} <a href="/prep/{{ p.job.id|urlencode }}">prep pack</a>{% endif %}</p>
   <ul class="coach-list">{% for i in p['items'] %}<li>{{ i }}</li>{% endfor %}</ul>{% endfor %}</div>{% endif %}
 
  {% if c.check %}<div class="coach-sec"><h3>Worth checking</h3><ul class="coach-list">{% for x in c.check %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
 
  {% if c.skips %}<details class="coach-sec more"><summary>Skipped today: <span data-count="{{ c.skips|length }}">{{ c.skips|length }}</span> role{{ '' if c.skips|length == 1 else 's' }}</summary>
   <ul class="coach-list">{% for sk in c.skips %}<li><b>{{ sk.company }}</b> <span class="muted">· {{ sk.title }} · {{ sk.reason }}</span>
-   <form method="post" action="/coach/undo-skip/{{ sk.id }}" class="inline"><button class="btn sm ghost">Undo</button></form></li>{% endfor %}</ul></details>{% endif %}
+   <form method="post" action="/coach/undo-skip/{{ sk.id|urlencode }}" class="inline"><button class="btn sm ghost">Undo</button></form></li>{% endfor %}</ul></details>{% endif %}
 </section>
 <style>.coach{margin:22px 0 0}.coach h2{margin:0}.coach-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
 .coach-day{font-size:13px}.coach-line{margin:0 0 6px;max-width:66ch;font-size:16px;text-wrap:pretty}.coach-line.first{font-weight:600}
 .coach-sec{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}.coach-sec h3{font-size:14px;font-weight:600;margin:0 0 6px}
-.coach-list{margin:0;padding-left:18px}.coach-list li{margin:4px 0}.coach-sub{font-size:14px;color:var(--ink-3);margin:2px 0 0}
+.coach-list{margin:0;padding-left:18px}.coach-rows{list-style:none;padding-left:0}.coach-rows li{padding:6px 0}.coach-list li{margin:4px 0}.coach-sub{font-size:14px;color:var(--ink-3);margin:2px 0 0}
 .coach-person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
 .coach-person:last-child{border-bottom:0}.cp-acts{display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-end}.cp-acts form{display:flex;gap:2px;margin:0}
 .cp-noaddr{font-size:13px}.cp-edit{grid-column:1/-1;font-size:14px}.cp-form{display:grid;gap:8px;max-width:560px;margin-top:8px}

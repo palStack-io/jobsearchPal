@@ -1,15 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Your week{% endblock %}
+{% block title %}Your coach{% endblock %}
 {% block body %}
 {% import "_goals.html" as g %}{{ g.goals_css() }}
-<div class="ph"><div><h1>Your week</h1>
- <div class="sub">Today's part of the plan, the plan itself and last week's look-back. It's yours; nothing reminds you of it.</div></div></div>
+<div class="ph"><div><h1>Your coach</h1>
+ <div class="sub">What to do next to get interviews, today's steps, and your plan for the week. The plan is yours; nothing reminds you of it.</div></div></div>
+{% if coach_card %}{% include "_coach.html" %}{% endif %}
 {% if today_goals %}{{ g.today_card(today_goals, just_met, so_far) }}{% endif %}
 <section class="card plan mt{{ ' g-saved' if planned }}" id="plan" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
  {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
  {% elif plan %}<div class="plan-row"><div><h2 id="plan-h">Your plan this week</h2>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
    {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>
   <div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div></div>
+ {% elif suggested and not back %}<h2 id="plan-h">Here's a week that fits your search</h2>
+  <p class="ink2 plan-why">{% if suggested_why %}{{ suggested_why }} {% endif %}Change anything, pick your days, and it's your plan. Nothing is saved until you press Use this plan.</p>
+  {{ g.goals_form(None, goal_totals, plan_days, submit='Use this plan') }}
  {% elif plan_open and not back %}<h2 id="plan-h">Your week, in your words</h2>
   <p class="ink2 plan-why">Set a few totals and pick your days; we'll spread them out. Change any day. It's yours; nothing reminds you of it.</p>
   {{ g.goals_form(None, goal_totals, plan_days) }}

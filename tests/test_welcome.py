@@ -45,7 +45,7 @@ def test_each_step_renders(env, n):
 def test_done_screen_offers_run_now(env):
     s, db, c = env
     html = c.get("/welcome?step=done").text
-    assert "You're set" in html and 'action="/run"' in html
+    assert "Almost there" in html and "things are still missing" in html and 'action="/run"' in html
 
 
 def test_setup_routes_go_on_to_the_next_step(env):

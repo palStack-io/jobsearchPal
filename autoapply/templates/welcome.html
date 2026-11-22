@@ -28,10 +28,10 @@
  <section class="wl-card">
   <form method="post" action="/welcome/about" class="wl-form">
    <div class="wl-grid">
-    <label class="fld"><span>First name</span><input name="first_name" required value="{{ prof.first_name or '' }}" autocomplete="given-name"></label>
-    <label class="fld"><span>Last name</span><input name="last_name" required value="{{ prof.last_name or '' }}" autocomplete="family-name"></label>
+    <label class="fld"><span>First name</span><input type="text" name="first_name" required value="{{ prof.first_name or '' }}" autocomplete="given-name"></label>
+    <label class="fld"><span>Last name</span><input type="text" name="last_name" required value="{{ prof.last_name or '' }}" autocomplete="family-name"></label>
     <label class="fld"><span>Email for applications</span><input type="email" name="email" required value="{{ prof.email or account_email }}" autocomplete="email"></label>
-    <label class="fld"><span>City and state (optional)</span><input name="location" value="{{ prof.location or '' }}" placeholder="Columbus, OH" autocomplete="address-level2"></label>
+    <label class="fld"><span>City and state (optional)</span><input type="text" name="location" value="{{ prof.location or '' }}" placeholder="Columbus, OH" autocomplete="address-level2"></label>
    </div>
    <fieldset class="wl-claim"><legend>Are you claiming unemployment benefits?</legend>
     <p class="wl-hint">If you are, jobsearchPal keeps your state's weekly work-search log and reminds you about claim days. If not, it stays a job-search helper and none of that shows.</p>
@@ -84,8 +84,8 @@
 
  {% else %}
  <section class="wl-card wl-done">
-  <h1>You're set</h1>
-  {% if left %}<p class="wl-lead">One thing is still missing before jobsearchPal can prepare applications: {{ left|map('replace', 'agent', 'connecting your AI')|map('replace', 'interests', 'job titles')|map('replace', 'profile', 'your name and email')|join(', ') }}. <a href="/welcome?step={{ {'resume': 1, 'profile': 2, 'interests': 3, 'agent': 4}[left[0]] }}">Finish it</a></p>
+  <h1>{{ "Almost there" if left else "You're set" }}</h1>
+  {% if left %}<p class="wl-lead">{{ "One thing is" if left|length == 1 else (left|length ~ " things are") }} still missing before jobsearchPal can prepare applications: {{ left|map('replace', 'agent', 'connecting your AI')|map('replace', 'interests', 'job titles')|map('replace', 'profile', 'your name and email')|join(', ') }}. <a href="/welcome?step={{ {'resume': 1, 'profile': 2, 'interests': 3, 'agent': 4}[left[0]] }}">Finish it</a></p>
   {% else %}<p class="wl-lead">Every weekday at 6:30 in the morning, jobsearchPal finds new roles, prepares the best fits and leaves them for you to send. Nothing is ever submitted without you. Want to see it work now?</p>{% endif %}
   <div class="wl-acts">
    <form method="post" action="/run"><button class="btn {{ 'primary' if not left }}" {{ 'disabled' if left }}>Run it now</button></form>
@@ -110,6 +110,9 @@
 .wl-msg{margin:0;padding:12px 16px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);font-size:14px}.wl-msg.bad{background:var(--bad-soft);color:var(--bad)}
 .wl-help{font-size:14px}.wl-help summary{cursor:pointer;font-weight:600;color:var(--accent-ink)}.wl-help ol{padding-left:20px;line-height:1.6}
 .wl-ai .agent-signin{display:flex;flex-direction:column;gap:16px}.wl-ai .opt:last-child{order:-1}
+.wl-ai button{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+.wl-ai button.ghost{border-color:transparent;background:none}.wl-ai button:hover{border-color:var(--ink-3)}
+.wl-ai .row{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:640px){.wl-card{padding:20px}.wl-grid{grid-template-columns:1fr}}
 </style>
 {% endblock %}

@@ -66,6 +66,7 @@ suggests", never "science proves", and copy never quotes a research figure.
 | Sign in | "Welcome back. Your search is right where you left it." |
 | Back after a week away | "Welcome back. No catch-up list today: just what's ready, and one place to start." |
 | Weekly plan | "Your week, in your words." / "No plan this week. That's fine." |
+| Coach's suggested week | "Here's a week that fits your search." + the coach's one-line why + "Nothing is saved until you press Use this plan." |
 | Weekly goals, setting | "Your week, in your words. Set a few totals and pick your days; we'll spread them out. Change any day." |
 | Today card | "Today" / "This week so far: {summary}." |
 | Today card, a short day | "{n} {thing} today, and that counts." |

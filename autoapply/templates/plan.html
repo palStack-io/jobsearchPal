@@ -6,6 +6,7 @@
 <div class="yc">
 <header class="yc-head"><div class="yc-date">{{ today_label }}</div><h1>Your coach</h1></header>
 
+<div class="yc-top{{ ' solo' if not (c and c.note) }}">
 {% if c and c.note %}<section class="yc-card yc-note" aria-label="The coach's note">
  <p class="yc-next">{{ c.note[0] }}</p>
  {% for line in c.note[1:] %}<p class="yc-line">{{ line }}</p>{% endfor %}
@@ -22,6 +23,7 @@
   </div>
  </div>
 </section>
+</div>
 
 {% include "_coach.html" %}
 
@@ -49,7 +51,11 @@
 </div>
 
 <style>
-.yc{max-width:880px;display:flex;flex-direction:column;gap:24px}
+.yc{display:flex;flex-direction:column;gap:24px}
+.yc-top,.yc-pair{display:grid;gap:24px;align-items:start}.yc-top.solo{grid-template-columns:1fr!important}
+@media (min-width:1100px){.yc-top{grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr)}.yc-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .yc-top{align-items:stretch}.yc-top .yc-week{flex-direction:column;align-items:flex-start;justify-content:center;gap:20px}.yc-top .yc-week-txt{flex:none}.yc-top .yc-note{justify-content:center}
+ .yc-pair .yc-item{grid-template-columns:36px minmax(0,1fr)}.yc-pair .yc-acts{grid-column:2;justify-content:flex-start}}
 .yc-head{display:flex;flex-direction:column;gap:6px}.yc-head h1{margin:0;font-size:28px;font-weight:700;line-height:1.2;text-wrap:balance}
 .yc-date{font-size:13px;color:var(--ink-3)}
 .yc-card{background:var(--surface);border:1px solid var(--line);border-radius:12px}

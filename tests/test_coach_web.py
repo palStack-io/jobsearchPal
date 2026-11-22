@@ -324,3 +324,13 @@ def test_people_section_invites_contacts_when_empty(env):
     html = _client(s, db).get("/coach").text
     sec = html[html.index(">People who can help<"):]
     assert 'href="/dua#people"' in sec[:1500]
+
+
+def test_wide_layout_pairs_sections(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    assert 'class="yc-top"' in html and 'class="yc-pair"' in html
+    assert ".yc{max-width:880px" not in html

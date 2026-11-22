@@ -26,7 +26,8 @@
   </div>
  </div>{% endmacro %}
 
-{% if c %}<section class="yc-sec" id="coach" aria-labelledby="yc-aim-h">
+{% if c %}<div class="yc-pair">
+<section class="yc-sec" id="coach" aria-labelledby="yc-aim-h">
  <h2 id="yc-aim-h">Where to aim</h2>
  {% if aim_rows %}<div class="yc-card yc-list">{% for r in aim_rows %}{{ item(r) }}{% endfor %}</div>
  {% else %}<p class="yc-empty">No new roles stood out today. The coach looks again tomorrow morning.</p>{% endif %}
@@ -38,6 +39,7 @@
  <div class="yc-card yc-list">{% for r in people_rows %}{{ item(r) }}{% endfor %}</div>
  {% else %}<p class="yc-empty">Referrals open more doors than applications alone. <a href="/dua#people">Add people you know</a> at companies you'd like to work for, and the coach will suggest who to ask and draft the note.</p>{% endif %}
 </section>
+</div>
 
 {% if c.later or c.prep %}<section class="yc-sec" aria-labelledby="yc-ready-h">
  <h2 id="yc-ready-h">Getting ready</h2>

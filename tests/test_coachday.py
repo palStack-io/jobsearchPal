@@ -536,3 +536,21 @@ def test_later_items_need_a_later_day(env):
                                                {"day": "Mon", "text": "Today is not later."},
                                                {"day": "Thu", "text": "Write to Bob Smith."}]), refs, text, mon)
     assert clean["later"] == [{"day": "Wed", "text": "Thank Priya Rao after your screen."}]
+
+
+# ---- Task 14: data for the redesigned page --------------------------------------------------------
+
+def test_week_numbers_count_this_week_only(env):
+    s, db = env
+    _job(db, "gh:a:1", "Acme", "AE", "submitted", submitted_at="2026-11-17 10:00")   # Tue, this week (Sun 16 - Sat 22)
+    _job(db, "gh:b:1", "Beta", "AE", "submitted", submitted_at="2026-11-21 09:00")   # Sat, this week
+    _job(db, "gh:c:1", "Cee", "AE", "submitted", submitted_at="2026-11-14 10:00")    # last week
+    db.add_event({"id": "<r1>", "job_id": "gh:a:1", "kind": "rejected", "at": "2026-11-19 09:00", "sender": "a <a@x.org>", "subject": "s"})
+    db.add_event({"id": "<r2>", "job_id": "gh:a:1", "kind": "confirmed", "at": "2026-11-18 09:00", "sender": "a <a@x.org>", "subject": "s"})
+    db.add_event({"id": "<r3>", "job_id": "gh:c:1", "kind": "interview", "at": "2026-11-12 09:00", "sender": "a <a@x.org>", "subject": "s"})
+    assert coachday.week_numbers(db, NOW.date()) == {"sent": 2, "replies": 1}
+
+
+def test_nudge_copy_plural():
+    from autoapply import nudges
+    assert nudges.ago(0) == "less than a day ago" and nudges.ago(1) == "1 day ago" and nudges.ago(10) == "10 days ago"

@@ -665,3 +665,15 @@ def with_panel(panel: dict, card_: dict | None) -> dict:
     if card_ and card_.get("note"):
         return {**panel, "line": card_["note"][0], "coach": True}
     return panel
+
+
+def week_numbers(db, today: date) -> dict:
+    """This Sunday-to-Saturday week: applications sent and replies (interviews, offers, no's, recruiters), counted up."""
+    from .stats import week_start
+    start = week_start(today).isoformat()
+    end = (week_start(today) + timedelta(days=7)).isoformat()
+    sent = db.conn.execute("select count(*) from jobs where status = 'submitted' and substr(submitted_at, 1, 10) >= ? "
+                           "and substr(submitted_at, 1, 10) < ?", (start, end)).fetchone()[0]
+    replies = sum(1 for e in db.events() if e["kind"] in ("interview", "rejected", "offer", "recruiter")
+                  and start <= _day(e["at"]) < end)
+    return {"sent": sent, "replies": replies}

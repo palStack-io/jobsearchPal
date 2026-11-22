@@ -34,6 +34,11 @@ def _addr(sender: str) -> tuple[str, str]:
     return (name or addr.split("@")[0] or "them"), addr.lower()
 
 
+def ago(days: int) -> str:
+    """"less than a day ago", "1 day ago", "10 days ago"."""
+    return "less than a day ago" if days <= 0 else f"{days} day{'' if days == 1 else 's'} ago"
+
+
 def _key(*parts: str) -> str:
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:12]
 
@@ -82,13 +87,13 @@ def compute(db: DB, data_dir: Path | None = None, now: datetime | None = None, i
                 title, kind = f"Reply to {name}", "reply"
             out.append({"key": _key("reply", e["id"]), "kind": kind, "title": title, "about": about, "since": e["at"],
                         "days": (now - at).days, "to": "" if automated else a, "subject": e["subject"], "event": e,
-                        "job": job, "why": f"They wrote {(now - at).days or 'less than 1'} day(s) ago. A short reply keeps it warm."})
+                        "job": job, "why": f"They wrote {ago((now - at).days)}. A short reply keeps it warm."})
         elif e["kind"] == "recruiter" and not automated and (now - answered).days >= CHASE_AFTER_DAYS \
                 and (now - answered).days <= STOP_AFTER_DAYS:
             out.append({"key": _key("chase", a, answered.isoformat()), "kind": "chase", "title": f"Check in with {name}",
                         "about": about, "since": answered.strftime("%Y-%m-%d %H:%M"), "days": (now - answered).days,
                         "to": a, "subject": e["subject"], "event": e, "job": job,
-                        "why": f"You last wrote {(now - answered).days} days ago. A friendly check-in is normal."})
+                        "why": f"You last wrote {ago((now - answered).days)}. A friendly check-in is normal."})
 
     heard = {e["job_id"] for e in events if e["job_id"] and e["kind"] in ("interview", "offer", "rejected")}
     for j in db.by_status("submitted"):
@@ -100,7 +105,7 @@ def compute(db: DB, data_dir: Path | None = None, now: datetime | None = None, i
             out.append({"key": _key("app", j["id"]), "kind": "application", "title": f"Follow up on {j['company']}",
                         "about": j["title"], "since": j["submitted_at"], "days": age, "to": "", "subject": "",
                         "event": None, "job": j,
-                        "why": f"Applied {age} days ago · no reply yet. Following up is normal."})
+                        "why": f"Applied {ago(age)} · no reply yet. Following up is normal."})
 
     if settings is not None:
         from . import benefits, stats

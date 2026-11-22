@@ -150,13 +150,15 @@ questions with the story to tell), and "Numbers to ask for" if any. No code fenc
 ```"""
 
 
-def prompt(job: dict, outline: dict, about: str, voice: str, qs: list[dict], reuse: bool) -> str:
+def prompt(job: dict, outline: dict, about: str, voice: str, qs: list[dict], reuse: bool, angle: str = "") -> str:
     posting = {k: job.get(k) for k in ("company", "title", "location", "pay", "work_setting", "ats") if job.get(k)}
     desc = re.sub(r"\n{3,}", "\n\n", re.sub(r"[ \t]+", " ", job.get("description") or "")).strip()[:POSTING_CHARS]
     parts = [RULES]
     if reuse:
         parts.append("The resume and cover letter were already tailored for this role: reply with docs.json as {} and "
                      "notes.md as a single line, and put your effort into the answers.")
+    if angle:  # the morning coach's call on what this application should lead with (coachday.py)
+        parts.append(f"Lead with: {angle}. Open the cover letter and the summary with it, using only facts from the materials.")
     parts += ["# The person", fence("materials", about or "(nothing written yet)")]
     if voice:
         parts.append(fence("voice.md", voice))
@@ -264,7 +266,10 @@ def run(db, settings, job_id: str, config: str, prep_only: bool = False, ask=Non
             log(tag, u)
         return reply
 
-    got = blocks(call(prompt(job, outline, about, voice, qs, reuse)))
+    from . import coachday
+    from datetime import date as _date
+    angle = coachday.angle_for(db, job_id, _date.today())
+    got = blocks(call(prompt(job, outline, about, voice, qs, reuse, angle)))
     if "answers.json" not in got or (not reuse and "docs.json" not in got):
         raise RuntimeError("the reply didn't have the docs.json and answers.json blocks")
     answers = keep_answers(_json(got["answers.json"], "answers.json"), [q["label"] for q in qs])

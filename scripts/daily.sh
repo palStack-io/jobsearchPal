@@ -124,12 +124,6 @@ elif [ -n "${AUTOAPPLY_JOB:-}" ]; then
   run_stage apply "$AUTOAPPLY_JOB" || true; picked="$line"
   if [ "${AUTOAPPLY_PREP_ONLY:-}" = 1 ]; then echo "- prep only: $picked" >> "$today"; else echo "- prepare: $picked" >> "$today"; fi
 fi
-# Follow-up and outreach drafts in one call when the coach is on (exit 2: off or nothing due; 1: failed, the agent drafts).
-if [ -z "$one" ] && [ "${AUTOAPPLY_TRIGGER:-}" != manual ]; then
-  rc=0; line=$(autoapply drafts-once 2>>data/cron.log) || rc=$?
-  if [ "$rc" = 0 ]; then echo "- drafts (one call): $line" >> "$today"
-  elif [ "$rc" = 1 ]; then echo "- drafts (one call failed, the agent takes it)" >> "$today"; run_stage drafts || true; fi
-fi
 for stage in $( [ -n "$one" ] || autoapply daily-stages 2>/dev/null); do
   if [ "$stage" = rank ]; then
     # The coach (Settings > Daily run): one call reads the whole search, picks, skips and suggests people to reach.
@@ -151,6 +145,12 @@ for stage in $( [ -n "$one" ] || autoapply daily-stages 2>/dev/null); do
   run_stage "$stage" || true
   if [ "$stage" = rank ]; then picked="$line"; fi
 done
+# Follow-up and outreach drafts in one call when the coach is on, after it (its outreach needs drafts today) (exit 2: off or nothing due; 1: failed, the agent drafts).
+if [ -z "$one" ] && [ "${AUTOAPPLY_TRIGGER:-}" != manual ]; then
+  rc=0; line=$(autoapply drafts-once 2>>data/cron.log) || rc=$?
+  if [ "$rc" = 0 ]; then echo "- drafts (one call): $line" >> "$today"
+  elif [ "$rc" = 1 ]; then echo "- drafts (one call failed, the agent takes it)" >> "$today"; run_stage drafts || true; fi
+fi
 if [ -z "$blocked" ] && [ -z "$one" ]; then
   for job in $(autoapply daily-picks 2>/dev/null); do
     run_stage apply "$job" || true

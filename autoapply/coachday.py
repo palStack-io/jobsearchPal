@@ -225,8 +225,9 @@ def digest(db, settings, now: datetime | None = None) -> tuple[str, dict]:
 
 
 def dismissed_keys(db) -> set[str]:
+    """Keys never to suggest again: dismissed by the person, or already sent."""
     ensure(db)
-    return {r[0] for r in db.conn.execute("select key from outreach where state = 'dismissed'")}
+    return {r[0] for r in db.conn.execute("select key from outreach where state in ('dismissed', 'sent')")}
 
 
 def vocab(db, ppl: list[dict], about: str, plan: str, todo: list[dict], now: datetime) -> set[str]:
@@ -245,6 +246,8 @@ def word_set(text: str) -> set[str]:
 
 # ---- validation: nothing the person didn't give us gets through ---------------------------------
 
+MAX_SKIPS = 5      # one reply can't clear the whole candidate list
+SKIP_UNDO_DAYS = 7  # the card offers Undo on the coach's skips this long
 KINDS = ("referral", "hiring_team", "check_in", "thank_you")  # replies you owe stay in To do (nudges.py), in the coach's order
 BANNED = ("streak", "guarantee", "dream job", "you'll land", "you will land", "don't break",
           "benefits stay safe", "lose your benefits", "keep your benefits", "benefits at risk")  # VOICE rule 8
@@ -256,6 +259,8 @@ COMMON_CAPS = {w.lower() for w in (
     "Jan Feb Mar Apr Jun Jul Aug Sep Sept Oct Nov Dec").split()}
 DATE_RX = re.compile(r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b")
 NUM_RX = re.compile(r"\d+(?:[.,]\d+)*")
+URL_RX = re.compile(r"https?://|www\.", re.I)
+EMAIL_RX = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 EMOJI_RX = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
 
 
@@ -264,6 +269,11 @@ def clean_text(text: str, digest_text: str, names: set[str] | None = None) -> st
     t = str(text or "").strip()
     if not t or EMOJI_RX.search(t) or t.count("!") > 1 or any(b in t.lower() for b in BANNED):
         return None
+    if URL_RX.search(t):
+        return None
+    for addr in EMAIL_RX.findall(t):
+        if addr.lower() not in digest_text.lower():  # only an address the person's own data has
+            return None
     for d in DATE_RX.findall(t):
         if d not in digest_text:
             return None
@@ -324,6 +334,9 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
         clean["picks"].append({"id": jid, "why": txt(x.get("why"), "why") or "", "angle": txt(x.get("angle"), "angle") or ""})
     picked = {p["id"] for p in clean["picks"]}
     for x in (x for x in items("skips") if isinstance(x, dict)):
+        if len(clean["skips"]) >= MAX_SKIPS:
+            dropped.append(f"skip: {x.get('id')} (over {MAX_SKIPS} a day)")
+            continue
         if x.get("id") in cands and x.get("id") not in picked:
             clean["skips"].append({"id": x["id"], "reason": txt(x.get("reason"), "skip") or "not a close fit"})
         else:
@@ -451,8 +464,10 @@ def run(db, settings, ask=None, log=None, now: datetime | None = None) -> tuple[
     for o in clean["outreach"]:
         p = people[o["person"]]
         o.update(name=p["name"], company=p["company"], email=p["email"])
-        db.conn.execute("insert or replace into outreach (key, day, person, email, company, job_id, kind, why, draft_path, "
-                        "state, changed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'suggested', ?)",
+        db.conn.execute("insert into outreach (key, day, person, email, company, job_id, kind, why, draft_path, "
+                        "state, changed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'suggested', ?) on conflict(key) do update set "
+                        "day = excluded.day, why = excluded.why, state = 'suggested', changed = excluded.changed "
+                        "where outreach.state not in ('sent', 'dismissed')",
                         (o["key"], day, p["name"], p["email"], p["company"], o["job"], o["kind"], o["why"],
                          str(nudges.draft_path(settings.data_dir, o["key"])), now.strftime("%Y-%m-%d %H:%M")))
     clean["skips"] = [sk | {"company": (db.get(sk["id"]) or {}).get("company", ""), "title": (db.get(sk["id"]) or {}).get("title", "")}
@@ -496,7 +511,10 @@ def drafts(db, settings, ask=None, log=None, now: datetime | None = None) -> tup
     pr = Prefs(settings.data_dir, settings.raw)
     if not enabled(pr):
         return 2, "coach off"
-    items = _draft_items(db, settings, now, int(pr.limits().get("drafts_per_day") or 0) or 6)
+    limit = int(pr.limits().get("drafts_per_day") or 0)
+    if not limit:
+        return 2, "drafts: off (Settings)"
+    items = _draft_items(db, settings, now, limit)
     if not items:
         return 2, "drafts: nothing due"
     about, voice = oneshot.about_you(settings.root)
@@ -604,8 +622,16 @@ def card(db, settings, day: date) -> dict | None:
     if not row:
         return None
     picks = [p | {"job": db.get(p["id"])} for p in row.get("picks") or [] if db.get(p["id"])]
-    skips = [sk for sk in row.get("skips") or []
-             if (j := db.get(sk["id"])) and j["status"] == "skipped" and str(j.get("error") or "").startswith("coach:")]
+    recent = []
+    for back in range(SKIP_UNDO_DAYS):
+        recent += (today(db, day - timedelta(days=back)) or {}).get("skips") or []
+    seen_ids: set[str] = set()
+    skips = []
+    for sk in recent:
+        j = db.get(sk.get("id")) if isinstance(sk.get("id"), str) else None
+        if j and sk["id"] not in seen_ids and j["status"] == "skipped" and str(j.get("error") or "").startswith("coach:"):
+            seen_ids.add(sk["id"])
+            skips.append(sk)
     prep = [p | {"job": db.get(p["job"])} for p in row.get("prep") or [] if db.get(p["job"])]
     return {"note": row.get("note") or [], "picks": picks, "skips": skips, "prep": prep, "check": row.get("check") or [],
             "people": rows(db, settings, day), "followups": row.get("followups") or []}

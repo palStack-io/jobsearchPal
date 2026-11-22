@@ -420,3 +420,9 @@ def test_daily_sh_tries_coach_first_then_quick_pick(tmp_path):
     rank_branch = sh[sh.index('if [ "$stage" = rank ]'):]
     assert rank_branch.index("autoapply coach") < rank_branch.index("autoapply quick-pick --alerts")
     assert "autoapply drafts-once" in sh and "run_stage drafts" in sh
+
+
+def test_daily_sh_drafts_after_the_coach():
+    from pathlib import Path
+    sh = (Path(__file__).resolve().parent.parent / "scripts" / "daily.sh").read_text()
+    assert sh.index("autoapply coach") < sh.index("autoapply drafts-once") < sh.index("autoapply daily-picks")

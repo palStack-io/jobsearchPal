@@ -35,7 +35,7 @@ browser:
 # Weekly work-search log (e.g. for unemployment benefits). Weeks run Sunday to Saturday.
 work_search:
   label: Work search          # e.g. DUA
-  weekly_minimum: 3
+  weekly_minimum: 0           # 0 = no weekly goal; picking your state on the Setup page sets your state's minimum
 
 
 # Email sorting sources, their order and models, and the daily run's model are set on the

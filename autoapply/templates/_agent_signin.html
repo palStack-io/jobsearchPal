@@ -5,8 +5,9 @@
   {% elif agent_login.token_env %}<small class="muted">Signed in with a token from <code>.env</code> ({{ agent_login.token }}).</small>
   {% else %}
   <form method="post" action="/setup/claude-token">
-   <input type="hidden" name="back" value="{{ back }}">
+   <input type="hidden" name="back" value="{{ back }}">{% if back == "welcome" %}<input type="hidden" name="wizard" value="4">{% endif %}
    <ol class="muted" style="font-size:14px;padding-left:18px;margin:6px 0">
+    {% if back == "welcome" %}<li>No Claude Code yet? On your Mac or Linux laptop, open Terminal and run <code>curl -fsSL https://claude.ai/install.sh | bash</code> (Windows: see <a href="https://docs.claude.com/en/docs/claude-code/setup" target="_blank" rel="noopener">the install guide</a>).</li>{% endif %}
     <li>On any computer with Claude Code (your laptop is fine), run <code>claude setup-token</code> and sign in.</li>
     <li>Paste the token it prints here. It's checked with one tiny call, then every run uses it.</li></ol>
    <label class="fld"><span>Token{% if agent_login.token_saved %} ({{ agent_login.token }}){% endif %}</span>

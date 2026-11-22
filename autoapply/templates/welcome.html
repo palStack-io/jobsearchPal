@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block body %}
+{# The welcome flow (2026-11-22): five short steps, each posting to the route that saves it with `wizard` = the step. #}
+{% set names = {'1': 'Your resume', '2': 'About you', '3': 'What you are looking for', '4': 'Connect your AI', '5': 'Your email'} %}
+<div class="wl">
+ {% if step != 'done' %}
+ <header class="wl-head">
+  <div class="wl-step">Step {{ step }} of 5</div>
+  <h1>{{ names[step] }}</h1>
+  <ol class="wl-dots" aria-label="Progress">{% for i in range(1, 6) %}<li class="{{ 'on' if i|string == step }}{{ ' done' if i < step|int }}"><span class="sr">Step {{ i }}</span></li>{% endfor %}</ol>
+ </header>
+ {% endif %}
+ {% if err %}<p class="wl-msg bad" role="alert">{{ err }}</p>{% elif msg %}<p class="wl-msg" role="status">{{ msg }}</p>{% endif %}
+
+ {% if step == '1' %}
+ <section class="wl-card">
+  <p class="wl-lead">Upload the resume you'd send today, as a Word file or a PDF. If it isn't in the plain format tailoring uses, your AI puts it in that format once, using only what's already in it, and you check it.</p>
+  <form method="post" action="/setup/resume" enctype="multipart/form-data" class="wl-form">
+   <input type="hidden" name="wizard" value="1">
+   <label class="fld"><span>Your resume{% if st.resume.done %} · saved ({{ st.resume.note }}){% endif %}</span>
+    <input type="file" name="docx" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
+   <div class="wl-acts"><button class="btn primary">Upload and continue</button><a class="btn ghost" href="/welcome?step=2">{{ 'Next' if st.resume.done else 'Skip for now' }}</a></div>
+  </form>
+ </section>
+
+ {% elif step == '2' %}
+ <section class="wl-card">
+  <form method="post" action="/welcome/about" class="wl-form">
+   <div class="wl-grid">
+    <label class="fld"><span>First name</span><input type="text" name="first_name" required value="{{ prof.first_name or '' }}" autocomplete="given-name"></label>
+    <label class="fld"><span>Last name</span><input type="text" name="last_name" required value="{{ prof.last_name or '' }}" autocomplete="family-name"></label>
+    <label class="fld"><span>Email for applications</span><input type="email" name="email" required value="{{ prof.email or account_email }}" autocomplete="email"></label>
+    <label class="fld"><span>City and state (optional)</span><input type="text" name="location" value="{{ prof.location or '' }}" placeholder="Columbus, OH" autocomplete="address-level2"></label>
+   </div>
+   <fieldset class="wl-claim"><legend>Are you claiming unemployment benefits?</legend>
+    <p class="wl-hint">If you are, jobsearchPal keeps your state's weekly work-search log and reminds you about claim days. If not, it stays a job-search helper and none of that shows.</p>
+    {# No answer saved yet (an install from before this question): a state means they are claiming. #}
+    {% set claims = ws.claiming if ws.claiming is defined else (ws.state is defined and ws.state) %}
+    <label class="wl-radio"><input type="radio" name="claiming" value="yes" {{ 'checked' if claims }}> Yes</label>
+    <label class="wl-radio"><input type="radio" name="claiming" value="no" {{ 'checked' if not claims }}> No</label>
+    <label class="fld wl-state"><span>Your state (if yes)</span><select name="state"><option value="">Choose your state</option>{% for code, r in states %}<option value="{{ code }}" {{ 'selected' if ws.state == code }}>{{ r.name or code }}</option>{% endfor %}</select></label>
+   </fieldset>
+   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=1">Back</a></div>
+  </form>
+ </section>
+
+ {% elif step == '3' %}
+ <section class="wl-card">
+  <form method="post" action="/welcome/roles" class="wl-form">
+   <label class="fld"><span>Job titles to look for</span>
+    <textarea name="titles" rows="3" placeholder="data analyst, business analyst, analytics engineer">{{ titles }}</textarea></label>
+   <p class="wl-hint">Short titles match more: "data analyst" also finds "Senior Data Analyst, Operations". You can add skipped words, companies and more job sources later in Settings.</p>
+   <label class="wl-radio"><input type="checkbox" name="us_only" value="1" {{ 'checked' if us_only }}> US roles only (remote roles count when they don't name another country)</label>
+   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=2">Back</a></div>
+  </form>
+ </section>
+
+ {% elif step == '4' %}
+ <section class="wl-card">
+  <p class="wl-lead">jobsearchPal uses your own AI subscription to tailor each resume and fill each form. Pick the one you have. You only do this once.</p>
+  {% if st.agent.done %}<p class="wl-msg" role="status">{{ st.agent.note }}.</p>{% endif %}
+  <div class="wl-ai">{% set back = "welcome" %}{% include "_agent_signin.html" %}</div>
+  <form method="post" action="/welcome/ai-done" class="wl-acts"><button class="btn {{ 'primary' if st.agent.done }}">{{ 'Continue' if st.agent.done else "I've signed in" }}</button>{% if not st.agent.done %}<a class="btn ghost" href="/welcome?step=5">Skip for now</a>{% endif %}<a class="btn ghost" href="/welcome?step=3">Back</a></form>
+  <p class="wl-hint">No subscription? An OpenRouter key works too: Settings, then Daily run.</p>
+ </section>
+
+ {% elif step == '5' %}
+ <section class="wl-card">
+  <p class="wl-lead">Optional. With email connected, jobsearchPal files every reply, reminds you who to follow up with, and sends you a short brief each morning. It only reads; it never sends anything but your brief.</p>
+  <details class="wl-help"><summary>How to make a Gmail app password (2 minutes)</summary>
+   <ol><li>Turn on 2-Step Verification: <a href="https://myaccount.google.com/signinoptions/twosv" target="_blank" rel="noopener">myaccount.google.com/signinoptions/twosv</a>.</li>
+    <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>, type "jobsearchPal" and press Create.</li>
+    <li>Copy the 16 letters it shows and paste them below. Your normal password is never used.</li></ol>
+   <p class="wl-hint">iCloud and Yahoo work the same way. Outlook and Hotmail can't be connected; forward them to a Gmail address instead.</p></details>
+  <form method="post" action="/setup/gmail" class="wl-form">
+   <input type="hidden" name="wizard" value="5">
+   <div class="wl-grid">
+    <label class="fld"><span>Provider</span><select name="provider"><option value="gmail">Gmail</option><option value="icloud">iCloud Mail</option><option value="yahoo">Yahoo Mail</option></select></label>
+    <label class="fld"><span>Your address</span><input type="email" name="gmail_user" autocomplete="email" placeholder="you@gmail.com"></label>
+    <label class="fld"><span>App password</span><input type="password" name="gmail_password" autocomplete="off" spellcheck="false" placeholder="16 letters"></label>
+   </div>
+   <div class="wl-acts"><button class="btn primary">Check and finish</button><a class="btn ghost" href="/welcome?step=done">Skip for now</a></div>
+  </form>
+ </section>
+
+ {% else %}
+ <section class="wl-card wl-done">
+  <h1>{{ "Almost there" if left else "You're set" }}</h1>
+  {% if left %}<p class="wl-lead">{{ "One thing is" if left|length == 1 else (left|length ~ " things are") }} still missing before jobsearchPal can prepare applications: {{ left|map('replace', 'agent', 'connecting your AI')|map('replace', 'interests', 'job titles')|map('replace', 'profile', 'your name and email')|join(', ') }}. <a href="/welcome?step={{ {'resume': 1, 'profile': 2, 'interests': 3, 'agent': 4}[left[0]] }}">Finish it</a></p>
+  {% else %}<p class="wl-lead">Every weekday at 6:30 in the morning, jobsearchPal finds new roles, prepares the best fits and leaves them for you to send. Nothing is ever submitted without you. Want to see it work now?</p>{% endif %}
+  <div class="wl-acts">
+   <form method="post" action="/run"><button class="btn {{ 'primary' if not left }}" {{ 'disabled' if left }}>Run it now</button></form>
+   <a class="btn ghost" href="/">Go to the dashboard</a></div>
+  <p class="wl-hint">Everything you set here, and much more (job sources, how your letters sound, resume looks), is under Settings.</p>
+ </section>
+ {% endif %}
+</div>
+<style>
+.wl{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.wl-head{display:flex;flex-direction:column;gap:8px}.wl-head h1,.wl-done h1{margin:0;font-size:28px;font-weight:700;line-height:1.2}
+.wl-step{font-size:13px;font-weight:600;color:var(--accent-ink)}
+.wl-dots{list-style:none;margin:4px 0 0;padding:0;display:flex;gap:6px}.wl-dots li{width:40px;height:6px;border-radius:999px;background:var(--line)}
+.wl-dots li.done{background:var(--accent-soft)}.wl-dots li.on{background:var(--accent)}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wl-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 32px;display:flex;flex-direction:column;gap:16px}
+.wl-lead{margin:0;font-size:16px;line-height:1.55;color:var(--ink-2);max-width:62ch}
+.wl-hint{margin:0;font-size:14px;line-height:1.5;color:var(--ink-3);max-width:62ch}
+.wl-form{display:flex;flex-direction:column;gap:16px}.wl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.wl-claim{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.wl-claim legend{font-size:16px;font-weight:600;margin-bottom:4px}
+.wl-radio{display:flex;gap:10px;align-items:center;font-size:16px}.wl-state{max-width:320px}
+.wl-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0}.wl-acts form{margin:0}
+.wl-msg{margin:0;padding:12px 16px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);font-size:14px}.wl-msg.bad{background:var(--bad-soft);color:var(--bad)}
+.wl-help{font-size:14px}.wl-help summary{cursor:pointer;font-weight:600;color:var(--accent-ink)}.wl-help ol{padding-left:20px;line-height:1.6}
+.wl-ai .agent-signin{display:flex;flex-direction:column;gap:16px}.wl-ai .opt:last-child{order:-1}
+.wl-ai button{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+.wl-ai button.ghost{border-color:transparent;background:none}.wl-ai button:hover{border-color:var(--ink-3)}
+.wl-ai .row{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:640px){.wl-card{padding:20px}.wl-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

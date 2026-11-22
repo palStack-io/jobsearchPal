@@ -68,9 +68,9 @@ html.intro .welcome-t{animation:hero-up .8s var(--ease-out) backwards}
 
 {% if setup_left %}<div class="notice" style="margin:0 0 20px"><span class="grow">Setup isn't finished: {{ setup_left }} required step{{ '' if setup_left == 1 else 's' }} left. The daily run needs them.</span><a class="btn sm" href="/setup">Finish setup</a></div>{% endif %}
 {% if not setup_left and src_total and src_on < src_total // 2 %}<div class="notice info" style="margin:0 0 16px"><span class="grow">You're using {{ src_on }} of {{ src_total }} job sources. More sources, more good matches.</span><a class="btn sm" href="/leads#sources">See job sources</a></div>{% endif %}
-{% set bad = s.runs|selectattr('state', 'equalto', 'fail')|list %}{% set late = s.runs|selectattr('state', 'equalto', 'stale')|list %}
+{% set runs_on = s.runs|rejectattr('kind', 'in', not_set_up)|list %}{% set bad = runs_on|selectattr('state', 'equalto', 'fail')|list %}{% set late = runs_on|selectattr('state', 'equalto', 'stale')|list %}{% set ran = s.runs|rejectattr('state', 'equalto', 'never')|list %}
 <details class="status {{ 'bad' if bad else ('warn' if late else '') }}"><summary><i aria-hidden="true"></i>
- {% if bad %}{{ bad|map(attribute='label')|join(', ') }} didn't finish {{ bad[0].when }}. That's on us, not you{% elif late %}{{ late|map(attribute='label')|join(', ') }} overdue{% else %}Everything ran on time{% endif %} <u>· details</u></summary>
+ {% if bad %}{{ bad|map(attribute='label')|join(', ') }} didn't finish {{ bad[0].when }}. That's on us, not you{% elif late %}{{ late|map(attribute='label')|join(', ') }} overdue{% elif not ran %}Nothing has run yet. The first run is the next weekday morning, or press Run now{% elif 'daily' in not_set_up %}The daily run starts once setup is finished{% else %}Everything ran on time{% endif %} <u>· details</u></summary>
  <section class="runs" aria-label="When things last ran">
  {% for r in s.runs %}<span class="run {{ r.state }}" title="{{ r.summary }}"><i aria-hidden="true"></i><b>{{ r.label }}</b> {{ r.when }}{% if r.state == 'fail' %} · didn't finish{% elif r.state == 'stale' %} · overdue{% endif %}</span>{% endfor %}
  <a class="run" href="/runs">Run log: what each run did</a>
@@ -123,7 +123,7 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
 
 {% if plan_popup %}<dialog id="plan-pop" class="ask plan-pop" aria-labelledby="plan-pop-h">
  <h2 id="plan-pop-h">Want to plan your week?</h2>
- <p class="ink2">A few totals and the days you'll search; we spread them out. It's yours, and nothing reminds you of it. You'll find it under Your week.</p>
+ <p class="ink2">A few totals and the days you'll search; we spread them out. It's yours, and nothing reminds you of it. You'll find it under Your coach.</p>
  <div class="plan-pop-acts"><a class="btn" href="/plan">Plan my week</a><form method="dialog"><button class="btn ghost">Not now</button></form></div>
 </dialog>
 <script>(()=>{const d=document.getElementById("plan-pop");if(d&&d.showModal)d.showModal()})()</script>{% endif %}

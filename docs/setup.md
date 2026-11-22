@@ -3,6 +3,31 @@
 Two ways in: a plain Linux install with systemd and cron, or Docker (one image with everything, the simplest). Either
 way, most of the setup happens afterwards on the dashboard's **Setup** page.
 
+## On a Mac or Windows PC (about 15 minutes)
+
+No server needed: your own computer works, as long as it's awake when the morning run starts (6:30 on weekdays, or
+press **Run now** on the dashboard whenever you like).
+
+1. Install **Docker Desktop** from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
+   and **open it**. Wait until the whale icon in the menu bar (Mac) or system tray (Windows) stops animating:
+   if Docker Desktop isn't running, the commands below just wait with no message.
+2. Open Terminal (Mac) or PowerShell (Windows) and run:
+   ```
+   git clone https://github.com/palStack-io/jobsearchPal.git jobsearchPal
+   cd jobsearchPal
+   docker compose up -d
+   ```
+   No `git`? Download the ZIP from the GitHub page (Code, then Download ZIP), unzip it, and run the last two lines
+   inside that folder.
+3. Open [http://localhost:8787](http://localhost:8787), create your account, and the welcome steps take it from
+   there: your resume (Word or PDF), a few details, the roles you want, your AI (ChatGPT Plus or Claude Pro), and
+   optionally your email.
+4. Keep it running in the morning. **Mac:** System Settings, Battery (or Energy), "Prevent automatic sleeping when the
+   display is off" while plugged in. **Windows:** Settings, System, Power, set Sleep to Never when plugged in. Or skip
+   this and press Run now when you sit down.
+
+Stopping it: `docker compose down` in the same folder. Updating: `git pull` and `docker compose up -d`.
+
 ## On a Linux server (about 30 minutes)
 
 You need an always-on Linux box (Ubuntu 24.04 tested), **either** a Claude subscription (Pro or Max,
@@ -95,10 +120,22 @@ networks:
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
-**Create your account** (email and password; sign-in is required from then on), then the **Setup** page,
-which walks through everything in a browser:
+**Create your account** (email and password; sign-in is required from then on), then **five welcome steps**, one
+short screen each:
 
-1. **Base resume**: upload your .docx (a PDF is made for you). Tailored resumes are built from it.
+1. **Your resume**, as a Word file or a PDF (see [Your resume](#your-resume) below).
+2. **About you**: name, email, city, and **"Are you claiming unemployment benefits?"** No: jobsearchPal stays a
+   job-search helper, with no Work search page and no weekly count. Yes: pick your state, and its weekly rule is used
+   (see [Unemployment help](unemployment.md)).
+3. **What you're looking for**: job titles, and US roles only.
+4. **Connect your AI**: sign in with ChatGPT (open a link, enter a code) or paste a Claude token (the step shows the
+   one command to install Claude Code). Not ready? **Skip for now**; nothing is prepared until an AI is connected.
+5. **Your email** (optional): Gmail, iCloud or Yahoo with an app password, with the steps to make one.
+
+The last screen says what's still missing, if anything, and offers **Run it now**. Everything the welcome steps set,
+and much more, lives on **Settings > Setup**, which keeps the full version of each step:
+
+1. **Base resume**: upload your resume (Word or PDF). Tailored resumes are built from it.
 2. **Contact details and standard answers** (prefilled from the resume), saved to `profile.yaml`.
 3. **Job interests**: titles to look for and skip, US-only, the levels you want (entry, mid, senior, lead,
    manager: read from the title, so "Data Engineer" is mid-level), companies to watch (paste careers-page URLs from
@@ -113,6 +150,23 @@ which walks through everything in a browser:
    inboxes. Outlook.com and Hotmail can only be forwarded: Microsoft turned off app passwords for them in September 2024.
 
 ![Setup](setup.png)
+
+### Your resume
+
+Tailoring edits your base resume in place, so it needs one plain shape: an upper-case headline and section headings,
+skills as "Label: list", and roles as "Title | Employer" with the dates on the same line and bullets under them. That
+shape is also what screening software (applicant tracking systems) reads best.
+
+If yours isn't in that shape, or you only have a PDF, your own AI rebuilds it once:
+
+- It uses only what's in your resume: **every number in the rebuild must already be in your original**, or nothing
+  changes and you're told why.
+- Your original is kept beside it as `<Name> Resume - Original.docx` (or `.pdf`) in `materials/`.
+- The Setup page shows **We rebuilt your resume…** with both files. Read it, then press **It looks right**.
+- Not connected to an AI yet? It waits, and runs as soon as you connect one (the AI step, **Do it now** on Setup, or
+  the next daily run).
+
+A scanned PDF (a picture of a resume) has no text to read: upload the Word version instead.
 
 Until steps 2 and 3 are done, the daily run does nothing. The Setup page writes the same files you could edit
 by hand, so either way works; keys it saves go to `data/secrets.json` (owner-only), and `.env` wins over them.

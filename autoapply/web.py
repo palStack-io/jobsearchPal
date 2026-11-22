@@ -311,12 +311,13 @@ def make_app(settings, db: DB) -> FastAPI:
         return HTMLResponse(env.get_template(name).render(demo=demo.ON, pending_count=len(db.pending_events()),
                                                           setup_left=len(setup.status(settings, os.environ)["left"]),
                                                           log_week=log_week(), palstack_report=bool(palstack_cfg),
+                                                          ws_claiming=(settings.raw.get("work_search") or {}).get("claiming", True) is not False,
                                                           app_version=_app_version(), **ctx))
 
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):
         if settings.raw.get("_from_example"):
-            return RedirectResponse("/setup", status_code=303)  # fresh install
+            return RedirectResponse("/welcome", status_code=303)  # fresh install: one short step at a time
         from . import prep
         from . import nudges
         todo = nudges.compute(db, settings.data_dir, settings=settings)
@@ -365,7 +366,14 @@ def make_app(settings, db: DB) -> FastAPI:
                       and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in states)
         if plan_popup:
             db.set_nudge(popup_key, "done")  # shown once; it goes, and the page stays in the nav
-        resp = page("index.html", s=s, shortlist=more, decline_reasons=DECLINE_REASONS, src_on=src["on"], src_total=src["total"], first_name=first_name,
+        from . import setup
+        st = setup.status(settings, os.environ)
+        # Steps that can't run yet aren't failures (install walk 2026-11-22): no email means no email sync, sorting or
+        # brief; setup left undone means the daily run is waiting, not broken.
+        not_set_up = set() if st["steps"]["gmail"]["done"] else {"sync-email", "classify", "brief"}
+        if st["left"]:
+            not_set_up.add("daily")
+        resp = page("index.html", not_set_up=not_set_up, s=s, shortlist=more, decline_reasons=DECLINE_REASONS, src_on=src["on"], src_total=src["total"], first_name=first_name,
                     interviews=ivs[:6], greet=greet, plan=wk_plan, plan_popup=plan_popup,
                     offer=None if back else coach.offer(db, settings, s, now.date(), bool(ivs)), back=back, if_then=coach.if_then(db),
                     celebrate=cel, rejection=pal.rejection_note(db, now.date()), week_left=_week_left(s, now.date()),
@@ -1538,9 +1546,71 @@ def make_app(settings, db: DB) -> FastAPI:
         return RedirectResponse(f"/settings?tab={tab}&msg={quote(msg)}" + (f"#src-{name}" if name else ""), status_code=303)
 
     # ---- first-run setup: writes profile.yaml, config.yaml, materials/ and data/secrets.json ----
-    def _back(msg: str, anchor: str = "") -> RedirectResponse:
+    def _back(msg: str, anchor: str = "", form=None, ok: bool = True) -> RedirectResponse:
+        """Back to Setup, or, for a form sent from the welcome flow (`wizard` = its step), on to the next step when it
+        worked and back to the same step when it didn't."""
         from urllib.parse import quote
+        wiz = str((form or {}).get("wizard") or "")
+        if wiz.isdigit() and 1 <= int(wiz) <= 5:
+            n = int(wiz) + 1 if ok else int(wiz)
+            return RedirectResponse(f"/welcome?step={'done' if n > 5 else n}&{'msg' if ok else 'err'}={quote(msg)}",
+                                    status_code=303)
         return RedirectResponse(f"/setup?msg={quote(msg)}" + (f"#{anchor}" if anchor else ""), status_code=303)
+
+    @app.get("/welcome")
+    def welcome(step: str = "1", msg: str = "", err: str = ""):
+        """A stranger's first run, one short step at a time (2026-11-22). Each step's form posts to the Setup route
+        that saves it, with `wizard` = the step; the Setup page keeps everything else."""
+        from . import agentlogin, setup
+        st = setup.status(settings, os.environ)
+        n = step if step == "done" else (step if step.isdigit() and 1 <= int(step) <= 5 else "1")
+        ws = settings.raw.get("work_search") or {}
+        prof = settings.profile or {}
+        account = auth.load(settings.data_dir) or {}
+        return page("welcome.html", nav="settings", step=n, st=st["steps"], left=st["left"], msg=msg[:300], err=err[:300],
+                    states=sorted(state_rules().items()), ws=ws, prof=prof, account_email=account.get("email", ""),
+                    titles=", ".join((settings.raw.get("search") or {}).get("title_keywords") or []),
+                    us_only=(settings.raw.get("search") or {}).get("us_only", True),
+                    agent_login=_agent_login_ctx())
+
+    @app.post("/welcome/about")
+    async def welcome_about(request: Request):
+        """Step 2: who you are, and whether you're claiming unemployment (the benefits side is off unless you are)."""
+        from . import setup
+        f = dict(await request.form())
+        f["wizard"] = "2"
+        if not (str(f.get("first_name") or "").strip() and str(f.get("last_name") or "").strip()
+                and "@" in str(f.get("email") or "")):
+            return _back("First name, last name and email are needed.", form=f, ok=False)
+        claiming = str(f.get("claiming") or "") == "yes"
+        state = str(f.get("state") or "").upper()
+        if claiming and state not in state_rules():
+            return _back("Pick your state, so the work-search log follows its rule.", form=f, ok=False)
+        setup.save_profile(settings, f)
+        setup.name_placeholder_resume(settings.root, settings.profile.get("last_name", ""))
+        setup.save_claim(settings, claiming, state, state_rules().get(state))
+        env.globals["ws_label"] = (settings.raw.get("work_search") or {}).get("label", "Work search")
+        return _back("Saved." + (" Your work-search log follows your state's rule." if claiming else ""), form=f)
+
+    @app.post("/welcome/roles")
+    async def welcome_roles(request: Request):
+        from . import setup
+        f = dict(await request.form())
+        f["wizard"] = "3"
+        if not setup._lines(str(f.get("titles") or "")):
+            return _back("Add at least one job title to look for.", form=f, ok=False)
+        n = len(setup.save_roles(settings, str(f.get("titles") or ""), bool(f.get("us_only"))))
+        return _back(f"Saved {n} title{'' if n == 1 else 's'} to look for.", form=f)
+
+    @app.post("/welcome/ai-done")
+    async def welcome_ai_done():
+        """Step 4 finished: a resume that waited for the AI is put in shape now."""
+        from . import resume_rebuild, setup
+        if not setup.agent_ready(setup._prefs(settings))["done"]:  # never call an AI that isn't signed in: it hangs
+            return _back("Not signed in yet. Sign in with one of these first, or skip for now and come back to it in "
+                         "Settings.", form={"wizard": "4"}, ok=False)
+        msg = await run_in_threadpool(resume_rebuild.run_waiting, settings)
+        return _back(msg or "Your AI is connected.", form={"wizard": "4"})
 
     @app.get("/setup")
     def setup_page(msg: str = "", err: str = ""):
@@ -1567,7 +1637,10 @@ def make_app(settings, db: DB) -> FastAPI:
         except (OSError, ValueError):
             src_stats = {}
         pr = Prefs(settings.data_dir, settings.raw)
-        return page("setup.html", finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
+        from . import resume_rebuild as _rb
+        rb = {"pending": _rb.pending(settings), "waiting": bool(_rb.waiting(settings)), "error": _rb._read(settings).get("error", ""),
+              "ai": st["steps"]["agent"]["done"], "files": _rb.files(settings)}
+        return page("setup.html", rb=rb, finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
                     stand=setup.standing_values(prof), prof=prof, fields=setup.PROFILE_FIELDS, yes_no=setup.YES_NO,
                     titles=", ".join(search.get("title_keywords") or []), exclude=", ".join(search.get("exclude_keywords") or []),
                     us_only=search.get("us_only", True), levels=search.get("levels") or [],
@@ -1614,17 +1687,17 @@ def make_app(settings, db: DB) -> FastAPI:
         f = dict(await request.form())
         if not (str(f.get("first_name") or "").strip() and str(f.get("last_name") or "").strip()
                 and "@" in str(f.get("email") or "")):
-            return _back("First name, last name and email are needed.", "profile")
+            return _back("First name, last name and email are needed.", "profile", form=f, ok=False)
         setup.save_profile(settings, f)
         setup.name_placeholder_resume(settings.root, settings.profile.get("last_name", ""))
-        return _back("Saved your contact details to profile.yaml.", "interests")
+        return _back("Saved your contact details to profile.yaml.", "interests", form=f, ok=True)
 
     @app.post("/setup/interests")
     async def setup_interests(request: Request):
         from . import setup
         f = dict(await request.form())
         if not setup._lines(str(f.get("titles") or "")):
-            return _back("Add at least one job title to look for.", "interests")
+            return _back("Add at least one job title to look for.", "interests", form=f, ok=False)
         from .prefs import Prefs
         pr = Prefs(settings.data_dir, settings.raw)
         for k in ("ADZUNA_APP_ID", "ADZUNA_APP_KEY", "USAJOBS_API_KEY", "USAJOBS_EMAIL"):
@@ -1638,31 +1711,68 @@ def make_app(settings, db: DB) -> FastAPI:
             msg += " Couldn't read: " + "; ".join(r["bad"][:5]) + ". Use a careers-page URL, 'greenhouse slug', or a feed URL."
         if r["missing_keys"]:
             msg += " Skipped until you fill in the free API keys box: " + ", ".join(r["missing_keys"]) + "."
-        return _back(msg, "about")
+        return _back(msg, "about", form=f, ok=True)
 
     @app.post("/setup/resume")
-    async def setup_resume(docx: UploadFile = File(None), pdf: UploadFile = File(None)):
+    async def setup_resume(docx: UploadFile = File(None), pdf: UploadFile = File(None), wizard: str = Form("")):
+        f = {"wizard": wizard}
+        if docx and docx.filename and docx.filename.lower().endswith(".pdf") and not (pdf and pdf.filename):
+            docx, pdf = None, docx  # the welcome flow has one file box for either
         from . import setup
         limit = 10 * 1024 * 1024
         d = await docx.read(limit + 1) if docx and docx.filename else None
         p = await pdf.read(limit + 1) if pdf and pdf.filename else None
         if not d and not p:
-            return _back("Pick your resume's .docx file first.", "resume")
+            return _back("Pick your resume first: a Word file or a PDF.", "resume", form=f, ok=False)
         if (d and len(d) > limit) or (p and len(p) > limit):
-            return _back("That file is over 10 MB.", "resume")
-        if p and not d and not setup.base_resume(settings.root):
-            return _back("The .docx is needed: tailored resumes are built from it. The PDF is optional.", "resume")
+            return _back("That file is over 10 MB.", "resume", form=f, ok=False)
         last = settings.profile.get("last_name") or ""
         r = await run_in_threadpool(setup.save_resume, settings.root, last, d, p)
         if r["error"]:
-            return _back(r["error"], "resume")
+            return _back(r["error"], "resume", form=f, ok=False)
         if not last:  # name it after the resume's own header when contact details aren't saved yet
             guess = setup.resume_contact(setup.base_resume(settings.root)).get("last_name", "")
             if renamed := setup.name_placeholder_resume(settings.root, guess):
                 r = {"docx": renamed, "pdf": renamed.replace(".docx", ".pdf") if r["pdf"] else None}
         made = " and ".join(x for x in (r["docx"], r["pdf"]) if x)
+        # Any resume works (resume_rebuild.py): one tailoring can't read is put in shape by the person's own AI, now if
+        # it's signed in, else as soon as it is.
+        from . import resume_rebuild
+        target = setup.base_resume(settings.root) if d else setup.materials(settings.root) / (r["pdf"] or "")
+        if target and target.exists() and resume_rebuild.needs(target):
+            if setup.agent_ready(setup._prefs(settings))["done"]:
+                try:
+                    await run_in_threadpool(resume_rebuild.rebuild, settings, target)
+                    return _back("Saved, and we rebuilt your resume in the format tailoring uses. Check it on the Setup page when you have a minute.", "resume", form=f)
+                except resume_rebuild.RebuildError as e:
+                    return _back(f"Saved {made}. {e}", "resume", form=f, ok=False)
+            resume_rebuild.mark_waiting(settings, target)
+            return _back(f"Saved {made}. Once your AI is connected (the Agent step), we'll put it in the format "
+                         "tailoring uses, and you can check it.", "profile", form=f)
         return _back(f"Saved {made} in materials/." + ("" if r["pdf"] or p else
-                     " No PDF was made (LibreOffice isn't installed here), so upload one too."), "profile")
+                     " No PDF was made (LibreOffice isn't installed here), so upload one too."), "profile", form=f)
+
+    @app.post("/setup/resume/rebuild")
+    async def setup_resume_rebuild():
+        from . import resume_rebuild
+        msg = await run_in_threadpool(resume_rebuild.run_waiting, settings)
+        return _back(msg or "There's no resume waiting to be rebuilt.", "resume")
+
+    @app.post("/setup/resume/confirm")
+    def setup_resume_confirm():
+        from . import resume_rebuild
+        resume_rebuild.confirm(settings)
+        return _back("Thanks. Tailored resumes start from this one.", "resume")
+
+    @app.get("/setup/resume/file/{which}")
+    def setup_resume_file(which: str):
+        from . import resume_rebuild
+        if which not in ("base", "original"):
+            raise HTTPException(404)
+        p = resume_rebuild.files(settings).get(which)
+        if not p:
+            raise HTTPException(404)
+        return FileResponse(p, filename=p.name)
 
     @app.post("/setup/look")
     async def setup_look(request: Request):
@@ -1786,7 +1896,7 @@ def make_app(settings, db: DB) -> FastAPI:
         pr = Prefs(settings.data_dir, settings.raw)
         back = str(f.get("back") or "setup")
         go = (lambda m: RedirectResponse(f"/settings?tab=daily&msg={quote(m)}#agent", status_code=303)) if back == "settings" \
-            else (lambda m: _back(m, "agent"))
+            else (lambda m: _back(m, "agent", form=f, ok=not m.startswith(("Not saved", "Your Claude token is set"))))
         if pr.from_env(agentlogin.TOKEN_KEY):
             return go("Your Claude token is set in .env; change it there.")
         if f.get("action") == "forget":
@@ -1831,18 +1941,18 @@ def make_app(settings, db: DB) -> FastAPI:
         if f.get("action") == "forget":
             for k in ("GMAIL_USER", "GMAIL_APP_PASSWORD", "BRIEF_TO", "EMAIL_PROVIDER"):
                 pr.set_key(k, "")
-            return _back("Removed the saved email login.", "gmail")
+            return _back("Removed the saved email login.", "gmail", form=f, ok=True)
         same = user.lower() == (os.environ.get("GMAIL_USER") or "").lower() and provider == mb.main_provider()
         pw = pw or ((os.environ.get("GMAIL_APP_PASSWORD") or "") if same else "")
         label = mb.PROVIDERS[provider]["label"]
         if "@" not in user or not pw:
-            return _back(f"Enter your {label} address and an app password.", "gmail")
+            return _back(f"Enter your {label} address and an app password.", "gmail", form=f, ok=False)
         if mb.provider_for(user) == "outlook":
             return _back("Not saved: Outlook and Hotmail no longer allow app passwords for other apps. Use a Gmail, iCloud "
-                         "or Yahoo address as your main inbox, and forward Outlook to it.", "gmail")
+                         "or Yahoo address as your main inbox, and forward Outlook to it.", "gmail", form=f, ok=False)
         problem = await run_in_threadpool(setup.test_gmail, user, pw, provider)
         if problem:
-            return _back(f"Not saved: {problem}", "gmail")
+            return _back(f"Not saved: {problem}", "gmail", form=f, ok=False)
         if not pr.from_env("EMAIL_PROVIDER"):
             pr.set_key("EMAIL_PROVIDER", "" if provider == "gmail" else provider)
         if not pr.from_env("GMAIL_USER"):
@@ -1852,7 +1962,7 @@ def make_app(settings, db: DB) -> FastAPI:
         brief_to = str(f.get("brief_to") or "").strip()
         if "@" in brief_to and not pr.from_env("BRIEF_TO"):
             pr.set_key("BRIEF_TO", brief_to)
-        return _back(f"{label} works. Job alerts and replies will be read (read-only), and the brief sent from it.", "other-emails")
+        return _back(f"{label} works. Job alerts and replies will be read (read-only), and the brief sent from it.", "other-emails", form=f, ok=True)
 
     @app.get("/dua")
     def dua(company: str = "", tab: str = ""):

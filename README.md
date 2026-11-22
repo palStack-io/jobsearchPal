@@ -1,15 +1,15 @@
 # jobsearchPal
 
-Your job search, and the unemployment paperwork that comes with it.
+Your job search, and the unemployment paperwork if you have it.
 
-A self-hosted assistant for people looking for work, especially while collecting unemployment. It runs on a
-small always-on computer you own and does two jobs:
+A self-hosted assistant for people looking for work. It runs on a computer you own (a Mac or Windows PC with Docker
+Desktop, or a small always-on server) and does two jobs:
 
 - **The job search.** Every weekday morning an AI agent on your own subscription
   ([Claude Code](https://claude.com/claude-code) or OpenAI's [Codex CLI](https://github.com/openai/codex)) finds new
   roles, picks the best fits, tailors your resume and cover letter, and fills in the real application form, PDFs
   included. **It never presses Submit.** You review each application on a private dashboard and send it yourself.
-- **The unemployment paperwork.** It keeps your state's work-search log as you go (every application, recruiter
+- **The unemployment paperwork, if you're claiming.** Say so in the welcome steps and it keeps your state's work-search log as you go (every application, recruiter
   contact and interview, with the original emails and submit screenshots as proof), knows your state's weekly
   rule, and reminds you about claim day, RESEA meetings and other deadlines. Rules for all 50 states, DC,
   Puerto Rico and the US Virgin Islands are built in.
@@ -48,6 +48,11 @@ The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them
   Your laptop, Claude desktop and any chat app can be closed; they're only for setup and fixes.
 - **Prepares, never sends.** Each morning a few applications are tailored and filled in, follow-up replies
   are drafted, and a brief arrives by email. You read them on the dashboard and press Submit yourself.
+- **Any resume.** Upload it as a Word file or a PDF. If it isn't in the plain format tailoring uses, your own AI
+  rebuilds it once, using only what's already in it (no new numbers, titles or dates), keeps your original beside it,
+  and you check it before anything is sent.
+- **A coach for where to aim.** Each morning it reads your whole search and says where to lean this week, which
+  roles are worth your time and what to lead with, and who could help, with the note drafted for you to send.
 - **A board for the roles you pick.** Star a lead and it lands on your board: Shortlist, Research, Reach out,
   Ready to apply, with small steps to tick, a next step with a day, and notes. Starring costs nothing.
 - **A plan for what you're missing.** Skills shows what the roles found for you ask for that your resume doesn't;
@@ -93,8 +98,9 @@ More in [Privacy and permissions](docs/privacy-and-permissions.md).
 
 ## Quick start
 
-You need an always-on Linux computer (Ubuntu 24.04 tested) and either a Claude subscription (for Claude Code) or a
-ChatGPT subscription (for the Codex CLI). With Docker:
+You need a computer that's on in the morning (a Mac or Windows PC with Docker Desktop, or an always-on Linux box)
+and either a ChatGPT subscription (Plus or Pro) or a Claude subscription (Pro or Max). On a Mac or PC, install
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it first. Then:
 
 ```
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
@@ -103,8 +109,11 @@ docker compose up -d                        # dashboard + the daily scheduler (p
 docker compose --profile finish up -d       # optional: Finish it here (a browser on this server for captchas)
 ```
 
-Open `http://localhost:8787/`, create your account, and the **Setup** page walks you through the rest (resume, job
-interests, email). The full guide, including a plain install without Docker and reaching the dashboard from your
+Open `http://localhost:8787/`, create your account, and five short welcome steps take you through the rest: your
+resume (Word or PDF), a few details (including whether you're claiming unemployment), the roles you want, your AI and,
+if you like, your email. Then press **Run it now** to see your first roles.
+
+![The welcome steps](docs/welcome.png) The full guide, including a plain install without Docker and reaching the dashboard from your
 phone, is in [docs/setup.md](docs/setup.md).
 
 ## Documentation
@@ -129,11 +138,13 @@ phone, is in [docs/setup.md](docs/setup.md).
 jobsearchPal is young: it's used daily by its author and has been tested from a clean Docker install, but expect
 rough edges. Known limits today:
 
-- **You need a small always-on computer** (a home server, a mini PC, a cheap cloud VM) and are comfortable running a
-  few terminal commands once. Day to day, everything happens in the browser.
+- **You need a computer that's on in the morning** (your own Mac or Windows PC with Docker Desktop, or a home server,
+  mini PC or cheap cloud VM) and to run a few terminal commands once. The welcome steps and everything after happen in
+  the browser. On a laptop that sleeps, press **Run now** whenever you sit down instead.
+- **You need an AI subscription:** ChatGPT Plus or Pro, or Claude Pro or Max (an OpenRouter key works too).
 - **Email is Gmail, iCloud or Yahoo** (an app password, read-only). Outlook.com and Hotmail need forwarding. Off Gmail,
   the recruiter search uses plain keywords, so it is a little broader.
-- **US-focused.** Job filters lean US, and the unemployment rules cover US states and territories.
+- **US-focused.** "US roles only" is on by default, and the unemployment rules cover US states and territories.
 - **Some sites need you.** Workday and other account-based sites get materials prepared and are marked "apply by
   hand"; captchas and emailed codes are finished by you: **Finish it here** opens the filled form in a browser on your
   server that you use from the job page, or `autoapply-finish` opens it in Chrome on your Mac.

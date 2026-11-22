@@ -43,11 +43,16 @@
 
 <section class="card mt step" id="resume">
  <h2><span><span class="n {{ 'done' if s.resume.done }}">{% if s.resume.done %}<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg>{% else %}1{% endif %}</span> Base resume</span><span class="count">{{ s.resume.note }}</span></h2>
- <p class="lead">Your full, current resume as a Word file. Every tailored resume keeps its layout and only rewords what's already true.</p>
+ <p class="lead">Your full, current resume, as a Word file or a PDF. If it isn't in the plain format tailoring uses, your AI puts it in that format once, using only what's already in it, and you check it.</p>
+ {% if rb.pending %}<div class="notice" role="status" style="margin:0 0 14px"><span class="grow"><b>We rebuilt your resume in the format tailoring uses.</b> Check it says what yours says. Your original is kept beside it.
+  <a href="/setup/resume/file/base">Open the rebuilt Word file</a>{% if rb.files.original %} · <a href="/setup/resume/file/original">your original</a>{% endif %}</span>
+  <form method="post" action="/setup/resume/confirm"><button class="btn sm primary">It looks right</button></form></div>
+ {% elif rb.waiting %}<div class="notice info" role="status" style="margin:0 0 14px"><span class="grow">{% if rb.error %}{{ rb.error }}{% elif rb.ai %}Your AI is connected: put your resume in the format tailoring uses now.{% else %}Saved. Once your AI is connected (step 5), we'll put your resume in the format tailoring uses.{% endif %}</span>
+  {% if rb.ai %}<form method="post" action="/setup/resume/rebuild"><button class="btn sm">Do it now</button></form>{% endif %}</div>{% endif %}
  <form method="post" action="/setup/resume" enctype="multipart/form-data" class="grid g11">
-  <label class="fld"><span>Resume (.docx)</span><input type="file" name="docx" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+  <label class="fld"><span>Resume (Word)</span><input type="file" name="docx" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
    <small class="muted">From Google Docs: File &gt; Download &gt; Microsoft Word.</small></label>
-  <label class="fld"><span>PDF of it (optional)</span><input type="file" name="pdf" accept=".pdf,application/pdf">
+  <label class="fld"><span>Or a PDF</span><input type="file" name="pdf" accept=".pdf,application/pdf">
    <small class="muted">Made for you when LibreOffice is installed (it is in Docker).</small></label>
   <div class="actions"><button class="btn primary">{{ 'Replace' if resume else 'Upload' }}</button>
    {% if resume %}<span class="muted" style="align-self:center">Current: <code>materials/{{ resume.name }}</code></span>{% endif %}</div>

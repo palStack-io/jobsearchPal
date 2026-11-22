@@ -73,7 +73,8 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     first = ((getattr(settings, "profile", None) or {}).get("first_name") or "") if settings else ""
     g = pal.greeting(db, s, now, first)
     market = g["market"] or (pal.market_line(now.date()) if now.day <= 7 else None)  # once a month, in the first week
-    subject = f"Job search brief: {headline(db, news, ready)} · {label} {s['this_week']}/{s['dua_floor']}" + (
+    count = f" · {label} {s['this_week']}/{s['dua_floor']}" if s["dua_floor"] else ""  # no goal, no count (not claiming)
+    subject = f"Job search brief: {headline(db, news, ready)}{count}" + (
         f" · {len(todo)} to do" if todo else "")
     base = review_url.rstrip("/")
     from . import finish_here

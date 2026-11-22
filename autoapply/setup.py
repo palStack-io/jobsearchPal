@@ -95,6 +95,15 @@ def base_resume(root: Path) -> Path | None:
     return next((d for d in docs if "resume" in d.stem.lower()), None)
 
 
+def _claude_json_signed_in(p: Path) -> bool:
+    """~/.claude.json is written the first time Claude Code starts, signed in or not; it names an account only after
+    /login (2026-11-22 install walk: a signed-out Run now made Setup say "signed in")."""
+    try:
+        return bool(json.loads(p.read_text()).get("oauthAccount"))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def agent_ready(prefs=None) -> dict:
     claude, codex = find_cli("claude"), find_cli("codex")
     if prefs is not None and prefs.data.get("daily_via") == "openrouter":
@@ -107,12 +116,20 @@ def agent_ready(prefs=None) -> dict:
     home = Path.home()
     # A long-lived token from `claude setup-token` in .env (CLAUDE_CODE_OAUTH_TOKEN) counts as signed in too.
     claude_in = (bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")) or (home / ".claude" / ".credentials.json").exists()
-                 or (home / ".claude.json").exists())
+                 or _claude_json_signed_in(home / ".claude.json"))
     codex_in = (home / ".codex" / "auth.json").exists()
     who = [n for n, ok in (("Claude Code", claude and claude_in), ("Codex", codex and codex_in)) if ok]
     return {"done": bool(who), "claude": bool(claude), "codex": bool(codex), "who": who,
             "note": f"{' and '.join(who)} signed in" if who else
                     ("installed, not signed in yet" if claude or codex else "no agent CLI found")}
+
+
+def _waiting_resume(settings):
+    from . import resume_rebuild
+    try:
+        return resume_rebuild.waiting(settings)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _prefs(settings):
@@ -137,7 +154,9 @@ def status(settings, environ: dict) -> dict:
                     "note": f"{prof.get('first_name', '')} {prof.get('last_name', '')}".strip() or "not set"},
         "interests": {"done": cfg.exists() and bool(titles),
                       "note": f"{len(titles)} titles" if cfg.exists() and titles else "not set"},
-        "resume": {"done": bool(resume), "note": resume.name if resume else "not uploaded"},
+        "resume": {"done": bool(resume) or bool(_waiting_resume(settings)),
+                   "note": resume.name if resume else ("waiting for your AI to put it in shape" if _waiting_resume(settings)
+                                                       else "not uploaded")},
         "about": {"done": has_about, "note": "written" if has_about else "optional, but it makes answers much better"},
         "gmail": {"done": bool(environ.get("GMAIL_USER") and environ.get("GMAIL_APP_PASSWORD")),
                   "note": _email_note(environ)},
@@ -315,6 +334,47 @@ def save_interests(settings, form: dict) -> dict:
     settings.raw.clear()
     settings.raw.update(cfg)
     return {"bad": bad, "missing_keys": missing}
+
+
+def save_roles(settings, titles: str, us_only: bool) -> list[str]:
+    """The welcome flow's step 3: only the titles and "US roles only". Everything else in config.yaml (job sources,
+    companies, levels) stays as it is; the Setup page's job-interests form saves those."""
+    root = settings.root
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    search = cfg.setdefault("search", {})
+    search["title_keywords"] = [t.lower() for t in _lines(titles)][:40]
+    search["us_only"] = bool(us_only)
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    (root / "config.yaml").write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update(cfg)
+    return search["title_keywords"]
+
+
+def save_claim(settings, claiming: bool, state: str = "", rule: dict | None = None) -> None:
+    """Unemployment is opt-in (2026-11-22). Not claiming: no weekly goal, and the work-search log and benefit reminders
+    stay out of the way. Claiming: the state's rule sets the weekly minimum (0 where the state names no number)."""
+    root = settings.root
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    ws = cfg.setdefault("work_search", {"label": "Work search", "weekly_minimum": 0})
+    ws["claiming"] = bool(claiming)
+    if claiming and state:
+        ws["state"] = state
+        try:
+            ws["weekly_minimum"] = int((rule or {}).get("weekly_minimum") or 0)
+        except (TypeError, ValueError):
+            ws["weekly_minimum"] = 0
+    elif not claiming:
+        ws.pop("state", None)
+        ws["weekly_minimum"] = 0
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    (root / "config.yaml").write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update(cfg)
 
 
 def add_title(settings, title: str) -> bool:

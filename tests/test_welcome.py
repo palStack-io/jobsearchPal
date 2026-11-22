@@ -100,6 +100,8 @@ def test_ai_step_puts_a_waiting_resume_in_shape(env, monkeypatch):
     from autoapply import resume_rebuild
     s, db, c = env
     ran = []
+    # Signed in, stated here rather than read from this machine (CI has no AI; the step never calls one that isn't).
+    monkeypatch.setattr(setup, "agent_ready", lambda prefs=None: {"done": True, "note": "", "who": ["Claude Code"], "claude": True, "codex": False})
     monkeypatch.setattr(resume_rebuild, "run_waiting", lambda settings, ask=None: ran.append(1) or "We rebuilt your resume.")
     r = c.post("/welcome/ai-done", follow_redirects=False)
     assert ran and r.headers["location"].startswith("/welcome?step=5")

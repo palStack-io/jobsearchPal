@@ -22,6 +22,12 @@ life a little easier. Like the other pals, it runs on your own computer: no trac
 
 ![Dashboard](docs/dashboard.png)
 
+**Your coach** reads your whole search each morning and says where to aim this week: the roles worth your time and
+what each letter should lead with, people who could help (the note drafted, you send it), what's coming up, and a
+week plan you can take with one press. Replies and follow-ups stay on the dashboard's To do.
+
+![Your coach](docs/coach.png)
+
 <details><summary>Work-search log, job sources, stats, emails, settings and the phone layout</summary>
 
 ![Work-search log](docs/work-search.png)
@@ -31,7 +37,7 @@ life a little easier. Like the other pals, it runs on your own computer: no trac
 ![Stats](docs/stats-dark.png)
 ![Emails](docs/emails.png)
 ![Settings](docs/settings.png)
-<img src="docs/dashboard-phone.png" width="300" alt="Dashboard on a phone">
+<img src="docs/dashboard-phone.png" width="300" alt="Dashboard on a phone"> <img src="docs/coach-phone.png" width="300" alt="Your coach on a phone">
 </details>
 
 The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them with `scripts/screenshots.py`).

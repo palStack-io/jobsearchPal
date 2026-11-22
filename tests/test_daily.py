@@ -367,3 +367,62 @@ def test_fill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
     plan.write_text(json.dumps({"url": "https://boards.greenhouse.io/a/jobs/1", "ats": "greenhouse", "files": {}}))
     cli.main(["--config", str(cfg), "fill", str(plan), "--job", "gh:a:1"])
     assert db.get("gh:a:1")["error"].startswith("This posting is closed")
+
+
+def test_coach_command_off_exits_2(tmp_path, capsys):
+    s, db, cfg = make(tmp_path)
+    with pytest.raises(SystemExit) as e:
+        cli.main(["--config", str(cfg), "coach"])
+    assert e.value.code == 2
+    assert "coach off" in capsys.readouterr().err
+
+
+def _coach_on(s, on=True):
+    from autoapply.prefs import Prefs
+    p = Prefs(s.data_dir, s.raw)
+    p.data["coach"] = on
+    p.save()
+
+
+def test_alert_roles_and_quick_pick_via_claude_when_no_key(tmp_path):
+    s, db, _ = make(tmp_path)
+    seen = []
+
+    def ask(text, model):
+        seen.append(model)
+        if "job-alert emails" in text:
+            return '{"roles": [{"company": "Acme", "title": "Analytics Engineer", "link": "", "why": "fits"}]}', {"tokens": 900}
+        return '{"picks": [{"id": "gh:a:1", "why": "dbt"}]}', {"tokens": 800}
+    roles, u = rank.alert_roles(db, s, [{"from": "a", "subject": "b", "text": "Acme Analytics Engineer"}], "", None, ask=ask)
+    assert roles and roles[0]["company"] == "Acme" and u["tokens"] == 900
+    picks, u = rank.quick_pick(db, s, 1, "", None, ask=ask)
+    assert [p["id"] for p in picks] == ["gh:a:1"] and u["tokens"] == 800
+    assert seen == ["haiku", "haiku"]
+
+
+def test_daily_stages_without_drafts_when_coach_on(tmp_path, capsys, monkeypatch):
+    from autoapply import nudges
+    s, db, cfg = make(tmp_path)
+    monkeypatch.setattr(nudges, "for_agent", lambda *a, **k: [{"key": "k"}])
+    cli.main(["--config", str(cfg), "daily-stages"])
+    assert "drafts" in capsys.readouterr().out.split()
+    _coach_on(s)
+    cli.main(["--config", str(cfg), "daily-stages"])
+    out = capsys.readouterr().out.split()
+    assert "drafts" not in out and "rank" in out
+
+
+def test_daily_sh_tries_coach_first_then_quick_pick(tmp_path):
+    import subprocess
+    from pathlib import Path
+    sh = (Path(__file__).resolve().parent.parent / "scripts" / "daily.sh").read_text()
+    assert subprocess.run(["bash", "-n", "-c", sh]).returncode == 0
+    rank_branch = sh[sh.index('if [ "$stage" = rank ]'):]
+    assert rank_branch.index("autoapply coach") < rank_branch.index("autoapply quick-pick --alerts")
+    assert "autoapply drafts-once" in sh and "run_stage drafts" in sh
+
+
+def test_daily_sh_drafts_after_the_coach():
+    from pathlib import Path
+    sh = (Path(__file__).resolve().parent.parent / "scripts" / "daily.sh").read_text()
+    assert sh.index("autoapply coach") < sh.index("autoapply drafts-once") < sh.index("autoapply daily-picks")

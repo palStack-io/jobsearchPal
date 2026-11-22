@@ -111,6 +111,7 @@ def main(argv=None):
     sub.add_parser("daily-stages"); sub.add_parser("daily-picks"); sub.add_parser("todo-line"); sub.add_parser("pal-line")
     a = sub.add_parser("daily-prompt"); a.add_argument("stage"); a.add_argument("job_id", nargs="?", default="")
     a = sub.add_parser("candidates"); a.add_argument("--limit", type=int, default=12)
+    sub.add_parser("coach"); sub.add_parser("drafts-once")
     a = sub.add_parser("quick-pick"); a.add_argument("--alerts", action="store_true")
     a = sub.add_parser("apply-once"); a.add_argument("job_id"); a.add_argument("--try", dest="try_it", action="store_true", help="run even when the setting is off (a test)")
     a = sub.add_parser("log-daily"); a.add_argument("agent"); a.add_argument("model", nargs="?", default="")
@@ -239,7 +240,16 @@ def main(argv=None):
             pass
         elif lim["prep_per_day"] and prep.needed(db, s.data_dir, lim["prep_per_day"]):
             stages.append("prep")
-        if not manual and lim["drafts_per_day"] and nudges.for_agent(db, s.data_dir, lim["drafts_per_day"]):
+        from . import coachday
+        pr_ = Prefs(s.data_dir, s.raw)
+        coach_on = coachday.enabled(pr_)
+        # With the coach on, `autoapply drafts-once` writes the drafts in one call (daily.sh runs the agent only if it
+        # fails), and the weekly board search runs as its own short stage instead of inside the rank agent.
+        if coach_on and not manual:
+            day = pr_.data.get("discover_weekday", 1)
+            if day and datetime.now().isoweekday() == day:
+                stages.append("boards")
+        if not coach_on and not manual and lim["drafts_per_day"] and nudges.for_agent(db, s.data_dir, lim["drafts_per_day"]):
             stages.append("drafts")
         if lim["picks_per_day"]:
             stages.append("rank")
@@ -327,6 +337,21 @@ def main(argv=None):
             print(f"one call failed: {str(e)[:300]}", file=sys.stderr)
             db.log_usage("daily", f"claude:-:{oneshot.TAG}", 0, 0, 0.0, 0, str(e)[:200])
             sys.exit(1)
+    elif args.cmd == "coach":
+        # The morning coach in one call (coachday.py). Exit 2: off or nothing to do, 1: failed; daily.sh then
+        # runs quick pick or the rank agent as before.
+        from . import coachday
+        code, summary = coachday.run(db, s)
+        print(summary, file=sys.stdout if code == 0 else sys.stderr)
+        if code:
+            sys.exit(code)
+    elif args.cmd == "drafts-once":
+        # Follow-up and outreach drafts in one call. Exit 2: off or nothing due, 1: failed (daily.sh runs the drafts agent).
+        from . import coachday
+        code, summary = coachday.drafts(db, s)
+        print(summary, file=sys.stdout if code == 0 else sys.stderr)
+        if code:
+            sys.exit(code)
     elif args.cmd == "quick-pick":
         # Picks today's roles with one cheap OpenRouter call. Exits 2 when it's off (daily.sh then runs the rank agent).
         from . import rank
@@ -334,9 +359,12 @@ def main(argv=None):
         pr = Prefs(s.data_dir, s.raw)
         model, key = pr.data.get("quick_pick_model") or "", pr.key("OPENROUTER_API_KEY")
         day = 0 if os.environ.get("AUTOAPPLY_TRIGGER") == "manual" else pr.data.get("discover_weekday", 1)
-        if not model or not key or (day and datetime.now().isoweekday() == day):
+        from . import coachday
+        if coachday.enabled(pr) and not (model and key):
+            model, key = "haiku", None  # the coach's fallback: Claude's haiku through the subscription
+        elif not model or not key or (day and datetime.now().isoweekday() == day):
             sys.exit(2)  # off, no key, or discovery day (that needs the agent's web search)
-        if db.spend_this_month() >= float(pr.data.get("monthly_api_budget") or 0):
+        if key and db.spend_this_month() >= float(pr.data.get("monthly_api_budget") or 0):
             sys.exit(2)
         n = pr.limits()["picks_per_day"]
         if args.alerts:
@@ -350,7 +378,7 @@ def main(argv=None):
             except Exception as e:
                 roles, u, err = [], {"tokens": 0, "cost": 0.0}, str(e)[:300]
             if u["tokens"] or err:
-                db.log_usage("daily", f"openrouter:{model}:alerts (openrouter)", 0, 0, u["cost"], 0, err, u["cost"], u["tokens"])
+                db.log_usage("daily", f"{'openrouter' if key else 'claude'}:{model}:alerts ({'openrouter' if key else 'one call'})", 0, 0, u["cost"], 0, err, u["cost"], u["tokens"])
             (s.data_dir / "daily").mkdir(exist_ok=True)
             (s.data_dir / "daily" / "alert-roles.json").write_text(json.dumps(roles, indent=1))
             if err:
@@ -363,7 +391,7 @@ def main(argv=None):
             err = None
         except Exception as e:
             picks, u, err = [], {"tokens": 0, "cost": 0.0}, str(e)[:300]
-        db.log_usage("daily", f"openrouter:{model}:rank (openrouter)", 0, 0, u["cost"], 0, err, u["cost"], u["tokens"])
+        db.log_usage("daily", f"{'openrouter' if key else 'claude'}:{model}:rank ({'openrouter' if key else 'one call'})", 0, 0, u["cost"], 0, err, u["cost"], u["tokens"])
         if err:
             print(f"quick pick failed: {err}", file=sys.stderr)
             sys.exit(1)

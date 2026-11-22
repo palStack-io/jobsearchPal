@@ -4,14 +4,17 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
 
 ## Dashboard pages
 
-- **Dashboard:** the horizon greeting, then **Your week** (this week's day strip, one line from what you did, a thin
+- **Dashboard:** the horizon greeting, then **Your week** (this week's day strip, one line from what you did, or the
+  coach's first line when the coach ran today with **Open your coach**, a thin
   tally for each goal you set and for the work-search log, and one place to start, usually your board's next due
   step), what's **ready to submit** and a **shortlist** of today's best untailored matches (Prepare, Add to board or
   Decline, with a reason), a to-do list (replies owed, follow-ups, claim day, RESEA and other deadlines), interviews
   with their prep packs, latest replies and recruiters. Charts live on **Stats** and the application list on
   **Leads > Applied**. **Run now** starts another batch any time.
-- **Your week** (`/plan`): today's part of your plan with **Done** for the timed goals, the plan itself (totals, the
-  days as chips, roles, one person to get in touch with) and last week's look-back.
+- **Your coach** (`/coach`; `/plan` redirects here; it was **Your week** until 2026-11-21): the coach's morning
+  (below), then today's part of your plan with **Done** for the timed goals, the plan itself (totals, the days as
+  chips, roles, one person to get in touch with) and last week's look-back. With no plan this week, the coach's
+  suggested week opens prefilled: **Use this plan** makes it yours, and nothing is saved before that.
 - **Stats:** four tabs, each about one screen: **Overview** opens with one plain sentence on what stands out (counted
   from your record, no AI), then the numbers, applications per week and the funnel; **Pipeline**, **Sources** and
   **Work search** hold the rest.
@@ -85,6 +88,16 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
 Light and dark mode, and it works on a phone. It looks like the other palStack apps: the Figtree typeface (served by the
 app itself from `/static/fonts`, no font service), a light sidebar, and a sunrise scene on the dashboard and the sign-in page.
 Motion is finite and plays once; with Reduce Motion the finished picture shows.
+
+## The coach (Your coach page)
+
+When the morning run's coach has run (Settings > Daily run > Coach), **Your coach** opens with its morning: the note
+(what's working, one next thing), **Today** (picks with what each letter leads with, the first follow-ups, and people
+to reach), **Later this week** (things it put on a day), then the rest. People to reach each have a
+drafted note: **Send** opens it in Gmail, or your mail app through `mailto:`; **I sent it**, **Not now** (hidden for 3
+days), **Dismiss** (never again), and **Edit** to change the note or add an address you found), prep for upcoming
+screens, **Worth checking** (what it couldn't confirm) and the roles it skipped, each with **Undo**. A suggestion with an
+address turns to sent on its own once your Sent mail shows a message to it. The To do list follows the coach's order.
 
 ## Settings page
 

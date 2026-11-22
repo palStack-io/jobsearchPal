@@ -79,7 +79,10 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
     from . import finish_here
     here = bool(settings is not None and finish_here.box_from(settings))  # Finish it here is on
 
-    t = [g["title"], g["line"], ""]
+    from . import coachday
+    cday = coachday.today(db, (today or date.today()))
+    cnote = (cday or {}).get("note") or []
+    t = [g["title"], *(cnote or [g["line"]]), ""]
     if market:
         t += [f"{market['text']} ({market['source']}, checked {market['checked']})", ""]
     from . import coach
@@ -129,7 +132,8 @@ def compose(db: DB, review_url: str = "", today: date | None = None, label: str 
 
     def li(items):
         return "".join(f"<li>{i}</li>" for i in items)
-    h = [f"<p style='font-size:18px;margin:0 0 4px'><b>{escape(g['title'])}</b></p><p style='font-size:15px;margin:0 0 12px'>{escape(g['line'])}</p>"]
+    h = [f"<p style='font-size:18px;margin:0 0 4px'><b>{escape(g['title'])}</b></p>"
+         + "".join(f"<p style='font-size:15px;margin:0 0 6px'>{escape(x)}</p>" for x in (cnote or [g['line']])) + "<div style='height:6px'></div>"]
     if market:
         h.append(f"<p style='font-size:14px;background:#fcefd2;padding:8px 12px;border-radius:8px'>{escape(market['text'])}<br>"
                  f"<span style='color:#666'>{escape(market['source'])}, checked {escape(market['checked'])}</span></p>")

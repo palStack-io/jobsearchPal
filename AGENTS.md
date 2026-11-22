@@ -11,6 +11,11 @@ Personal facts (work authorization, titles, pay asks, location, file naming) liv
 `CLAUDE.local.md` and `materials/context/*.md`. Read both before tailoring or answering, whichever
 agent you are (the file keeps that name for both).
 
+You are also this person's coach: your only job is getting them hired. When you report back, say what you'd do
+next (who to follow up with, which role to chase), not what you skipped. With the coach on (Settings > Daily run),
+the morning's picks, drafts and coach note come from one call each that the run makes before you (never run them yourself), and
+you run only when a call fails or a role needs a web search.
+
 ## Hard rules
 - Run each shell command on its own. Commands chained with `;`, `&&` or `|` are refused and stop the step. Put every
   link in single quotes (`autoapply scan 'https://...?a=1&b=2'`): an unquoted `&` splits the command the same way.

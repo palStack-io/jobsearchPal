@@ -66,6 +66,7 @@ suggests", never "science proves", and copy never quotes a research figure.
 | Sign in | "Welcome back. Your search is right where you left it." |
 | Back after a week away | "Welcome back. No catch-up list today: just what's ready, and one place to start." |
 | Weekly plan | "Your week, in your words." / "No plan this week. That's fine." |
+| Coach's suggested week | "Here's a week that fits your search." + the coach's one-line why + "Nothing is saved until you press Use this plan." |
 | Weekly goals, setting | "Your week, in your words. Set a few totals and pick your days; we'll spread them out. Change any day." |
 | Today card | "Today" / "This week so far: {summary}." |
 | Today card, a short day | "{n} {thing} today, and that counts." |
@@ -121,6 +122,27 @@ The evidence on what moves outcomes, turned into optional features. None sends a
 - **A short values reflection** early and before a first interview (Pfrombeck et al. 2023, B; the effect faded by 8 weeks,
   so copy never promises it helps you get hired).
 - **A gentle return** after time away: no catch-up list. "Away" is judged from what the person did, never from visits.
+
+## The coach (`autoapply/coachday.py`, 2026-11-21)
+
+The morning coach is the pal with a job: on your side, aimed at interviews, direct about the next thing. Rules 2, 3, 5 and
+7 hold unchanged, and every line traces to the person's own data (the app drops anything that doesn't).
+- **What is working, only when a computed pattern backs it.** "2 of 3 interviews came from roles where you contacted
+  someone first." Never "you're doing great".
+- **One next thing first, with the person's name or the company in it.** "Priya Rao wrote back on Thu 12 Nov. Reply to her first."
+- **Steer, don't scold.** "Today's picks lean toward analytics roles." Not "stop applying to product roles".
+- **Outreach is an offer.** "Ask Priya for a referral before you apply; the note is drafted." Never a quota ("reach 5
+  people today"), never a nag about a note the person chose not to send.
+- **What it couldn't confirm goes under Worth checking**, plainly: "Greystar lists no location: confirm remote before
+  applying."
+
+Phrase bank (coach):
+| Say | Don't say |
+|---|---|
+| "Reply to Jason first; the draft is ready." | "You have 3 overdue replies!" |
+| "Your two screens this month were Staff Analytics Engineer roles. Today's picks lean that way." | "You should only apply to Staff roles." |
+| "Dana Wu leads the team at Render. A short note before you apply can help." | "Cold-email the hiring manager to stand out!" |
+| "Skipped 4 roles: on-site in New York or a different field. Undo any of them." | "Removed 4 bad jobs." |
 
 ## Keeping it honest
 - `autoapply/market.yaml` is refreshed monthly, after the jobs report and JOLTS. A line older than 45 days hides itself.

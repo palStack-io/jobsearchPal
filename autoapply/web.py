@@ -324,6 +324,10 @@ def make_app(settings, db: DB) -> FastAPI:
         todo = [n for n in todo if not (n.get("kind") == "worksearch" and "behind-" in str(n.get("key")))]
         for n in todo:
             n["compose"] = nudges.gmail_compose_url(n)
+        from . import coachday
+        coach_card = coachday.card(db, settings, datetime.now().date())
+        if coach_card:
+            todo = coachday.order_todo(todo, coach_card["followups"])
         from .prefs import Prefs
         from .rank import shortlist
         s = stats.compute(db, floor=work_search(settings)[1])
@@ -365,11 +369,11 @@ def make_app(settings, db: DB) -> FastAPI:
                     interviews=ivs[:6], greet=greet, plan=wk_plan, plan_popup=plan_popup,
                     offer=None if back else coach.offer(db, settings, s, now.date(), bool(ivs)), back=back, if_then=coach.if_then(db),
                     celebrate=cel, rejection=pal.rejection_note(db, now.date()), week_left=_week_left(s, now.date()),
-                    todo=todo, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
+                    todo=todo, coach_card=coach_card, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
                     today_goals=today_goals, just_met={m["key"] for m in met},
                     so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
-                    week_panel=goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]),
+                    week_panel=coachday.with_panel(goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]), coach_card),
                     start=_start(s, now.date()), last_wk=last_wk,
                     last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "")
         if request.headers.get("x-in-page"):
@@ -582,11 +586,54 @@ def make_app(settings, db: DB) -> FastAPI:
             raise HTTPException(400)
         return RedirectResponse("/#todo", status_code=303)
 
+    @app.post("/outreach/{key}")
+    def outreach_action(key: str, action: str = Form(...), email: str = Form(""), link: str = Form(""), draft: str = Form("")):
+        """The coach's suggestion of someone to reach. The person sends from their own mail; this only keeps track."""
+        from pathlib import Path as _P
+        from . import coach, coachday
+        coachday.ensure(db)
+        row = db.conn.execute("select * from outreach where key = ?", (key,)).fetchone()
+        if not row:
+            raise HTTPException(404)
+        row = dict(row)
+        if action in ("sent", "not_now"):
+            coachday.set_state(db, key, action)
+            if action == "sent":
+                coach.touch(db)
+        elif action == "dismiss":
+            coachday.set_state(db, key, "dismissed")
+        elif action == "save":
+            if draft.strip() and row["draft_path"]:
+                p = _P(row["draft_path"])
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(draft.strip()[:5000] + "\n")
+            if email.strip() or link.strip():
+                coach.set_contact_email(db, row["person"], row["company"] or "", email.strip()[:120], link.strip()[:300])
+                db.conn.execute("update outreach set email = ? where key = ?", (email.strip()[:120] or row["email"], key))
+                db.conn.commit()
+        else:
+            raise HTTPException(400)
+        return RedirectResponse("/#coach", status_code=303)
+
+    @app.post("/coach/undo-skip/{job_id:path}")
+    def coach_undo_skip(job_id: str):
+        j = db.get(job_id)
+        if j and j["status"] == "skipped" and str(j.get("error") or "").startswith("coach:"):
+            db.update(job_id, status="new", error=None)
+        return RedirectResponse("/#coach", status_code=303)
+
     @app.get("/plan")
+    def plan_redirect(request: Request):
+        """Your week became Your coach (2026-11-21); old links and the morning email still land."""
+        q = request.url.query
+        return RedirectResponse("/coach" + (f"?{q}" if q else ""), status_code=303)
+
+    @app.get("/coach")
     def plan_page(request: Request, planned: str = ""):
-        """Your week: the person's own plan for the week, the days, and last week's look-back. Optional; nothing reminds
-        them of it beyond the once-a-week pop-up on the dashboard."""
-        from . import coach, goals, pal
+        """Your coach: the morning coach's note and today's steps, things for later this week, then the person's own
+        plan for the week, the days, and last week's look-back. The plan stays optional and theirs: a suggested week is
+        saved only when they press Use this plan."""
+        from . import coach, coachday, goals, nudges, pal
         now = datetime.now()
         s = stats.compute(db, floor=work_search(settings)[1])
         greet = pal.greeting(db, s, now, (settings.profile or {}).get("first_name", ""))
@@ -597,13 +644,22 @@ def make_app(settings, db: DB) -> FastAPI:
         today_goals = goals.today_view(db, now.date())
         # A goal or day met plays its moment here, where Done is pressed (11/18); the whole week's stays for the dashboard.
         met = [m for m in goals.new_met(db, now.date()) if m["scope"] != "week"]
-        resp = page("plan.html", nav="plan", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
+        coach_card = coachday.card(db, settings, now.date())
+        suggested = None if wk_plan else coachday.suggested_totals(coach_card)
+        follow = []
+        if coach_card:
+            todo = [n for n in nudges.compute(db, settings.data_dir, settings=settings) if n.get("kind") in ("reply", "chase", "application", "interview")]
+            for n in coachday.order_todo(todo, coach_card["followups"])[:3]:
+                n["compose"] = nudges.gmail_compose_url(n)
+                follow.append(n)
+        resp = page("plan.html", nav="coach", coach_card=coach_card, follow=follow, suggested=bool(suggested),
+                    suggested_why=(coach_card or {}).get("week", {}).get("why", "") if suggested else "", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
                     today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
                     just_met={m["key"] for m in met},
                     plan_days=coach.DAYS,
-                    plan_open=not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states(),
+                    plan_open=bool(suggested) or (not wk_plan and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in db.nudge_states()),
                     lookback=lookback, planned=planned == "1",
-                    goal_totals=goals.week_goals(wk_plan) or goals.prefill(db, s["this_week_start"]),
+                    goal_totals=goals.week_goals(wk_plan) or suggested or goals.prefill(db, s["this_week_start"]),
                     week_iso=s["this_week_start"].isoformat(),
                     g_summary=("Goals: " + goals.summary(goals.week_goals(wk_plan))) if goals.week_goals(wk_plan) else "",
                     last_wk=last_wk, last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "",
@@ -685,11 +741,12 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.post("/contacts")
     def contact_action(action: str = Form("add"), name: str = Form(""), company: str = Form(""), how: str = Form(""),
-                       note: str = Form(""), at: str = Form(""), cid: int = Form(0), counts: str = Form("")):
+                       note: str = Form(""), at: str = Form(""), cid: int = Form(0), counts: str = Form(""),
+                       email: str = Form(""), link: str = Form("")):
         """People you got in touch with about work. They go in the work-search log as networking contacts."""
         from . import coach
         if action == "add":
-            coach.add_contact(db, name, company, how, note, at)
+            coach.add_contact(db, name, company, how, note, at, email.strip(), link.strip())
         elif action == "delete" and cid:
             coach.delete_contact(db, cid)
         elif action == "counts":
@@ -1412,6 +1469,11 @@ def make_app(settings, db: DB) -> FastAPI:
                 pass
         if "one_call_form" in f:
             d["apply_one_call"] = bool(f.get("apply_one_call"))
+        if "coach_form" in f:
+            d["coach"] = bool(f.get("coach"))
+            for k in ("coach_model", "drafts_model"):
+                if f.get(k) in ("sonnet", "haiku", "opus"):
+                    d[k] = f.get(k)
         if "skills_form" in f:
             d["skills_enabled"] = bool(f.get("skills_enabled"))
             if f.get("skills_via") in ("openrouter", "claude"):

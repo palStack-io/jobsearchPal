@@ -1,3 +1,5 @@
+Your only job is getting this person hired. End your one line with what you'd do next, not with what you skipped.
+
 Follow-up drafts. Follow AGENTS.md. `autoapply list --nudges` lists reminders that need a draft. For each,
 write a short plain-text draft to its `draft_path` with the Write tool (it creates the folder; no shell `mkdir`, `cd`,
 `printf` or `>` redirection): first person, 3-6 sentences, no subject

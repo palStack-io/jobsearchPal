@@ -107,7 +107,7 @@
    {% if p.tallies %}<ul class="g-tally" aria-label="This week">{% for t in p.tallies %}
     <li><span class="g-tb" aria-hidden="true"><i style="width:{{ (t.frac * 100)|round|int }}%;--i:{{ loop.index0 }}"></i></span><b>{{ t.did }} of {{ t.planned }}</b> {{ t.label }}</li>{% endfor %}</ul>{% endif %}
   </div>
-  <div class="g-panel-acts">{% if last_wk %}{{ lookback_open('Last week') }}{% endif %}<a class="btn sm ghost" href="/plan">{{ 'Your plan' if p.planned else 'Plan your week' }}</a></div>
+  <div class="g-panel-acts">{% if last_wk %}{{ lookback_open('Last week') }}{% endif %}{% if p.coach %}<a class="btn sm" href="/coach">Open your coach</a>{% else %}<a class="btn sm ghost" href="/coach">{{ 'Your plan' if p.planned else 'Plan your week' }}</a>{% endif %}</div>
  </div>
  {% if start %}<div class="g-start"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <span><b>One place to start:</b> {{ start.text }}</span>{% if start.href %}<a class="btn sm" href="{{ start.href }}">{{ start.cta }}</a>{% endif %}</div>{% endif %}
@@ -115,7 +115,7 @@
 
 {% macro hrs(m) %}{{ '%g'|format(m / 60) }}{% endmacro %}
 
-{% macro goals_form(plan, totals, days, saved=False, skip=True) %}
+{% macro goals_form(plan, totals, days, saved=False, skip=True, submit="Save my week") %}
 <form method="post" action="/plan" class="plan-form"><input type="hidden" name="back" value="/plan">
  <div class="g-totals">
   <label class="fld"><span>Applications</span><input type="number" name="apps" min="0" max="200" step="1" inputmode="numeric" value="{{ totals.apps if totals and totals.apps else '' }}" placeholder="e.g. 15"></label>
@@ -126,7 +126,7 @@
  <fieldset class="fld days"><legend>Which days will you search?</legend>{% for d in days %}<label class="day"><input type="checkbox" name="days" value="{{ d }}" {% if (plan and d in plan.days) or (not plan and d in ('Mon', 'Tue', 'Wed', 'Thu', 'Fri')) %}checked{% endif %}><span>{{ d }}</span></label>{% endfor %}</fieldset>
  <label class="fld"><span>What kinds of roles?</span><input type="text" name="roles" maxlength="200" value="{{ plan.roles if plan else '' }}" placeholder="e.g. analytics engineer, two at companies I like"></label>
  <label class="fld"><span>One person to get in touch with</span><input type="text" name="contact" maxlength="120" value="{{ plan.contact if plan else '' }}" placeholder="e.g. Sam from my old team"></label>
- <div class="acts"><button class="btn sm primary">Save my week</button>{% if skip and not plan %}<button class="btn sm ghost" name="action" value="skip">Not this week</button>{% endif %}</div>
+ <div class="acts"><button class="btn sm primary">{{ submit }}</button>{% if skip and not plan %}<button class="btn sm ghost" name="action" value="skip">Not this week</button>{% endif %}</div>
 </form>{% endmacro %}
 
 {% macro adjust_days(plan, week, days) %}{% if plan and plan.per_day %}

@@ -27,6 +27,9 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+from .pace import Pace
+from .pace import current as current_pace
+
 SCAN_JS = (Path(__file__).parent / "scan.js").read_text()
 
 
@@ -79,6 +82,7 @@ class Report:
     submit_clicked: bool = False   # True once Submit was pressed, even if no confirmation was seen
     confirmation: str = ""
     closed: bool = False           # the company took the posting down: nothing was filled or sent
+    verification: bool = False     # the site showed a bot check (captcha frame) after filling or at Submit (fillers/pace.py)
 
     @property
     def blocking(self) -> list:
@@ -226,26 +230,32 @@ def _combobox_options(page: Page, f: dict) -> list[str]:
         return []
 
 
-def _set_one(page: Page, f: dict, value) -> str | None:
-    """Fills a single field. Returns an error string, or None on success."""
+def _set_one(page: Page, f: dict, value, pace: Pace | None = None) -> str | None:
+    """Fills a single field at the given pace (fillers/pace.py). Returns an error string, or None on success."""
+    pace = pace or Pace.fast()
     el = page.locator(f'[data-aa-id="{f["id"]}"]')
     kind = f["kind"]
     if kind == "file":
         el.set_input_files(str(value))
         return None
     if kind in ("text", "textarea"):
-        el.fill(str(value))
+        pace.type_into(page, el, str(value))
         return None
     if kind == "select":
         opt = _best_option(f["options"], str(value))
         if not opt:
             return f"no option like {value!r}"
+        pace.move_to(page, el)
         el.select_option(label=opt)
         return None
     if kind == "combobox":
         # react-select style: type, wait for the menu (autocompletes load it async), click the best match.
+        pace.move_to(page, el)
         el.click()
-        el.fill(str(value))
+        if pace.human:
+            pace.type_into(page, el, str(value))
+        else:
+            el.fill(str(value))
         texts = _menu_texts(page, el, f["id"], wait_ms=3000)
         if texts:  # Enter is never pressed here: on a plain input it would submit the form
             opt = _best_option(texts, str(value))
@@ -261,6 +271,7 @@ def _set_one(page: Page, f: dict, value) -> str | None:
         if kind == "checkbox_single":
             on = str(wants[0]).lower() in ("yes", "true", "1", "checked", "on") or norm(str(wants[0])) == norm(f["options"][0]["text"])
             box = page.locator(f'[data-aa-id="{f["options"][0]["id"]}"]')
+            pace.move_to(page, box)
             box.set_checked(on, force=True)
             return None
         texts = [o["text"] for o in f["options"]]
@@ -269,6 +280,7 @@ def _set_one(page: Page, f: dict, value) -> str | None:
             if opt is None:
                 return f"no option like {w!r} in {texts}"
             oid = f["options"][texts.index(opt)]["id"]
+            pace.move_to(page, page.locator(f'[data-aa-id="{oid}"]'))
             page.locator(f'[data-aa-id="{oid}"]').check(force=True)
         return None
     return f"unsupported kind {kind}"
@@ -327,7 +339,9 @@ def _closed(page: Page, a: ATS, status: int, report: Report) -> bool:
     return bool(reason)
 
 
-def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
+def _fill_page(page: Page, plan: dict, profile: dict, report: Report, pace: Pace | None = None):
+    pace = pace or current_pace()
+    pace.read()
     fields = page.evaluate(SCAN_JS)
     # Upload the resume first: Lever and Ashby parse it and prefill fields we'd overwrite anyway.
     fields.sort(key=lambda f: 0 if f["kind"] == "file" else 1)
@@ -350,7 +364,8 @@ def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
             # Consents and self-ID: filled from your own answers, and always listed for you to check.
             err = None
             try:
-                err = _set_one(page, f, value)
+                pace.between()
+                err = _set_one(page, f, value, pace)
             except Exception as e:
                 err = str(e).splitlines()[0]
             report.held.append({**info, "value": "" if err else str(value), "prefilled": source == "standing" and not err})
@@ -363,7 +378,8 @@ def _fill_page(page: Page, plan: dict, profile: dict, report: Report):
             report.unanswered.append(info)
             continue
         try:
-            err = _set_one(page, f, value)
+            pace.between()
+            err = _set_one(page, f, value, pace)
         except Exception as e:
             err = str(e).splitlines()[0]
         if err:
@@ -407,6 +423,7 @@ def fill(plan: dict, profile: dict, shot_dir: Path, headless: bool = True, _subm
             browser.close()
             return report
         _fill_page(page, plan, profile, report)
+        report.verification = _verification(page)
         report.screenshot = str(shot_dir / f"{a.name}-{stamp}-filled.png")
         page.screenshot(path=report.screenshot, full_page=True)
         if _submit:
@@ -487,6 +504,7 @@ def handoff(plan: dict, profile: dict, wait: bool = True, on_sent=None, browser=
             closed = _closed(page, a, resp.status if resp else 0, report)
             if not closed:
                 _fill_page(page, plan, profile, report)
+                report.verification = _verification(page)
             if on_page:
                 on_page(page, report)
             if wait and not closed:
@@ -517,6 +535,14 @@ DIAGNOSE_JS = """() => {
 }"""
 
 
+def _verification(page: Page) -> bool:
+    """Whether the site is showing a bot check right now (a visible captcha or challenge frame)."""
+    try:
+        return bool(page.evaluate(DIAGNOSE_JS)["captcha"])
+    except Exception:
+        return False
+
+
 def _do_submit(page: Page, a: ATS, report: Report, shot_dir: Path, stamp: str):
     if report.blocking:
         report.errors.append({"label": "(submit)", "error": f"{len(report.blocking)} required question(s) still open"})
@@ -525,6 +551,9 @@ def _do_submit(page: Page, a: ATS, report: Report, shot_dir: Path, stamp: str):
     # Only a button you could see: Lever puts a hidden hCaptcha submit button ahead of the real one.
     button = page.locator(f"{a.submit} >> visible=true").first
     try:
+        pace = current_pace()
+        pace.before_submit()
+        pace.move_to(page, button)
         button.click()
     except Exception:
         report.errors.append({"label": "(submit)", "error": "couldn't find a Submit button to press; "
@@ -546,6 +575,7 @@ def _do_submit(page: Page, a: ATS, report: Report, shot_dir: Path, stamp: str):
     except Exception:
         d = page.evaluate(DIAGNOSE_JS)
         if d["captcha"]:
+            report.verification = True
             why = "a captcha challenge appeared; finish this one from the posting link"
         elif d["errors"]:
             why = "the form showed errors: " + "; ".join(d["errors"])

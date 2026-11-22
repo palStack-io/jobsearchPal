@@ -17,3 +17,9 @@ def _no_leaked_finish_key():
     config.FROM_SECRETS.discard("AUTOAPPLY_TOKEN")
     if before is not None:
         os.environ["AUTOAPPLY_TOKEN"] = before
+
+
+@pytest.fixture(autouse=True)
+def _fast_fill_pace(monkeypatch):
+    """The filler types at a person's pace in production (fillers/pace.py); tests run it fast unless they ask."""
+    monkeypatch.setenv("AUTOAPPLY_FILL_PACE", "fast")

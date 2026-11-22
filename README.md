@@ -136,6 +136,9 @@ rough edges. Known limits today:
   off by default) writes each role's resume, letter and answers in a single model call, about 20K tokens a role
   instead of several hundred thousand, for Greenhouse, Lever and Ashby forms; see
   [Costs and limits](docs/costs-and-limits.md).
+- **Forms are filled at a person's pace** (typed, clicked and read like a person, a couple of minutes a form), because
+  the boards score how a form was filled and add a verification step for bot-like filling. It never solves a captcha
+  or hides the browser; see [Bot checks](docs/bot-checks.md).
 - **The coach** (Settings > Daily run, on for new installs): each morning one call reads your whole search (replies,
   interviews, patterns, open threads, the people you know) and writes a short note on what's working and the next
   thing to do, picks the day's roles, skips weak ones (with an undo) and suggests people to reach, with the notes

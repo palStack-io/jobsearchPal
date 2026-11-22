@@ -128,3 +128,67 @@ def test_not_now_hides_three_days(env):
                     ((datetime.now() - timedelta(days=4)).strftime("%Y-%m-%d %H:%M"), k))
     db.conn.commit()
     assert [r["key"] for r in coachday.rows(db, s, today)] == [k]
+
+
+# ---- Task 9: the card, the to-do order, the brief, the setting ----------------------------------
+
+def _coach_row(db, day=None):
+    from datetime import date
+    day = day or date.today()
+    db.conn.execute("insert into coach_day (day, json) values (?, ?)", (day.isoformat(), json.dumps({
+        "note": ["Priya Rao wrote back on Thu 12 Nov. Reply to her first.", "Your screens were analytics roles."],
+        "picks": [{"id": "gh:render:1", "why": "Close to your Scribd screen", "angle": "your dbt work"}],
+        "skips": [{"id": "gh:hooli:9", "reason": "On-site in New York", "company": "Hooli", "title": "Data Engineer"}],
+        "outreach": [], "followups": ["b", "a"], "prep": [{"job": "gh:render:1", "items": ["Your dbt migration story"]}],
+        "check": ["Render lists Remote; confirm the time zone."]})))
+    db.conn.commit()
+
+
+def test_card_renders_note_people_and_undo(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    db.upsert_job({"id": "gh:hooli:9", "ats": "greenhouse", "company": "Hooli", "title": "Data Engineer", "location": "",
+                   "url": "u", "apply_url": "u", "description": ""})
+    db.update("gh:hooli:9", status="skipped", error="coach: On-site in New York")
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/").text
+    assert 'id="coach"' in html
+    assert "Priya Rao wrote back on Thu 12 Nov." in html
+    assert "Dana Wu" in html and ">Send<" in html and "add their address" in html
+    assert 'action="/coach/undo-skip/gh:hooli:9"' in html
+    assert "Your dbt migration story" in html and "confirm the time zone" in html
+    assert html.count("btn sm primary") >= 1
+
+
+def test_no_card_without_row(env):
+    s, db = env
+    assert 'id="coach"' not in _client(s, db).get("/").text
+
+
+def test_todo_ordered_by_followups():
+    todo = [{"key": "a"}, {"key": "c"}, {"key": "b"}]
+    assert [n["key"] for n in coachday.order_todo(todo, ["b", "a"])] == ["b", "a", "c"]
+    assert coachday.order_todo(todo, []) == todo
+
+
+def test_brief_opens_with_coach_note(env):
+    from datetime import date
+    from autoapply import brief
+    s, db = env
+    _coach_row(db)
+    subject, text, html = brief.compose(db, "http://x", today=date.today(), data_dir=s.data_dir, settings=s)
+    assert "Priya Rao wrote back on Thu 12 Nov." in text
+    assert text.index("Priya Rao wrote back") < text.index("READY FOR YOU")
+    assert "Priya Rao wrote back" in html
+
+
+def test_settings_toggle_saves(env):
+    s, db = env
+    c = _client(s, db)
+    c.post("/settings", data={"coach_form": "1", "coach": "1", "coach_model": "opus", "drafts_model": "haiku"}, follow_redirects=False)
+    p = Prefs(s.data_dir, s.raw)
+    assert p.data["coach"] is True and p.data["coach_model"] == "opus" and p.data["drafts_model"] == "haiku"
+    c.post("/settings", data={"coach_form": "1", "coach_model": "nope"}, follow_redirects=False)
+    p = Prefs(s.data_dir, s.raw)
+    assert p.data["coach"] is False and p.data["coach_model"] == "opus"

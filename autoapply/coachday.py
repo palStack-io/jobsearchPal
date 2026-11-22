@@ -564,3 +564,22 @@ def rows(db, settings, day: date) -> list[dict]:
         r["send"] = compose_url(r, r["draft"], gmail, first)
         out.append(r)
     return out
+
+
+def order_todo(todo: list[dict], followups: list[str]) -> list[dict]:
+    """The dashboard's to-do list in the coach's order; anything it didn't mention keeps its place after."""
+    rank = {k: i for i, k in enumerate(followups or [])}
+    return sorted(todo, key=lambda n: rank.get(n.get("key"), len(rank)))
+
+
+def card(db, settings, day: date) -> dict | None:
+    """What the dashboard's coach card shows today, or None when the coach hasn't run today."""
+    row = today(db, day)
+    if not row:
+        return None
+    picks = [p | {"job": db.get(p["id"])} for p in row.get("picks") or [] if db.get(p["id"])]
+    skips = [sk for sk in row.get("skips") or []
+             if (j := db.get(sk["id"])) and j["status"] == "skipped" and str(j.get("error") or "").startswith("coach:")]
+    prep = [p | {"job": db.get(p["job"])} for p in row.get("prep") or [] if db.get(p["job"])]
+    return {"note": row.get("note") or [], "picks": picks, "skips": skips, "prep": prep, "check": row.get("check") or [],
+            "people": rows(db, settings, day), "followups": row.get("followups") or []}

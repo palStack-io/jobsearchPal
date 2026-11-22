@@ -139,6 +139,11 @@
  <div class="srow"><div class="sl"><b>Look for new companies</b><p>Once a week the run finds about 10 companies hiring for roles like yours and watches their boards.</p></div>
   <div class="sc"><select name="discover_weekday">{% for v, l in [(0, 'Never'), (1, 'Mondays'), (2, 'Tuesdays'), (3, 'Wednesdays'), (4, 'Thursdays'), (5, 'Fridays')] %}<option value="{{ v }}" {% if p.discover_weekday == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div></div>
 
+ <div class="srow"><div class="sl"><b>Coach</b><p>Each morning one call reads your whole search, picks the day's roles, says what's working and suggests people to reach. You send every note yourself.</p></div>
+  <div class="sc"><input type="hidden" name="coach_form" value="1"><label class="toggle"><input type="checkbox" name="coach" value="1" {% if p.coach %}checked{% endif %}> <span>Use the coach</span></label>
+   <label class="fld"><span>Coach model</span><select name="coach_model">{% for m in ['sonnet', 'haiku', 'opus'] %}<option {% if (p.coach_model or 'sonnet') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></label>
+   <label class="fld"><span>Drafts model</span><select name="drafts_model">{% for m in ['sonnet', 'haiku', 'opus'] %}<option {% if (p.drafts_model or 'sonnet') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></label></div></div>
+
  <details class="adv" {% if p.quick_pick_model or p.apply_one_call %}open{% endif %}><summary>Advanced</summary>
   <div class="srow"><div class="sl"><b>Tailor in one call</b><p>Write the resume, cover letter and answers in one request instead of an agent session.</p></div>
    <div class="sc"><input type="hidden" name="one_call_form" value="1"><label class="toggle"><input type="checkbox" name="apply_one_call" value="1" {% if p.apply_one_call %}checked{% endif %}> <span>Use one call</span></label>

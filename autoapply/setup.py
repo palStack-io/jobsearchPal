@@ -251,7 +251,11 @@ def save_interests(settings, form: dict) -> dict:
     from .sources import EXTRA
     root = settings.root
     cfg = load_config(root)
-    cfg.pop("_from_example", None)
+    if cfg.pop("_from_example", None):  # a new install starts with the coach on (2026-11-21)
+        from .prefs import Prefs
+        pr = Prefs(settings.data_dir, settings.raw)
+        pr.data.setdefault("coach", True)
+        pr.save()
     search = cfg.setdefault("search", {})
     search["title_keywords"] = [t.lower() for t in _lines(form.get("titles", ""))][:40]
     search["exclude_keywords"] = [t.lower() for t in _lines(form.get("exclude", ""))][:40]
@@ -318,7 +322,11 @@ def add_title(settings, title: str) -> bool:
     t = " ".join(str(title or "").lower().split())[:60]
     root = settings.root
     cfg = load_config(root)
-    cfg.pop("_from_example", None)
+    if cfg.pop("_from_example", None):  # a new install starts with the coach on (2026-11-21)
+        from .prefs import Prefs
+        pr = Prefs(settings.data_dir, settings.raw)
+        pr.data.setdefault("coach", True)
+        pr.save()
     search = cfg.setdefault("search", {})
     current = search.get("title_keywords") or (settings.raw.get("search") or {}).get("title_keywords") or []
     titles = [str(x).lower() for x in current]  # what the search uses now, even before config.yaml exists

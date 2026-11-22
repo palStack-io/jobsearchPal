@@ -324,6 +324,10 @@ def make_app(settings, db: DB) -> FastAPI:
         todo = [n for n in todo if not (n.get("kind") == "worksearch" and "behind-" in str(n.get("key")))]
         for n in todo:
             n["compose"] = nudges.gmail_compose_url(n)
+        from . import coachday
+        coach_card = coachday.card(db, settings, datetime.now().date())
+        if coach_card:
+            todo = coachday.order_todo(todo, coach_card["followups"])
         from .prefs import Prefs
         from .rank import shortlist
         s = stats.compute(db, floor=work_search(settings)[1])
@@ -365,7 +369,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     interviews=ivs[:6], greet=greet, plan=wk_plan, plan_popup=plan_popup,
                     offer=None if back else coach.offer(db, settings, s, now.date(), bool(ivs)), back=back, if_then=coach.if_then(db),
                     celebrate=cel, rejection=pal.rejection_note(db, now.date()), week_left=_week_left(s, now.date()),
-                    todo=todo, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
+                    todo=todo, coach_card=coach_card, nav="dashboard", running=run_state(), picks_default=Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
                     msg=msg[:300], open_log=log == "1", today=now.date().isoformat(),
                     today_goals=today_goals, just_met={m["key"] for m in met},
                     so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
@@ -1449,6 +1453,11 @@ def make_app(settings, db: DB) -> FastAPI:
                 pass
         if "one_call_form" in f:
             d["apply_one_call"] = bool(f.get("apply_one_call"))
+        if "coach_form" in f:
+            d["coach"] = bool(f.get("coach"))
+            for k in ("coach_model", "drafts_model"):
+                if f.get(k) in ("sonnet", "haiku", "opus"):
+                    d[k] = f.get(k)
         if "skills_form" in f:
             d["skills_enabled"] = bool(f.get("skills_enabled"))
             if f.get("skills_via") in ("openrouter", "claude"):

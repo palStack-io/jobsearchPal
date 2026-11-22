@@ -244,7 +244,21 @@ def _about(root: Path, chars: int = 4000) -> str:
     return "\n\n".join(parts)[:chars] or "(no notes yet; judge by the titles and the resume keywords)"
 
 
-def quick_pick(db, settings, n: int, model: str, key: str, limit: int = 15) -> tuple[list[dict], dict]:
+def _cheap_call(prompt: str, model: str, key: str | None, ask=None) -> tuple[str, dict]:
+    """One cheap call: OpenRouter when a key is saved, otherwise Claude's haiku through the subscription (no tools)."""
+    from . import classify
+    if not key:
+        from . import oneshot
+        text, u = (ask or oneshot.ask_claude)(prompt, "haiku")
+        return text or "", {"tokens": int(u.get("tokens") or 0), "cost": 0.0}
+    data = classify._post("https://openrouter.ai/api/v1/chat/completions",
+                          {"model": model, "temperature": 0, "messages": [{"role": "user", "content": prompt}],
+                           "response_format": {"type": "json_object"}, "usage": {"include": True}}, key)
+    u = data.get("usage") or {}
+    return data["choices"][0]["message"]["content"] or "", {"tokens": int(u.get("total_tokens") or 0), "cost": float(u.get("cost") or 0)}
+
+
+def quick_pick(db, settings, n: int, model: str, key: str | None, limit: int = 15, ask=None) -> tuple[list[dict], dict]:
     """One cheap chat call instead of an agent session: candidates in, picks out. Returns (picks, usage)."""
     from . import classify
     cands = candidates(db, settings, limit, desc_chars=700)
@@ -255,12 +269,7 @@ def quick_pick(db, settings, n: int, model: str, key: str, limit: int = 15) -> t
              f"\n  {c['description']}" for c in cands]
     prompt = QUICK_PROMPT.format(n=n, about=_about(settings.root), applied="\n".join(applied) or "(none)",
                                  cands="\n".join(lines))
-    data = classify._post("https://openrouter.ai/api/v1/chat/completions",
-                          {"model": model, "temperature": 0, "messages": [{"role": "user", "content": prompt}],
-                           "response_format": {"type": "json_object"}, "usage": {"include": True}}, key)
-    u = data.get("usage") or {}
-    usage = {"tokens": int(u.get("total_tokens") or 0), "cost": float(u.get("cost") or 0)}
-    text = data["choices"][0]["message"]["content"] or ""
+    text, usage = _cheap_call(prompt, model, key, ask)
     m = re.search(r"\{.*\}", text, re.S)
     try:
         raw = json.loads(m.group(0))["picks"]
@@ -328,7 +337,7 @@ def _url(u: str | None) -> str:
     return u
 
 
-def alert_roles(db, settings, emails: list[dict], model: str, key: str, limit: int = 8) -> tuple[list[dict], dict]:
+def alert_roles(db, settings, emails: list[dict], model: str, key: str | None, limit: int = 8, ask=None) -> tuple[list[dict], dict]:
     """One cheap call over the alert emails: the roles worth looking up. Drops ones already tracked."""
     from . import classify
     if not emails:
@@ -336,12 +345,7 @@ def alert_roles(db, settings, emails: list[dict], model: str, key: str, limit: i
     applied = sorted({f"{j['company']} ({j['title']})" for j in db.by_status("submitted")})[-60:]
     body = "\n\n".join(f"--- {e['from']} | {e['subject']}\n{e['text'][:3000]}" for e in emails)[:40000]
     prompt = ALERT_PROMPT.format(n=limit, about=_about(settings.root), applied="\n".join(applied) or "(none)", emails=body)
-    data = classify._post("https://openrouter.ai/api/v1/chat/completions",
-                          {"model": model, "temperature": 0, "messages": [{"role": "user", "content": prompt}],
-                           "response_format": {"type": "json_object"}, "usage": {"include": True}}, key)
-    u = data.get("usage") or {}
-    usage = {"tokens": int(u.get("total_tokens") or 0), "cost": float(u.get("cost") or 0)}
-    text = data["choices"][0]["message"]["content"] or ""
+    text, usage = _cheap_call(prompt, model, key, ask)
     m = re.search(r"\{.*\}", text, re.S)
     try:
         raw = json.loads(m.group(0))["roles"]

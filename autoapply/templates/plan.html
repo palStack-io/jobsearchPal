@@ -2,22 +2,102 @@
 {% block title %}Your coach{% endblock %}
 {% block body %}
 {% import "_goals.html" as g %}{{ g.goals_css() }}
-<div class="ph"><div><h1>Your coach</h1>
- <div class="sub">What to do next to get interviews, today's steps, and your plan for the week. The plan is yours; nothing reminds you of it.</div></div></div>
-{% if coach_card %}{% include "_coach.html" %}{% endif %}
-{% if today_goals %}{{ g.today_card(today_goals, just_met, so_far) }}{% endif %}
-<section class="card plan mt{{ ' g-saved' if planned }}" id="plan" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
- {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
- {% elif plan %}<div class="plan-row"><div><h2 id="plan-h">Your plan this week</h2>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
-   {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>
-  <div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div></div>
- {% elif suggested and not back %}<h2 id="plan-h">Here's a week that fits your search</h2>
-  <p class="ink2 plan-why">{% if suggested_why %}{{ suggested_why }} {% endif %}Change anything, pick your days, and it's your plan. Nothing is saved until you press Use this plan.</p>
-  {{ g.goals_form(None, goal_totals, plan_days, submit='Use this plan') }}
- {% elif plan_open and not back %}<h2 id="plan-h">Your week, in your words</h2>
-  <p class="ink2 plan-why">Set a few totals and pick your days; we'll spread them out. Change any day. It's yours; nothing reminds you of it.</p>
-  {{ g.goals_form(None, goal_totals, plan_days) }}
- {% else %}<div class="plan-row"><h2 id="plan-h" class="plan-quiet">No plan this week. That's fine.</h2><div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Write one</summary>{{ g.goals_form(None, goal_totals, plan_days, skip=False) }}</details></div></div>{% endif %}
- {% if last_wk %}{{ g.lookback_dialog(last_wk, last_wk_summary) }}{% endif %}
+{% set c = coach_card %}
+<div class="yc">
+<header class="yc-head"><div class="yc-date">{{ today_label }}</div><h1>Your coach</h1></header>
+
+{% if c and c.note %}<section class="yc-card yc-note" aria-label="The coach's note">
+ <p class="yc-next">{{ c.note[0] }}</p>
+ {% for line in c.note[1:] %}<p class="yc-line">{{ line }}</p>{% endfor %}
+</section>{% endif %}
+
+<section class="yc-card yc-week" aria-labelledby="yc-week-h">
+ {{ g.strip(week_strip) }}
+ <div class="yc-week-txt">
+  <h2 id="yc-week-h">This week</h2>
+  <div class="yc-nums">
+   <div><div class="yc-num"><span data-count="{{ week_nums.sent }}">{{ week_nums.sent }}</span></div><div class="yc-lbl">application{{ '' if week_nums.sent == 1 else 's' }} sent</div></div>
+   <div><div class="yc-num"><span data-count="{{ week_nums.replies }}">{{ week_nums.replies }}</span></div><div class="yc-lbl">repl{{ 'y' if week_nums.replies == 1 else 'ies' }}</div></div>
+   {% if s.dua_floor %}<div><div class="yc-num"><span data-count="{{ s.this_week }}">{{ s.this_week }}</span> <span class="yc-of">of {{ s.dua_floor }}</span></div><div class="yc-lbl">{{ ws_label|lower }}{{ ', covered' if s.this_week >= s.dua_floor }}</div></div>{% endif %}
+  </div>
+ </div>
 </section>
+
+{% include "_coach.html" %}
+
+{% set plan_summary = g_summary|replace('Goals: ', '') if plan else ('a suggested week to look at' if suggested else 'none yet, and that\'s fine') %}
+<details class="yc-row" id="plan"{% if planned or lookback or suggested or (plan_open and not c) %} open{% endif %}>
+ <summary>Your plan for the week <span class="yc-n">· {{ plan_summary }}</span></summary>
+ <div class="yc-plan">
+ {% if today_goals %}{{ g.today_card(today_goals, just_met, so_far) }}{% endif %}
+ <section class="plan{{ ' g-saved' if planned }}" aria-labelledby="plan-h">{% if planned %}<script>(()=>{const u=new URL(location.href);u.searchParams.delete("planned");history.replaceState(null,"",u.pathname+u.search+u.hash)})()</script>{% endif %}
+  {% if lookback %}{{ g.lookback_card(lookback, lookback_summary, plan_days, goal_totals, planned) }}
+  {% elif plan %}<div class="plan-row"><div><h3 id="plan-h">Your plan this week</h3>{% if plan_line %}<p class="plan-line">{{ plan_line }}</p>{% endif %}
+    {% if plan.goals %}<p class="plan-line ink2">{{ g_summary }}</p>{% endif %}</div>
+   <div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Edit</summary>{{ g.goals_form(plan, goal_totals, plan_days) }}{{ g.adjust_days(plan, week_iso, plan_days) }}</details></div></div>
+  {% elif suggested and not back %}<h3 id="plan-h">Here's a week that fits your search</h3>
+   <p class="ink2 plan-why">{% if suggested_why %}{{ suggested_why }} {% endif %}Change anything, pick your days, and it's your plan. Nothing is saved until you press Use this plan.</p>
+   {{ g.goals_form(None, goal_totals, plan_days, submit='Use this plan') }}
+  {% elif plan_open and not back %}<h3 id="plan-h">Your week, in your words</h3>
+   <p class="ink2 plan-why">Set a few totals and pick your days; we'll spread them out. Change any day. It's yours; nothing reminds you of it.</p>
+   {{ g.goals_form(None, goal_totals, plan_days) }}
+  {% else %}<div class="plan-row"><h3 id="plan-h" class="plan-quiet">No plan this week. That's fine.</h3><div class="plan-acts">{% if last_wk %}{{ g.lookback_open('Last week') }}{% endif %}<details class="plan-edit"><summary class="btn ghost sm">Write one</summary>{{ g.goals_form(None, goal_totals, plan_days, skip=False) }}</details></div></div>{% endif %}
+  {% if last_wk %}{{ g.lookback_dialog(last_wk, last_wk_summary) }}{% endif %}
+ </section>
+ </div>
+</details>
+</div>
+
+<style>
+.yc{max-width:880px;display:flex;flex-direction:column;gap:24px}
+.yc-head{display:flex;flex-direction:column;gap:6px}.yc-head h1{margin:0;font-size:28px;font-weight:700;line-height:1.2;text-wrap:balance}
+.yc-date{font-size:13px;color:var(--ink-3)}
+.yc-card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.yc-note{padding:28px 32px;display:flex;flex-direction:column;gap:12px}
+.yc-next{margin:0;font-size:22px;font-weight:600;line-height:1.35;text-wrap:balance}
+.yc-line{margin:0;font-size:16px;line-height:1.55;color:var(--ink-2);max-width:62ch;text-wrap:pretty}
+.yc-week{padding:24px 32px;display:flex;gap:32px;align-items:center;flex-wrap:wrap}
+.yc-week .g-strip{margin:0;max-width:none;width:auto;grid-template-columns:repeat(7,28px);gap:6px;flex:none}
+.yc-week .g-col{height:44px;border-radius:8px}
+.yc-week-txt{display:flex;flex-direction:column;gap:10px;flex:1 1 280px;min-width:0}
+.yc h2{margin:0;font-size:18px;font-weight:600;line-height:1.3}
+.yc-nums{display:flex;gap:28px;flex-wrap:wrap}
+.yc-num{font-size:28px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}.yc-of{font-size:16px;font-weight:400;color:var(--ink-3)}
+.yc-lbl{font-size:13px;color:var(--ink-3)}
+.yc-sec{display:flex;flex-direction:column;gap:12px}
+.yc-list{display:flex;flex-direction:column}
+.yc-item{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:16px;align-items:start;padding:18px 24px;border-top:1px solid var(--line)}
+.yc-item:first-child{border-top:0}
+.yc-ic{width:36px;height:36px;border-radius:999px;display:grid;place-items:center}
+.yc-reply .yc-ic{background:var(--accent-soft);color:var(--accent-ink)}.yc-apply .yc-ic{background:var(--sun-soft);color:var(--warn)}.yc-reach .yc-ic{background:var(--good-soft);color:var(--good)}
+.yc-txt{min-width:0;align-self:center}.yc-title{font-size:16px;font-weight:600;line-height:1.4}
+.yc-detail{font-size:14px;line-height:1.5;color:var(--ink-3);margin-top:2px;text-wrap:pretty}
+.yc-acts{display:flex;gap:4px;align-items:center;align-self:center}
+.yc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:background-color .15s cubic-bezier(0.23,1,0.32,1),border-color .15s cubic-bezier(0.23,1,0.32,1)}
+.yc-btn:hover{border-color:var(--ink-3)}
+.yc-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}.yc-btn.primary:hover{background:var(--accent-ink)}
+.yc-more{position:relative}.yc-more>summary{list-style:none;width:40px;height:40px;display:grid;place-items:center;border-radius:8px;color:var(--ink-2);cursor:pointer}
+.yc-more>summary::-webkit-details-marker{display:none}.yc-more>summary:hover,.yc-more[open]>summary{background:var(--accent-soft)}
+.yc-menu{position:absolute;right:0;top:44px;z-index:5;min-width:200px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,24,20,.12);padding:6px}
+.yc-menu form{display:flex;flex-direction:column;margin:0}
+.yc-menu button{text-align:left;padding:10px 12px;border:0;background:none;border-radius:8px;font-size:14px;color:var(--ink);cursor:pointer}.yc-menu button:hover{background:var(--accent-soft)}
+.yc-edit{margin-top:8px;font-size:14px}.yc-edit>summary{color:var(--accent-ink);cursor:pointer;font-weight:600}
+.yc-form{display:grid;gap:10px;max-width:520px;margin-top:10px}
+.yc-later{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:16px;line-height:1.5}
+.yc-later li{display:flex;gap:16px}.yc-day{width:48px;flex:none;font-size:14px;font-weight:600;color:var(--ink-3);padding-top:1px}
+.yc-rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.yc-row{border-bottom:1px solid var(--line)}
+.yc>.yc-row{border-top:1px solid var(--line)}.yc-rows+.yc-row{border-top:0;margin-top:-24px}
+.yc-row>summary{display:flex;align-items:baseline;gap:6px;padding:16px 0;font-size:16px;cursor:pointer;list-style:none}
+.yc-row>summary::-webkit-details-marker{display:none}
+.yc-row>summary::after{content:"Show";margin-left:auto;padding-left:16px;font-size:14px;font-weight:600;color:var(--accent-ink)}.yc-row[open]>summary::after{content:"Hide"}
+.yc-n{color:var(--ink-3)}
+.yc-plain{margin:0 0 16px;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5;color:var(--ink-2)}
+.yc-plain li form{display:inline;margin-left:8px}
+.yc-link{border:0;background:none;padding:0;font-size:14px;font-weight:600;color:var(--accent-ink);cursor:pointer}
+.yc-plan{display:flex;flex-direction:column;gap:16px;padding-bottom:20px}.yc-plan h3{margin:0 0 6px;font-size:18px;font-weight:600}
+@media (max-width:640px){.yc-note{padding:20px}.yc-next{font-size:18px}.yc-week{padding:20px;gap:20px}.yc-week .g-strip{width:100%;grid-template-columns:repeat(7,minmax(0,1fr))}
+ .yc-item{grid-template-columns:36px minmax(0,1fr);padding:16px}.yc-acts{grid-column:2;justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){.yc-btn{transition:none}}
+</style>
 {% endblock %}

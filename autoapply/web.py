@@ -652,7 +652,11 @@ def make_app(settings, db: DB) -> FastAPI:
             for n in coachday.order_todo(todo, coach_card["followups"])[:3]:
                 n["compose"] = nudges.gmail_compose_url(n)
                 follow.append(n)
+        wk_panel = goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0])
         resp = page("plan.html", nav="coach", coach_card=coach_card, follow=follow, suggested=bool(suggested),
+                    today_rows=coachday.today_rows(coach_card, follow), week_strip=wk_panel["strip"],
+                    week_nums=coachday.week_numbers(db, now.date()), ws_label=work_search(settings)[0],
+                    today_label=f"{now.strftime('%A')} {now.day} {now.strftime('%B')}",
                     suggested_why=(coach_card or {}).get("week", {}).get("why", "") if suggested else "", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),
                     today_goals=today_goals, so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
                     just_met={m["key"] for m in met},

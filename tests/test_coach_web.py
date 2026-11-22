@@ -160,7 +160,7 @@ def test_card_renders_note_people_and_undo(env):
     _client(s, db).post("/coach/undo-skip/gh%3Ahooli%3A9", follow_redirects=False)
     assert db.get("gh:hooli:9")["status"] == "new"
     assert "Your dbt migration story" in html and "confirm the time zone" in html
-    assert html.count("btn sm primary") >= 1
+    assert html.count("yc-btn primary") == 1
 
 
 def test_no_card_without_row(env):
@@ -241,3 +241,64 @@ def test_dashboard_has_no_coach_card_but_panel_line(env):
     html = _client(s, db).get("/").text
     assert 'id="coach"' not in html
     assert "Priya Rao wrote back on Thu 12 Nov." in html and 'href="/coach"' in html and "Open your coach" in html
+
+
+
+# ---- Task 15: direction A ------------------------------------------------------------------------
+
+def _row_with(db, **extra):
+    _coach_row(db)
+    row = json.loads(db.conn.execute("select json from coach_day").fetchone()[0])
+    row.update(extra)
+    db.conn.execute("update coach_day set json = ?", (json.dumps(row),))
+    db.conn.commit()
+
+
+def test_page_order_is_note_week_today_later_more(env):
+    from datetime import date
+    s, db = env
+    _row_with(db, later=[{"day": "Sat", "text": "Check in with Render."}])
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    marks = ['class="yc-next"', ">This week<", ">Today<", ">Later this week<", ">Worth checking", ">Your plan for the week"]
+    at = [html.index(m) for m in marks]
+    assert at == sorted(at), dict(zip(marks, at))
+
+
+def test_one_filled_button_in_today(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    today = html[html.index(">Today<"):html.index("</section>", html.index(">Today<"))]
+    assert today.count("yc-btn primary") == 1 and today.count("yc-btn") >= 2
+
+
+def test_more_menu_holds_person_actions(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    k = _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    menu = html[html.index('aria-label="More for Dana Wu"'):]
+    menu = menu[:menu.index("</details>")]
+    for v in ("sent", "not_now", "dismiss"):
+        assert f'value="{v}"' in menu
+    assert f'action="/outreach/{k}"' in menu
+
+
+def test_plan_disclosure_opens_for_suggested_week(env):
+    s, db = env
+    _row_with(db, week={"apps": 4, "reach": 120, "prep": 0, "learn": 0, "why": "Keep the pace."})
+    html = _client(s, db).get("/coach").text
+    tag = html[html.index('<details class="yc-row" id="plan"'):]
+    assert tag[:tag.index(">")].endswith("open")
+
+
+def test_week_numbers_count_up_on_the_page(env):
+    s, db = env
+    _coach_row(db)
+    html = _client(s, db).get("/coach").text
+    week = html[html.index(">This week<"):]
+    assert week.count("data-count=") >= 3

@@ -677,3 +677,30 @@ def week_numbers(db, today: date) -> dict:
     replies = sum(1 for e in db.events() if e["kind"] in ("interview", "rejected", "offer", "recruiter")
                   and start <= _day(e["at"]) < end)
     return {"sent": sent, "replies": replies}
+
+
+def today_rows(card_: dict | None, follow: list[dict]) -> list[dict]:
+    """The Your coach page's Today list, one shape for every kind: replies you owe, today's picks, people to reach.
+    Each row has one action; the rest live in its More menu. The first row's action is the page's one filled button."""
+    from urllib.parse import quote
+    out: list[dict] = []
+    for n in follow:
+        out.append({"kind": "reply", "title": n.get("title") or "", "detail": n.get("why") or "",
+                    "label": "Open the draft" if n.get("compose") else "Open", "href": n.get("compose") or "/#todo",
+                    "external": bool(n.get("compose")), "nudge": n.get("key"), "who": n.get("title") or ""})
+    for p in (card_ or {}).get("picks") or []:
+        j = p.get("job") or {}
+        out.append({"kind": "apply", "title": f"Apply to {j.get('company', '')} · {j.get('title', '')}",
+                    "detail": f"Lead with {p['angle']}" if p.get("angle") else (p.get("why") or ""),
+                    "label": "Review", "href": f"/job/{quote(p['id'], safe='')}", "external": False,
+                    "who": j.get("company", "")})
+    for o in (card_ or {}).get("people") or []:
+        detail = o.get("why") or ""
+        if not o.get("email"):
+            detail += " · no address yet"
+        out.append({"kind": "reach", "title": f"Write to {o['person']}" + (f" at {o['company']}" if o.get("company") else ""),
+                    "detail": detail, "label": "Send", "href": o.get("send") or "", "external": True,
+                    "person": o, "who": o["person"]})
+    for i, r in enumerate(out):
+        r["primary"] = i == 0
+    return out

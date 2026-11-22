@@ -341,3 +341,42 @@ def test_model_from_prefs_reaches_ask(env):
     seen = []
     coachday.run(db, s, ask=_asker(_good_reply(db, s), seen), now=NOW)
     assert seen == ["opus"]
+
+
+# ---- Task 5: the drafts call --------------------------------------------------------------------
+
+def _coached(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    assert coachday.run(db, s, ask=_asker(_good_reply(db, s)), now=NOW)[0] == 0
+    return s, db
+
+
+def test_drafts_written_only_for_offered_keys(env):
+    s, db = _coached(env)
+    key = db.conn.execute("select key from outreach").fetchone()[0]
+    reply = json.dumps({key: "Hi Dana,\n\nI applied for the Senior Analytics Engineer role at Render. I'd like to talk.\n\nPat",
+                        "made-up-key": "Hello"})
+    code, summary = coachday.drafts(db, s, ask=_asker(reply), now=NOW)
+    assert code == 0, summary
+    files = sorted(p.name for p in (s.data_dir / "drafts").glob("*.md"))
+    assert files == [f"{key}.md"]
+    assert any("drafts-1call" in r[0] for r in db.conn.execute("select model from usage"))
+
+
+def test_draft_with_invented_number_is_dropped(env):
+    s, db = _coached(env)
+    key = db.conn.execute("select key from outreach").fetchone()[0]
+    reply = json.dumps({key: "Hi Dana,\n\nI grew revenue 400% at Render's rival.\n\nPat"})
+    coachday.drafts(db, s, ask=_asker(reply), now=NOW)
+    assert not (s.data_dir / "drafts" / f"{key}.md").exists()
+
+
+def test_no_work_returns_2_without_call(env):
+    s, db = env
+    _on(s)
+
+    def boom(text, model):
+        raise AssertionError("no call expected")
+    assert coachday.drafts(db, s, ask=boom, now=NOW)[0] == 2

@@ -436,3 +436,67 @@ def run(db, settings, ask=None, log=None, now: datetime | None = None) -> tuple[
     db.conn.commit()
     return 0, (f"Coach: {len(picks)} picks, {len(clean['outreach'])} people to reach, {len(clean['skips'])} skipped"
                + (f", {len(dropped)} items dropped by the checks" if dropped else ""))
+
+
+# ---- the drafts call -----------------------------------------------------------------------------
+
+DRAFTS_PROMPT = Path(__file__).resolve().parent.parent / "prompts" / "drafts-once.md"
+DRAFTS_TAG = "drafts-1call"
+
+
+def _draft_items(db, settings, now: datetime, limit: int) -> list[dict]:
+    """Open reminders without a draft, then the coach's suggestions without one, at most `limit`."""
+    from . import nudges
+    items = [{"key": r["key"], "kind": r["kind"], "to": r["to"], "person": "", "company": r["company"] or "",
+              "role": r["role"] or "", "why": r["why"], "their_email": r["their_email"], "draft_path": r["draft_path"]}
+             for r in nudges.for_agent(db, settings.data_dir, now=now)]
+    ensure(db)
+    for r in db.conn.execute("select * from outreach where state = 'suggested' order by day desc"):
+        r = dict(r)
+        if Path(r["draft_path"] or "").exists():
+            continue
+        job = db.get(r["job_id"]) if r["job_id"] else None
+        items.append({"key": r["key"], "kind": r["kind"], "to": r["email"] or "", "person": r["person"],
+                      "company": r["company"] or "", "role": (job or {}).get("title", ""), "why": r["why"],
+                      "posting": ((job or {}).get("description") or "")[:1500], "draft_path": r["draft_path"]})
+    return items[:limit]
+
+
+def drafts(db, settings, ask=None, log=None, now: datetime | None = None) -> tuple[int, str]:
+    """One call writes every draft that's due. 0 = written, 2 = off or nothing due, 1 = failed (the agent stage runs)."""
+    from . import oneshot
+    from .prefs import Prefs
+    now = now or datetime.now()
+    pr = Prefs(settings.data_dir, settings.raw)
+    if not enabled(pr):
+        return 2, "coach off"
+    items = _draft_items(db, settings, now, int(pr.limits().get("drafts_per_day") or 0) or 6)
+    if not items:
+        return 2, "drafts: nothing due"
+    about, voice = oneshot.about_you(settings.root)
+    first = (settings.profile or {}).get("first_name") or ""
+    shown = [{k: v for k, v in i.items() if k != "draft_path"} for i in items]
+    data_text = "\n\n".join([oneshot.fence("about the person", about), oneshot.fence("items", json.dumps(shown, ensure_ascii=False, indent=0, default=str))])
+    text = (DRAFTS_PROMPT.read_text().replace("{{FIRST}}", first)
+            .replace("{{VOICE}}", f"Their own notes on how they write:\n{voice}" if voice else "").replace("{{ITEMS}}", data_text))
+    m = model(pr, "drafts")
+    try:
+        reply, u = (ask or oneshot.ask_claude)(text, m)
+        data = parse(reply)
+    except Exception as e:  # noqa: BLE001
+        db.log_usage("daily", f"claude:{m}:{DRAFTS_TAG}", 0, 0, 0.0, 0, str(e)[:200])
+        return 1, f"drafts call failed: {str(e)[:200]}"
+    db.log_usage("daily", f"claude:{m}:{DRAFTS_TAG}", 0, 0, 0.0, int(u.get("ms", 0)), None, est=float(u.get("est", 0.0)),
+                 tokens=int(u.get("tokens", 0)), split=u.get("split"))
+    names = {w.lower() for w in re.findall(r"[A-Za-z][\w'&.-]*", " ".join([about, first, json.dumps(shown, default=str)]))}
+    wrote = 0
+    for i in items:
+        body = data.get(i["key"])
+        ok = clean_text(body, data_text + " " + first, names) if isinstance(body, str) else None
+        if not ok:
+            continue
+        p = Path(i["draft_path"])
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(ok.strip() + "\n")
+        wrote += 1
+    return 0, f"Drafts: {wrote} written" + (f", {len(items) - wrote} left for the agent or you" if wrote < len(items) else "")

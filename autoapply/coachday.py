@@ -665,3 +665,40 @@ def with_panel(panel: dict, card_: dict | None) -> dict:
     if card_ and card_.get("note"):
         return {**panel, "line": card_["note"][0], "coach": True}
     return panel
+
+
+def week_numbers(db, today: date) -> dict:
+    """This Sunday-to-Saturday week: applications sent and replies (interviews, offers, no's, recruiters), counted up."""
+    from .stats import week_start
+    start = week_start(today).isoformat()
+    end = (week_start(today) + timedelta(days=7)).isoformat()
+    sent = db.conn.execute("select count(*) from jobs where status = 'submitted' and substr(submitted_at, 1, 10) >= ? "
+                           "and substr(submitted_at, 1, 10) < ?", (start, end)).fetchone()[0]
+    replies = sum(1 for e in db.events() if e["kind"] in ("interview", "rejected", "offer", "recruiter")
+                  and start <= _day(e["at"]) < end)
+    return {"sent": sent, "replies": replies}
+
+
+def page_rows(card_: dict | None) -> tuple[list[dict], list[dict]]:
+    """(where to aim, people who can help) for the Your coach page. Replies and follow-ups are not here: they stay in
+    the dashboard's To do (2026-11-22). Each row has one action and a More menu; the page's first row is its one filled
+    button."""
+    from urllib.parse import quote
+    aim: list[dict] = []
+    for p in (card_ or {}).get("picks") or []:
+        j = p.get("job") or {}
+        aim.append({"kind": "apply", "title": f"{j.get('company', '')} · {j.get('title', '')}",
+                    "detail": f"Lead with {p['angle']}" if p.get("angle") else (p.get("why") or ""),
+                    "label": "Review", "href": f"/job/{quote(p['id'], safe='')}", "external": False,
+                    "who": j.get("company", "")})
+    people: list[dict] = []
+    for o in (card_ or {}).get("people") or []:
+        detail = o.get("why") or ""
+        if not o.get("email"):
+            detail += " · no address yet"
+        people.append({"kind": "reach", "title": o["person"] + (f", {o['company']}" if o.get("company") else ""),
+                       "detail": detail, "label": "Send", "href": o.get("send") or "", "external": True,
+                       "person": o, "who": o["person"]})
+    for i, r in enumerate(aim + people):
+        r["primary"] = i == 0
+    return aim, people

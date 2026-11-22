@@ -160,7 +160,7 @@ def test_card_renders_note_people_and_undo(env):
     _client(s, db).post("/coach/undo-skip/gh%3Ahooli%3A9", follow_redirects=False)
     assert db.get("gh:hooli:9")["status"] == "new"
     assert "Your dbt migration story" in html and "confirm the time zone" in html
-    assert html.count("btn sm primary") >= 1
+    assert html.count("yc-btn primary") == 1
 
 
 def test_no_card_without_row(env):
@@ -216,7 +216,7 @@ def test_coach_page_shows_note_today_and_later(env):
     _outreach(db, day=date.today().isoformat())
     html = _client(s, db).get("/coach").text
     assert "<h1>Your coach</h1>" in html and 'aria-current="page"' in html
-    assert html.index("Priya Rao wrote back") < html.index(">Today<") < html.index("Later this week")
+    assert html.index("Priya Rao wrote back") < html.index(">Where to aim<") < html.index(">Getting ready<")
     assert "Thank Priya Rao after your screen." in html and "Dana Wu" in html
     assert "Your coach</span>" in html  # the side nav label
 
@@ -241,3 +241,109 @@ def test_dashboard_has_no_coach_card_but_panel_line(env):
     html = _client(s, db).get("/").text
     assert 'id="coach"' not in html
     assert "Priya Rao wrote back on Thu 12 Nov." in html and 'href="/coach"' in html and "Open your coach" in html
+
+
+
+# ---- Task 15: direction A ------------------------------------------------------------------------
+
+def _row_with(db, **extra):
+    _coach_row(db)
+    row = json.loads(db.conn.execute("select json from coach_day").fetchone()[0])
+    row.update(extra)
+    db.conn.execute("update coach_day set json = ?", (json.dumps(row),))
+    db.conn.commit()
+
+
+def test_page_order_is_note_week_today_later_more(env):
+    from datetime import date
+    s, db = env
+    _row_with(db, later=[{"day": "Sat", "text": "Check in with Render."}])
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    marks = ['class="yc-next"', ">This week<", ">Where to aim<", ">People who can help<", ">Getting ready<", ">Worth checking", ">Your plan for the week"]
+    at = [html.index(m) for m in marks]
+    assert at == sorted(at), dict(zip(marks, at))
+
+
+def test_one_filled_button_in_today(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    body = html[html.index(">Where to aim<"):html.index(">Worth checking")]
+    assert body.count("yc-btn primary") == 1 and body.count("yc-btn") >= 2
+
+
+def test_more_menu_holds_person_actions(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    k = _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    menu = html[html.index('aria-label="More for Dana Wu"'):]
+    menu = menu[:menu.index("</details>")]
+    for v in ("sent", "not_now", "dismiss"):
+        assert f'value="{v}"' in menu
+    assert f'action="/outreach/{k}"' in menu
+
+
+def test_plan_disclosure_opens_for_suggested_week(env):
+    s, db = env
+    _row_with(db, week={"apps": 4, "reach": 120, "prep": 0, "learn": 0, "why": "Keep the pace."})
+    html = _client(s, db).get("/coach").text
+    tag = html[html.index('id="plan"'):]
+    assert tag[:tag.index(">")].endswith("open")
+
+
+def test_week_numbers_count_up_on_the_page(env):
+    s, db = env
+    _coach_row(db)
+    html = _client(s, db).get("/coach").text
+    week = html[html.index(">This week<"):]
+    assert week.count("data-count=") >= 3
+
+
+
+# ---- refocus (2026-11-22): the coach is strategy; replies and follow-ups stay in the dashboard's To do ----
+
+def test_coach_page_has_no_reply_rows(env, monkeypatch):
+    from autoapply import nudges
+    s, db = env
+    _coach_row(db)
+    monkeypatch.setattr(nudges, "compute", lambda *a, **k: [{"key": "k1", "kind": "reply", "title": "Reply to Jason Spaar",
+                                                            "why": "They wrote 2 days ago.", "to": "j@x.org", "subject": "Hi",
+                                                            "draft": "", "job": None, "event": None}])
+    html = _client(s, db).get("/coach").text
+    assert "Reply to Jason Spaar" not in html
+
+
+def test_people_section_invites_contacts_when_empty(env):
+    s, db = env
+    _coach_row(db)
+    html = _client(s, db).get("/coach").text
+    sec = html[html.index(">People who can help<"):]
+    assert 'href="/dua#people"' in sec[:1500]
+
+
+def test_wide_layout_pairs_sections(env):
+    from datetime import date
+    s, db = env
+    _coach_row(db)
+    _outreach(db, day=date.today().isoformat())
+    html = _client(s, db).get("/coach").text
+    assert 'class="yc-top"' in html and 'class="yc-pair"' in html
+    assert ".yc{max-width:880px" not in html
+
+
+
+def test_lower_sections_sit_in_cards(env):
+    s, db = env
+    _row_with(db, later=[{"day": "Sat", "text": "Check in with Render."}])
+    db.upsert_job({"id": "gh:hooli:9", "ats": "greenhouse", "company": "Hooli", "title": "Data Engineer", "location": "",
+                   "url": "u", "apply_url": "u", "description": ""})
+    db.update("gh:hooli:9", status="skipped", error="coach: On-site in New York")
+    html = _client(s, db).get("/coach").text
+    assert 'class="yc-card yc-ready"' in html and 'class="yc-card yc-fold"' in html
+    assert '<details class="yc-card yc-plancard" id="plan"' in html
+    assert 'class="yc-badge"' in html and ">Show<" not in html

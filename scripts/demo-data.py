@@ -120,8 +120,8 @@ db.conn.execute("insert or replace into outreach (key, day, person, email, compa
                 "(?, ?, 'Riley Chen', '', 'Brightwater', 'gh:brightwater:1', 'hiring_team', ?, ?, 'suggested')",
                 (key, now.date().isoformat(), "Riley Chen leads analytics there. A short note with your application can help.", str(draft)))
 db.conn.execute("insert or replace into coach_day (day, json) values (?, ?)", (now.date().isoformat(), json.dumps({
-    "note": ["Analytics Engineer roles are your warmest lane: 4 replies from 9 sent.",
-             "Next thing: apply to Brightwater today, and send Riley Chen a short note with it."],
+    "note": ["Lean into Analytics Engineer roles this week, and reach someone at each company before you apply.",
+             "Analytics Engineer roles are your warmest lane: 4 replies from 9 sent."],
     "picks": [{"id": "gh:brightwater:1", "why": "Remote, your dbt and Snowflake stack", "angle": "your dbt and Snowflake modeling work"},
               {"id": "ashby:fennel:1", "why": "Remote, dbt with finance stakeholders", "angle": "stakeholder work with finance teams"}],
     "skips": [{"id": "gh:corvid:1", "reason": "On-site five days a week in New York", "company": "Corvid Systems", "title": "Staff Data Engineer"}],

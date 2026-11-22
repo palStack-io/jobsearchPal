@@ -62,6 +62,15 @@ def _day(s: str | None) -> str:
     return (s or "")[:10]
 
 
+def _utc_day(s: str) -> date:
+    """jobs.found_at is SQLite's current_timestamp (UTC): the local day it was found."""
+    from datetime import timezone
+    try:
+        return datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).astimezone().date()
+    except ValueError:
+        return datetime.strptime(s[:10], "%Y-%m-%d").date()
+
+
 def people(db, cands: list[dict], now: datetime) -> list[dict]:
     """Everyone the person has a real link to, each with a ref the coach must use: contacts, people who wrote to them
     about a job, and names a candidate posting gives next to a cue ("the hiring manager, Dana Wu")."""
@@ -202,7 +211,7 @@ def digest(db, settings, now: datetime | None = None) -> tuple[str, dict]:
     room = DIGEST_CHARS - len(head_text) - 200
     per = max(200, min(700, room // max(1, len(cands)) - 250)) if cands else 700
     cand_rows = [{"id": c["id"], "company": c["company"], "title": c["title"], "location": c["location"],
-                  "found": fmt_day(datetime.strptime(_day(c["found_at"]), "%Y-%m-%d").date()) if _day(c["found_at"]) else "",
+                  "found": fmt_day(_utc_day(c["found_at"])) if _day(c["found_at"]) else "",
                   "description": (c["description"] or "")[:per]} for c in cands]
     text = head_text + "\n\n# Candidates (use only these ids)\n" + _fence("candidates", cand_rows)
     if len(text) > DIGEST_CHARS:
@@ -231,8 +240,9 @@ def vocab(db, ppl: list[dict], about: str, plan: str, todo: list[dict], now: dat
 
 # ---- validation: nothing the person didn't give us gets through ---------------------------------
 
-KINDS = ("referral", "hiring_team", "check_in", "thank_you", "reply")
-BANNED = ("streak", "guarantee", "dream job", "you'll land", "you will land", "don't break")
+KINDS = ("referral", "hiring_team", "check_in", "thank_you")  # replies you owe stay in To do (nudges.py), in the coach's order
+BANNED = ("streak", "guarantee", "dream job", "you'll land", "you will land", "don't break",
+          "benefits stay safe", "lose your benefits", "keep your benefits", "benefits at risk")  # VOICE rule 8
 COMMON_CAPS = {w.lower() for w in (
     "I Your You Today Tomorrow This That These Those Their They He She It We Next Then Also And But Or So If When "
     "Staff Senior Lead Principal Engineer Engineering Analytics Data Manager Director Head Remote Hybrid "
@@ -260,8 +270,11 @@ def clean_text(text: str, digest_text: str, names: set[str] | None = None) -> st
             w = m.group(0)
             if not w[0].isupper():
                 continue
-            before = t[:m.start()].rstrip()
-            if not before or before[-1] in ".!?:;\"(-":  # the first word of a sentence may be capitalised
+            gap = t[:m.start()]
+            before = gap.rstrip()
+            if not before or before[-1] in ".!?:;\"(-" or "\n" in gap[len(before):]:  # a sentence's or a line's first word
+                continue
+            if re.fullmatch(r"I'(?:m|ll|d|ve)", w):
                 continue
             if w.lower().rstrip(".") not in names and w.lower().rstrip(".") not in COMMON_CAPS:
                 return None
@@ -274,7 +287,11 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
     dropped: list[str] = []
     reply = reply if isinstance(reply, dict) else {}
 
+    ppl_refs = refs.get("people") or {}
+
     def txt(v, what):
+        if isinstance(v, str):  # a person's ref ("p3") reads as their name
+            v = re.sub(r"\bp\d+\b", lambda m: ppl_refs[m.group(0)]["name"] if m.group(0) in ppl_refs else m.group(0), v)
         out = clean_text(v, digest_text, names)
         if out is None and v:
             dropped.append(f"{what}: {str(v)[:80]}")
@@ -311,10 +328,14 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
     soon = (now.date() - timedelta(days=3)).isoformat()
     jobs = set(refs.get("jobs") or ()) | set(cands)
     seen: set[str] = set()
+    reminded = {str(n.get("to") or "").lower() for n in (refs.get("nudges") or {}).values() if n.get("to")}
     for x in (x for x in items("outreach") if isinstance(x, dict)):
         p, kind, job = ppl.get(x.get("person")), x.get("kind"), x.get("job") or None
         if not p or kind not in KINDS or (job and job not in jobs):
             dropped.append(f"outreach: {x.get('person')} {kind} {job}")
+            continue
+        if p["email"] and p["email"] in reminded:
+            dropped.append(f"outreach: {p['name']} already has an open reminder in To do")
             continue
         key = outreach_key(p["name"], kind, job)
         r = recent.get(key)

@@ -380,3 +380,60 @@ def test_no_work_returns_2_without_call(env):
     def boom(text, model):
         raise AssertionError("no call expected")
     assert coachday.drafts(db, s, ask=boom, now=NOW)[0] == 2
+
+
+# ---- found on the demo run (2026-11-21) ---------------------------------------------------------
+
+def test_outreach_to_someone_with_an_open_reminder_is_dropped(env):
+    s, db, text, refs = _refs(env)
+    refs["nudges"] = {"n1": {"key": "n1", "to": "priya@scribd.com"}}
+    clean, _ = coachday.validate(_reply(outreach=[
+        {"person": _ref_of(refs, "Priya Rao"), "job": None, "kind": "reply", "why": "Reply to Priya Rao"},
+        {"person": _ref_of(refs, "Priya Rao"), "job": None, "kind": "check_in", "why": "Check in with Priya Rao"},
+        {"person": _ref_of(refs, "Dana Wu"), "job": "gh:render:1", "kind": "hiring_team", "why": "Dana Wu leads the team"}]),
+        refs, text, NOW)
+    assert [o["kind"] for o in clean["outreach"]] == ["hiring_team"]
+
+
+def test_benefit_threats_are_dropped(env):
+    s, db, text, refs = _refs(env)
+    clean, _ = coachday.validate(_reply(note=["Keep the steps on the list so your benefits stay safe.",
+                                              "Or you could lose your benefits.", "Reply to Priya Rao first."]), refs, text, NOW)
+    assert clean["note"] == ["Reply to Priya Rao first."]
+
+
+def test_person_refs_become_names(env):
+    s, db, text, refs = _refs(env)
+    pr = _ref_of(refs, "Priya Rao")
+    clean, _ = coachday.validate(_reply(note=[f"Reply to {pr} first.", f"Recruiters ({pr}) wrote to you."],
+                                        check=[f"Confirm what {pr} is hiring for."]), refs, text, NOW)
+    assert clean["note"] == ["Reply to Priya Rao first.", "Recruiters (Priya Rao) wrote to you."]
+    assert clean["check"] == ["Confirm what Priya Rao is hiring for."]
+
+
+def test_found_date_is_local_not_utc(env):
+    s, db = env
+    db.upsert_job({"id": "gh:late:1", "ats": "greenhouse", "company": "Latecorp", "title": "Analytics Engineer",
+                   "location": "Remote", "url": "u", "apply_url": "u", "description": "dbt"})
+    db.conn.execute("update jobs set found_at = '2026-11-22 03:00:00' where id = 'gh:late:1'")  # UTC: 10pm on the 21st in New York
+    db.conn.commit()
+    import os, time
+    old = os.environ.get("TZ")
+    os.environ["TZ"] = "America/New_York"
+    time.tzset()
+    try:
+        text, _ = coachday.digest(db, s, NOW)
+    finally:
+        if old is None:
+            os.environ.pop("TZ")
+        else:
+            os.environ["TZ"] = old
+        time.tzset()
+    assert "Sat 21 Nov" in text and "Sun 22 Nov" not in text
+
+
+def test_letter_shape_passes_name_check():
+    names = {"sam", "rivera", "pat"}
+    ok = "Hi Sam,\n\nThank you for writing. I'm keen, and I'd like to talk; I've got time Tuesday.\n\nBest,\nPat"
+    assert coachday.clean_text(ok, "digest", names) == ok
+    assert coachday.clean_text("Hi Sam,\n\nI know Kubernetes well.\n\nPat", "digest", names) is None

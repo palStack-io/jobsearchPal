@@ -365,7 +365,14 @@ def make_app(settings, db: DB) -> FastAPI:
                       and f"pal:plan-skip:{s['this_week_start'].isoformat()}" not in states)
         if plan_popup:
             db.set_nudge(popup_key, "done")  # shown once; it goes, and the page stays in the nav
-        resp = page("index.html", s=s, shortlist=more, decline_reasons=DECLINE_REASONS, src_on=src["on"], src_total=src["total"], first_name=first_name,
+        from . import setup
+        st = setup.status(settings, os.environ)
+        # Steps that can't run yet aren't failures (install walk 2026-11-22): no email means no email sync, sorting or
+        # brief; setup left undone means the daily run is waiting, not broken.
+        not_set_up = set() if st["steps"]["gmail"]["done"] else {"sync-email", "classify", "brief"}
+        if st["left"]:
+            not_set_up.add("daily")
+        resp = page("index.html", not_set_up=not_set_up, s=s, shortlist=more, decline_reasons=DECLINE_REASONS, src_on=src["on"], src_total=src["total"], first_name=first_name,
                     interviews=ivs[:6], greet=greet, plan=wk_plan, plan_popup=plan_popup,
                     offer=None if back else coach.offer(db, settings, s, now.date(), bool(ivs)), back=back, if_then=coach.if_then(db),
                     celebrate=cel, rejection=pal.rejection_note(db, now.date()), week_left=_week_left(s, now.date()),

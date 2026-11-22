@@ -197,11 +197,9 @@ US_MARKERS = re.compile(
     r"|(?-i:,\s*(?:AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NC|ND"
     r"|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b)", re.I)  # "Columbus, OH"; case-sensitive
 NON_US = re.compile(
-    r"\b(emea|europe|eu|uk|united kingdom|england|london|ireland|dublin|poland|warsaw|spain|madrid|barcelona"
-    r"|germany|berlin|munich|france|paris|netherlands|amsterdam|portugal|lisbon|italy|sweden|denmark|norway"
-    r"|switzerland|zurich|romania|ukraine|serbia|israel|tel aviv|india|bangalore|bengaluru|hyderabad|pune"
-    r"|singapore|apac|japan|tokyo|australia|sydney|new zealand|philippines|latam|brazil|s[aã]o paulo"
-    r"|mexico|argentina|colombia|chile|canada|toronto|vancouver|montreal)\b", re.I)
+    r"\b(emea|europe|eu|apac|asia|asia pacific|asia-pacific|latam|latin america|middle east|africa|oceania|london|dublin|warsaw|madrid|barcelona|berlin|munich|paris|amsterdam|lisbon|zurich|tel aviv|bangalore|bengaluru|hyderabad|pune|tokyo|sydney|melbourne|s[aã]o paulo|toronto|vancouver|montreal|manila|taipei|seoul|shanghai|beijing|shenzhen|ho chi minh|hanoi|jakarta|kuala lumpur|bangkok|lagos|nairobi|cairo|dubai|istanbul|karachi|lahore|dhaka|bogot[aá]|buenos aires|santiago|lima|mexico city|guadalajara|krak[oó]w|bucharest|kyiv|kiev|prague|budapest|vienna|stockholm|copenhagen|oslo|helsinki|brussels|edinburgh|manchester|england|scotland|wales|united[\s-]arab[\s-]emirates|dominican[\s-]republic|north[\s-]macedonia|united[\s-]kingdom|liechtenstein|saudi[\s-]arabia|south[\s-]africa|sierra[\s-]leone|turkmenistan|el[\s-]salvador|philippines|new[\s-]zealand|switzerland|netherlands|ivory[\s-]coast|afghanistan|south[\s-]korea|madagascar|bangladesh|costa[\s-]rica|kyrgyzstan|luxembourg|mauritania|kazakhstan|seychelles|mozambique|cape[\s-]verde|tajikistan|montenegro|uzbekistan|azerbaijan|guatemala|venezuela|mauritius|nicaragua|argentina|australia|sri[\s-]lanka|singapore|hong[\s-]kong|indonesia|lithuania|viet[\s-]nam|slovakia|ethiopia|cambodia|zimbabwe|colombia|portugal|tanzania|cameroon|mongolia|dominica|suriname|thailand|honduras|slovenia|pakistan|maldives|malaysia|trinidad|bulgaria|djibouti|paraguay|botswana|barbados|eswatini|vietnam|belgium|uruguay|algeria|hungary|austria|andorra|bahamas|burkina|eritrea|jamaica|belarus|romania|ireland|tunisia|iceland|germany|croatia|namibia|armenia|denmark|liberia|grenada|finland|burundi|czechia|türkiye|antigua|lesotho|albania|senegal|bahrain|estonia|ecuador|somalia|bolivia|comoros|moldova|lebanon|morocco|ukraine|nigeria|myanmar|sweden|panama|guinea|norway|zambia|malawi|brunei|guyana|israel|monaco|mexico|brazil|turkey|rwanda|uganda|serbia|canada|bhutan|angola|poland|russia|france|gambia|kuwait|kosovo|taiwan|jordan|belize|greece|latvia|cyprus|bosnia|papua|italy|malta|congo|china|egypt|nepal|gabon|yemen|czech|libya|niger|chile|syria|sudan|ghana|korea|kenya|japan|benin|macau|qatar|spain|haiti|india|oman|laos|chad|mali|iran|togo|iraq|cuba|fiji|peru|uae|uk)\b", re.I)
+# "Worldwide except the US", "outside the US", "non-US": names the US only to rule it out (install walk, 2026-11-22).
+EXCLUDES_US = re.compile(r"\b(except|excluding|outside|not in|non)[\s-]+(the\s+)?(us|usa|u\.s\.|united states)\b", re.I)
 
 
 def location_ok(loc: str, search: dict) -> bool:
@@ -210,6 +208,8 @@ def location_ok(loc: str, search: dict) -> bool:
     if not search.get("us_only", True):
         oks = search.get("locations_ok", [])
         return not oks or not loc or any(k in loc.lower() for k in oks)
+    if EXCLUDES_US.search(loc):
+        return False
     if not loc.strip() or US_MARKERS.search(loc):
         return True
     return "remote" in loc.lower() and not NON_US.search(loc)

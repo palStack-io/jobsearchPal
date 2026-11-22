@@ -95,6 +95,15 @@ def base_resume(root: Path) -> Path | None:
     return next((d for d in docs if "resume" in d.stem.lower()), None)
 
 
+def _claude_json_signed_in(p: Path) -> bool:
+    """~/.claude.json is written the first time Claude Code starts, signed in or not; it names an account only after
+    /login (2026-11-22 install walk: a signed-out Run now made Setup say "signed in")."""
+    try:
+        return bool(json.loads(p.read_text()).get("oauthAccount"))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def agent_ready(prefs=None) -> dict:
     claude, codex = find_cli("claude"), find_cli("codex")
     if prefs is not None and prefs.data.get("daily_via") == "openrouter":
@@ -107,7 +116,7 @@ def agent_ready(prefs=None) -> dict:
     home = Path.home()
     # A long-lived token from `claude setup-token` in .env (CLAUDE_CODE_OAUTH_TOKEN) counts as signed in too.
     claude_in = (bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")) or (home / ".claude" / ".credentials.json").exists()
-                 or (home / ".claude.json").exists())
+                 or _claude_json_signed_in(home / ".claude.json"))
     codex_in = (home / ".codex" / "auth.json").exists()
     who = [n for n, ok in (("Claude Code", claude and claude_in), ("Codex", codex and codex_in)) if ok]
     return {"done": bool(who), "claude": bool(claude), "codex": bool(codex), "who": who,

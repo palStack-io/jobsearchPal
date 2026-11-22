@@ -48,6 +48,8 @@ The screenshots use fictional demo data (`scripts/demo-data.py`; regenerate them
   Your laptop, Claude desktop and any chat app can be closed; they're only for setup and fixes.
 - **Prepares, never sends.** Each morning a few applications are tailored and filled in, follow-up replies
   are drafted, and a brief arrives by email. You read them on the dashboard and press Submit yourself.
+- **A coach for where to aim.** Each morning it reads your whole search and says where to lean this week, which
+  roles are worth your time and what to lead with, and who could help, with the note drafted for you to send.
 - **A board for the roles you pick.** Star a lead and it lands on your board: Shortlist, Research, Reach out,
   Ready to apply, with small steps to tick, a next step with a day, and notes. Starring costs nothing.
 - **A plan for what you're missing.** Skills shows what the roles found for you ask for that your resume doesn't;

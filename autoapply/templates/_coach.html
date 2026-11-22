@@ -6,6 +6,7 @@
 {% elif kind == 'apply' %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
 {% else %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 8v6M22 11h-6"/></svg>{% endif %}{% endmacro %}
 
+{% macro chev() %}<svg class="yc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>{% endmacro %}
 {% macro item(r) %}<div class="yc-item yc-{{ r.kind }}">
   <span class="yc-ic" aria-hidden="true">{{ icon(r.kind) }}</span>
   <div class="yc-txt"><div class="yc-title">{{ r.title }}</div>{% if r.detail %}<div class="yc-detail">{{ r.detail }}</div>{% endif %}
@@ -41,18 +42,23 @@
 </section>
 </div>
 
+{% if (c.later or c.prep) or (c.check or c.skips) %}<div class="yc-pair">
 {% if c.later or c.prep %}<section class="yc-sec" aria-labelledby="yc-ready-h">
  <h2 id="yc-ready-h">Getting ready</h2>
- <ul class="yc-later">
- {% for p in c.prep %}<li><span class="yc-day">Prep</span><span><b>{{ p.job.company }}:</b> {{ p['items']|join('; ') }}{% if p.job %} · <a href="/prep/{{ p.job.id|urlencode }}">prep pack</a>{% endif %}</span></li>{% endfor %}
- {% for x in c.later %}<li><span class="yc-day">{{ x.day }}</span><span>{{ x.text }}</span></li>{% endfor %}
- </ul>
-</section>{% endif %}{% endif %}
-
-{% if c and (c.check or c.skips) %}<section class="yc-rows" aria-label="More from the coach">
- {% if c.check %}<details class="yc-row"><summary>Worth checking <span class="yc-n">· {{ c.check|length }}</span></summary>
-  <ul class="yc-plain">{% for x in c.check %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif %}
- {% if c.skips %}<details class="yc-row"><summary>Skipped <span class="yc-n">· {{ c.skips|length }}, each with undo</span></summary>
-  <ul class="yc-plain">{% for sk in c.skips %}<li><span><b>{{ sk.company }}</b> · {{ sk.title }} <span class="yc-n">· {{ sk.reason }}</span></span>
-   <form method="post" action="/coach/undo-skip/{{ sk.id|urlencode }}"><button class="yc-link">Undo</button></form></li>{% endfor %}</ul></details>{% endif %}
+ <div class="yc-card yc-ready">
+ {% for p in c.prep %}<div class="yc-when"><span class="yc-tag">Prep</span><div><b>{{ p.job.company }}:</b> {{ p['items']|join('; ') }}{% if p.job %} · <a href="/prep/{{ p.job.id|urlencode }}">prep pack</a>{% endif %}</div></div>{% endfor %}
+ {% for x in c.later %}<div class="yc-when"><span class="yc-tag">{{ x.day }}</span><div>{{ x.text }}</div></div>{% endfor %}
+ </div>
 </section>{% endif %}
+
+{% if c.check or c.skips %}<section class="yc-sec" aria-labelledby="yc-also-h">
+ <h2 id="yc-also-h">Also from the coach</h2>
+ <div class="yc-card yc-fold">
+ {% if c.check %}<details class="yc-fold-row"><summary><span>Worth checking</span><span class="yc-badge">{{ c.check|length }}</span>{{ chev() }}</summary>
+  <ul class="yc-plain">{% for x in c.check %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif %}
+ {% if c.skips %}<details class="yc-fold-row"><summary><span>Skipped today</span><span class="yc-badge">{{ c.skips|length }}</span>{{ chev() }}</summary>
+  <ul class="yc-plain yc-skips">{% for sk in c.skips %}<li><span><b>{{ sk.company }}</b> · {{ sk.title }}<span class="yc-n"> · {{ sk.reason }}</span></span>
+   <form method="post" action="/coach/undo-skip/{{ sk.id|urlencode }}"><button class="yc-link">Undo</button></form></li>{% endfor %}</ul></details>{% endif %}
+ </div>
+</section>{% endif %}
+</div>{% endif %}{% endif %}

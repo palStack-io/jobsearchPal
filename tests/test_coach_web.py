@@ -292,7 +292,7 @@ def test_plan_disclosure_opens_for_suggested_week(env):
     s, db = env
     _row_with(db, week={"apps": 4, "reach": 120, "prep": 0, "learn": 0, "why": "Keep the pace."})
     html = _client(s, db).get("/coach").text
-    tag = html[html.index('<details class="yc-row" id="plan"'):]
+    tag = html[html.index('id="plan"'):]
     assert tag[:tag.index(">")].endswith("open")
 
 
@@ -334,3 +334,16 @@ def test_wide_layout_pairs_sections(env):
     html = _client(s, db).get("/coach").text
     assert 'class="yc-top"' in html and 'class="yc-pair"' in html
     assert ".yc{max-width:880px" not in html
+
+
+
+def test_lower_sections_sit_in_cards(env):
+    s, db = env
+    _row_with(db, later=[{"day": "Sat", "text": "Check in with Render."}])
+    db.upsert_job({"id": "gh:hooli:9", "ats": "greenhouse", "company": "Hooli", "title": "Data Engineer", "location": "",
+                   "url": "u", "apply_url": "u", "description": ""})
+    db.update("gh:hooli:9", status="skipped", error="coach: On-site in New York")
+    html = _client(s, db).get("/coach").text
+    assert 'class="yc-card yc-ready"' in html and 'class="yc-card yc-fold"' in html
+    assert '<details class="yc-card yc-plancard" id="plan"' in html
+    assert 'class="yc-badge"' in html and ">Show<" not in html

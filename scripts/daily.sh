@@ -124,6 +124,9 @@ elif [ -n "${AUTOAPPLY_JOB:-}" ]; then
   run_stage apply "$AUTOAPPLY_JOB" || true; picked="$line"
   if [ "${AUTOAPPLY_PREP_ONLY:-}" = 1 ]; then echo "- prep only: $picked" >> "$today"; else echo "- prepare: $picked" >> "$today"; fi
 fi
+# A resume that waited for the AI is put in the format tailoring uses before anything is tailored from it.
+line=$(autoapply resume-rebuild 2>>data/cron.log) || true
+[ -n "$line" ] && echo "- resume: $line" >> "$today"
 for stage in $( [ -n "$one" ] || autoapply daily-stages 2>/dev/null); do
   if [ "$stage" = rank ]; then
     # The coach (Settings > Daily run): one call reads the whole search, picks, skips and suggests people to reach.

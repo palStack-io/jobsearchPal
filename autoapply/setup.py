@@ -124,6 +124,14 @@ def agent_ready(prefs=None) -> dict:
                     ("installed, not signed in yet" if claude or codex else "no agent CLI found")}
 
 
+def _waiting_resume(settings):
+    from . import resume_rebuild
+    try:
+        return resume_rebuild.waiting(settings)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _prefs(settings):
     from .prefs import Prefs
     try:
@@ -146,7 +154,9 @@ def status(settings, environ: dict) -> dict:
                     "note": f"{prof.get('first_name', '')} {prof.get('last_name', '')}".strip() or "not set"},
         "interests": {"done": cfg.exists() and bool(titles),
                       "note": f"{len(titles)} titles" if cfg.exists() and titles else "not set"},
-        "resume": {"done": bool(resume), "note": resume.name if resume else "not uploaded"},
+        "resume": {"done": bool(resume) or bool(_waiting_resume(settings)),
+                   "note": resume.name if resume else ("waiting for your AI to put it in shape" if _waiting_resume(settings)
+                                                       else "not uploaded")},
         "about": {"done": has_about, "note": "written" if has_about else "optional, but it makes answers much better"},
         "gmail": {"done": bool(environ.get("GMAIL_USER") and environ.get("GMAIL_APP_PASSWORD")),
                   "note": _email_note(environ)},

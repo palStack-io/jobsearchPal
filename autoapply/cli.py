@@ -111,7 +111,7 @@ def main(argv=None):
     sub.add_parser("daily-stages"); sub.add_parser("daily-picks"); sub.add_parser("todo-line"); sub.add_parser("pal-line")
     a = sub.add_parser("daily-prompt"); a.add_argument("stage"); a.add_argument("job_id", nargs="?", default="")
     a = sub.add_parser("candidates"); a.add_argument("--limit", type=int, default=12)
-    sub.add_parser("coach"); sub.add_parser("drafts-once")
+    sub.add_parser("coach"); sub.add_parser("drafts-once"); sub.add_parser("resume-rebuild")
     a = sub.add_parser("quick-pick"); a.add_argument("--alerts", action="store_true")
     a = sub.add_parser("apply-once"); a.add_argument("job_id"); a.add_argument("--try", dest="try_it", action="store_true", help="run even when the setting is off (a test)")
     a = sub.add_parser("log-daily"); a.add_argument("agent"); a.add_argument("model", nargs="?", default="")
@@ -337,6 +337,12 @@ def main(argv=None):
             print(f"one call failed: {str(e)[:300]}", file=sys.stderr)
             db.log_usage("daily", f"claude:-:{oneshot.TAG}", 0, 0, 0.0, 0, str(e)[:200])
             sys.exit(1)
+    elif args.cmd == "resume-rebuild":
+        # A resume that waited for the AI (resume_rebuild.py) is put in shape before anything is tailored from it.
+        from . import resume_rebuild
+        msg = resume_rebuild.run_waiting(s)
+        if msg:
+            print(msg)
     elif args.cmd == "coach":
         # The morning coach in one call (coachday.py). Exit 2: off or nothing to do, 1: failed; daily.sh then
         # runs quick pick or the rank agent as before.

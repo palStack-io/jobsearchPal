@@ -1574,7 +1574,10 @@ def make_app(settings, db: DB) -> FastAPI:
         except (OSError, ValueError):
             src_stats = {}
         pr = Prefs(settings.data_dir, settings.raw)
-        return page("setup.html", finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
+        from . import resume_rebuild as _rb
+        rb = {"pending": _rb.pending(settings), "waiting": bool(_rb.waiting(settings)), "error": _rb._read(settings).get("error", ""),
+              "ai": st["steps"]["agent"]["done"], "files": _rb.files(settings)}
+        return page("setup.html", rb=rb, finish_cmd=("docker compose --profile finish up -d" if Path("/.dockerenv").exists() else "docker compose -f docker-compose.finish.yml up -d"), finish_on=bool((settings.raw.get("finish") or {}).get("on_server")), nav="settings", tab="setup", st=st, standing=setup.STANDING, decline=setup.DECLINE,
                     stand=setup.standing_values(prof), prof=prof, fields=setup.PROFILE_FIELDS, yes_no=setup.YES_NO,
                     titles=", ".join(search.get("title_keywords") or []), exclude=", ".join(search.get("exclude_keywords") or []),
                     us_only=search.get("us_only", True), levels=search.get("levels") or [],
@@ -1657,8 +1660,6 @@ def make_app(settings, db: DB) -> FastAPI:
             return _back("Pick your resume's .docx file first.", "resume")
         if (d and len(d) > limit) or (p and len(p) > limit):
             return _back("That file is over 10 MB.", "resume")
-        if p and not d and not setup.base_resume(settings.root):
-            return _back("The .docx is needed: tailored resumes are built from it. The PDF is optional.", "resume")
         last = settings.profile.get("last_name") or ""
         r = await run_in_threadpool(setup.save_resume, settings.root, last, d, p)
         if r["error"]:
@@ -1668,8 +1669,44 @@ def make_app(settings, db: DB) -> FastAPI:
             if renamed := setup.name_placeholder_resume(settings.root, guess):
                 r = {"docx": renamed, "pdf": renamed.replace(".docx", ".pdf") if r["pdf"] else None}
         made = " and ".join(x for x in (r["docx"], r["pdf"]) if x)
+        # Any resume works (resume_rebuild.py): one tailoring can't read is put in shape by the person's own AI, now if
+        # it's signed in, else as soon as it is.
+        from . import resume_rebuild
+        target = setup.base_resume(settings.root) if d else setup.materials(settings.root) / (r["pdf"] or "")
+        if target and target.exists() and resume_rebuild.needs(target):
+            if setup.agent_ready(setup._prefs(settings))["done"]:
+                try:
+                    await run_in_threadpool(resume_rebuild.rebuild, settings, target)
+                    return _back("Saved, and we rebuilt your resume in the format tailoring uses. Check it below.", "resume")
+                except resume_rebuild.RebuildError as e:
+                    return _back(f"Saved {made}. {e}", "resume")
+            resume_rebuild.mark_waiting(settings, target)
+            return _back(f"Saved {made}. Once your AI is connected (the Agent step), we'll put it in the format "
+                         "tailoring uses, and you can check it.", "profile")
         return _back(f"Saved {made} in materials/." + ("" if r["pdf"] or p else
                      " No PDF was made (LibreOffice isn't installed here), so upload one too."), "profile")
+
+    @app.post("/setup/resume/rebuild")
+    async def setup_resume_rebuild():
+        from . import resume_rebuild
+        msg = await run_in_threadpool(resume_rebuild.run_waiting, settings)
+        return _back(msg or "There's no resume waiting to be rebuilt.", "resume")
+
+    @app.post("/setup/resume/confirm")
+    def setup_resume_confirm():
+        from . import resume_rebuild
+        resume_rebuild.confirm(settings)
+        return _back("Thanks. Tailored resumes start from this one.", "resume")
+
+    @app.get("/setup/resume/file/{which}")
+    def setup_resume_file(which: str):
+        from . import resume_rebuild
+        if which not in ("base", "original"):
+            raise HTTPException(404)
+        p = resume_rebuild.files(settings).get(which)
+        if not p:
+            raise HTTPException(404)
+        return FileResponse(p, filename=p.name)
 
     @app.post("/setup/look")
     async def setup_look(request: Request):

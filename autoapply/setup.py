@@ -336,6 +336,47 @@ def save_interests(settings, form: dict) -> dict:
     return {"bad": bad, "missing_keys": missing}
 
 
+def save_roles(settings, titles: str, us_only: bool) -> list[str]:
+    """The welcome flow's step 3: only the titles and "US roles only". Everything else in config.yaml (job sources,
+    companies, levels) stays as it is; the Setup page's job-interests form saves those."""
+    root = settings.root
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    search = cfg.setdefault("search", {})
+    search["title_keywords"] = [t.lower() for t in _lines(titles)][:40]
+    search["us_only"] = bool(us_only)
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    (root / "config.yaml").write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update(cfg)
+    return search["title_keywords"]
+
+
+def save_claim(settings, claiming: bool, state: str = "", rule: dict | None = None) -> None:
+    """Unemployment is opt-in (2026-11-22). Not claiming: no weekly goal, and the work-search log and benefit reminders
+    stay out of the way. Claiming: the state's rule sets the weekly minimum (0 where the state names no number)."""
+    root = settings.root
+    cfg = load_config(root)
+    cfg.pop("_from_example", None)
+    ws = cfg.setdefault("work_search", {"label": "Work search", "weekly_minimum": 0})
+    ws["claiming"] = bool(claiming)
+    if claiming and state:
+        ws["state"] = state
+        try:
+            ws["weekly_minimum"] = int((rule or {}).get("weekly_minimum") or 0)
+        except (TypeError, ValueError):
+            ws["weekly_minimum"] = 0
+    elif not claiming:
+        ws.pop("state", None)
+        ws["weekly_minimum"] = 0
+    head = ("# Written by the dashboard's Setup page. Edit here or there.\n"
+            "# More boards can live in boards.yaml (`autoapply board add ATS SLUG`).\n")
+    (root / "config.yaml").write_text(head + yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+    settings.raw.clear()
+    settings.raw.update(cfg)
+
+
 def add_title(settings, title: str) -> bool:
     """Adds one job title to the search (a related title the person chose). False when it's empty or already there."""
     t = " ".join(str(title or "").lower().split())[:60]

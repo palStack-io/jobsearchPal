@@ -95,8 +95,9 @@ More in [Privacy and permissions](docs/privacy-and-permissions.md).
 
 ## Quick start
 
-You need an always-on Linux computer (Ubuntu 24.04 tested) and either a Claude subscription (for Claude Code) or a
-ChatGPT subscription (for the Codex CLI). With Docker:
+You need a computer that's on in the morning (a Mac or Windows PC with Docker Desktop, or an always-on Linux box)
+and either a ChatGPT subscription (Plus or Pro) or a Claude subscription (Pro or Max). On a Mac or PC, install
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it first. Then:
 
 ```
 git clone https://github.com/palStack-io/jobsearchPal.git ~/auto-apply && cd ~/auto-apply
@@ -105,8 +106,9 @@ docker compose up -d                        # dashboard + the daily scheduler (p
 docker compose --profile finish up -d       # optional: Finish it here (a browser on this server for captchas)
 ```
 
-Open `http://localhost:8787/`, create your account, and the **Setup** page walks you through the rest (resume, job
-interests, email). The full guide, including a plain install without Docker and reaching the dashboard from your
+Open `http://localhost:8787/`, create your account, and five short welcome steps take you through the rest: your
+resume (Word or PDF), a few details (including whether you're claiming unemployment), the roles you want, your AI and,
+if you like, your email. The full guide, including a plain install without Docker and reaching the dashboard from your
 phone, is in [docs/setup.md](docs/setup.md).
 
 ## Documentation

@@ -3,6 +3,31 @@
 Two ways in: a plain Linux install with systemd and cron, or Docker (one image with everything, the simplest). Either
 way, most of the setup happens afterwards on the dashboard's **Setup** page.
 
+## On a Mac or Windows PC (about 15 minutes)
+
+No server needed: your own computer works, as long as it's awake when the morning run starts (6:30 on weekdays, or
+press **Run now** on the dashboard whenever you like).
+
+1. Install **Docker Desktop** from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
+   and **open it**. Wait until the whale icon in the menu bar (Mac) or system tray (Windows) stops animating:
+   if Docker Desktop isn't running, the commands below just wait with no message.
+2. Open Terminal (Mac) or PowerShell (Windows) and run:
+   ```
+   git clone https://github.com/palStack-io/jobsearchPal.git jobsearchPal
+   cd jobsearchPal
+   docker compose up -d
+   ```
+   No `git`? Download the ZIP from the GitHub page (Code, then Download ZIP), unzip it, and run the last two lines
+   inside that folder.
+3. Open [http://localhost:8787](http://localhost:8787), create your account, and the welcome steps take it from
+   there: your resume (Word or PDF), a few details, the roles you want, your AI (ChatGPT Plus or Claude Pro), and
+   optionally your email.
+4. Keep it running in the morning. **Mac:** System Settings, Battery (or Energy), "Prevent automatic sleeping when the
+   display is off" while plugged in. **Windows:** Settings, System, Power, set Sleep to Never when plugged in. Or skip
+   this and press Run now when you sit down.
+
+Stopping it: `docker compose down` in the same folder. Updating: `git pull` and `docker compose up -d`.
+
 ## On a Linux server (about 30 minutes)
 
 You need an always-on Linux box (Ubuntu 24.04 tested), **either** a Claude subscription (Pro or Max,

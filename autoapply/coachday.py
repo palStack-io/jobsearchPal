@@ -235,7 +235,12 @@ def vocab(db, ppl: list[dict], about: str, plan: str, todo: list[dict], now: dat
     parts = [p["name"] + " " + p["company"] for p in ppl] + [about, plan] + patterns(db, now)
     parts += [f"{j['company']} {j['title']} {j.get('location') or ''}" for j in db.all()]
     parts += [f"{n.get('title') or ''} {n.get('why') or ''}" for n in todo]
-    return {w.lower() for w in re.findall(r"[A-Za-z][\w'&.-]*", " ".join(parts))}
+    return word_set(" ".join(parts))
+
+
+def word_set(text: str) -> set[str]:
+    """Lower-cased words, without a sentence's trailing full stop ("Airflow." counts as "airflow")."""
+    return {w.lower().rstrip(".") for w in re.findall(r"[A-Za-z][\w'&.-]*", text or "")}
 
 
 # ---- validation: nothing the person didn't give us gets through ---------------------------------
@@ -509,7 +514,7 @@ def drafts(db, settings, ask=None, log=None, now: datetime | None = None) -> tup
         return 1, f"drafts call failed: {str(e)[:200]}"
     db.log_usage("daily", f"claude:{m}:{DRAFTS_TAG}", 0, 0, 0.0, int(u.get("ms", 0)), None, est=float(u.get("est", 0.0)),
                  tokens=int(u.get("tokens", 0)), split=u.get("split"))
-    names = {w.lower() for w in re.findall(r"[A-Za-z][\w'&.-]*", " ".join([about, first, json.dumps(shown, default=str)]))}
+    names = word_set(" ".join([about, first, json.dumps(shown, default=str)]))
     wrote = 0
     for i in items:
         body = data.get(i["key"])

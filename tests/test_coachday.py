@@ -437,3 +437,8 @@ def test_letter_shape_passes_name_check():
     ok = "Hi Sam,\n\nThank you for writing. I'm keen, and I'd like to talk; I've got time Tuesday.\n\nBest,\nPat"
     assert coachday.clean_text(ok, "digest", names) == ok
     assert coachday.clean_text("Hi Sam,\n\nI know Kubernetes well.\n\nPat", "digest", names) is None
+
+
+def test_word_at_end_of_a_sentence_in_materials_counts():
+    names = coachday.word_set("Analytics engineer: SQL, dbt, Airflow. Data modeling.")
+    assert coachday.clean_text("Hi,\n\nI run jobs in Airflow and dbt.\n\nPat", "d", names | {"pat"})

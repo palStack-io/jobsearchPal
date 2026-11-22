@@ -95,3 +95,34 @@ for i, (co, t, col, steps, nxt, due) in enumerate([
             board.toggle_step(db, k, j)
         if nxt:
             board.save(db, k, nxt, (now + timedelta(days=due)).date().isoformat(), "")
+
+# The coach (11/21): a morning's note, picks, a person to reach and a skip, so the dashboard card has something to show.
+# Fictional, like everything here; the real card comes from `autoapply coach` on a live install.
+from autoapply import coachday
+from autoapply.prefs import Prefs
+coachday.ensure(db)
+pr = Prefs(root/"data", {}); pr.data["coach"] = True; pr.save()
+for jid, co, t, loc, d in [
+        ("gh:brightwater:1", "Brightwater", "Senior Analytics Engineer", "Remote (US)", "Own our dbt project and Snowflake models. The hiring manager, Riley Chen, leads analytics."),
+        ("ashby:fennel:1", "Fennel", "Analytics Engineer", "Remote", "dbt, Looker, stakeholder work with finance."),
+        ("gh:corvid:1", "Corvid Systems", "Staff Data Engineer", "New York, NY (on-site)", "On-site five days a week in New York.")]:
+    db.upsert_job({"id": jid, "ats": jid.split(":")[0].replace("gh", "greenhouse"), "company": co, "title": t, "location": loc,
+                   "url": "https://example.org/" + jid, "apply_url": "https://example.org/" + jid, "description": d})
+db.update("gh:corvid:1", status="skipped", error="coach: On-site five days a week in New York")
+key = coachday.outreach_key("Riley Chen", "hiring_team", "gh:brightwater:1")
+draft = root/"data"/"drafts"/f"{key}.md"
+draft.parent.mkdir(parents=True, exist_ok=True)
+draft.write_text("Hi Riley,\n\nI applied for the Senior Analytics Engineer role on your team. I've spent the last few years "
+                 "owning dbt projects and Snowflake models, and I'd welcome a short conversation about what the team is building.\n\nBest,\nMorgan\n")
+db.conn.execute("insert or replace into outreach (key, day, person, email, company, job_id, kind, why, draft_path, state) values "
+                "(?, ?, 'Riley Chen', '', 'Brightwater', 'gh:brightwater:1', 'hiring_team', ?, ?, 'suggested')",
+                (key, now.date().isoformat(), "Riley Chen leads analytics there. A short note with your application can help.", str(draft)))
+db.conn.execute("insert or replace into coach_day (day, json) values (?, ?)", (now.date().isoformat(), json.dumps({
+    "note": ["Analytics Engineer roles are your warmest lane: 4 replies from 9 sent.",
+             "Next thing: apply to Brightwater today, and send Riley Chen a short note with it."],
+    "picks": [{"id": "gh:brightwater:1", "why": "Remote, your dbt and Snowflake stack", "angle": "your dbt and Snowflake modeling work"},
+              {"id": "ashby:fennel:1", "why": "Remote, dbt with finance stakeholders", "angle": "stakeholder work with finance teams"}],
+    "skips": [{"id": "gh:corvid:1", "reason": "On-site five days a week in New York", "company": "Corvid Systems", "title": "Staff Data Engineer"}],
+    "outreach": [], "followups": [], "prep": [],
+    "check": ["Fennel doesn't say which time zones it hires in. Confirm before applying."]})))
+db.conn.commit()

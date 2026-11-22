@@ -209,5 +209,130 @@ def digest(db, settings, now: datetime | None = None) -> tuple[str, dict]:
     refs = {"candidates": {c["id"]: c for c in cands}, "people": {p["ref"]: p for p in ppl},
             "nudges": {n["key"]: n for n in todo}, "recent_outreach": recent,
             "picks_per_day": Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
-            "jobs": {j["id"] for j in db.all()}}
+            "jobs": {j["id"] for j in db.all()}, "dismissed": dismissed_keys(db),
+            "names": vocab(db, ppl, about, plan, todo, now)}
     return text, refs
+
+
+def dismissed_keys(db) -> set[str]:
+    ensure(db)
+    return {r[0] for r in db.conn.execute("select key from outreach where state = 'dismissed'")}
+
+
+def vocab(db, ppl: list[dict], about: str, plan: str, todo: list[dict], now: datetime) -> set[str]:
+    """Lower-cased words a coach line may name: people, companies and titles you track, your own notes, the computed
+    patterns and open threads. Posting descriptions are left out on purpose: text in a posting can't introduce a name."""
+    parts = [p["name"] + " " + p["company"] for p in ppl] + [about, plan] + patterns(db, now)
+    parts += [f"{j['company']} {j['title']} {j.get('location') or ''}" for j in db.all()]
+    parts += [f"{n.get('title') or ''} {n.get('why') or ''}" for n in todo]
+    return {w.lower() for w in re.findall(r"[A-Za-z][\w'&.-]*", " ".join(parts))}
+
+
+# ---- validation: nothing the person didn't give us gets through ---------------------------------
+
+KINDS = ("referral", "hiring_team", "check_in", "thank_you", "reply")
+BANNED = ("streak", "guarantee", "dream job", "you'll land", "you will land", "don't break")
+COMMON_CAPS = {w.lower() for w in (
+    "I Your You Today Tomorrow This That These Those Their They He She It We Next Then Also And But Or So If When "
+    "Staff Senior Lead Principal Engineer Engineering Analytics Data Manager Director Head Remote Hybrid "
+    "Monday Tuesday Wednesday Thursday Friday Saturday Sunday Mon Tue Wed Thu Fri Sat Sun "
+    "January February March April May June July August September October November December "
+    "Jan Feb Mar Apr Jun Jul Aug Sep Sept Oct Nov Dec").split()}
+DATE_RX = re.compile(r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b")
+NUM_RX = re.compile(r"\d+(?:[.,]\d+)*")
+EMOJI_RX = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
+
+
+def clean_text(text: str, digest_text: str, names: set[str] | None = None) -> str | None:
+    """The text when every number, date and name in it comes from the digest and the copy rules hold; else None."""
+    t = str(text or "").strip()
+    if not t or EMOJI_RX.search(t) or t.count("!") > 1 or any(b in t.lower() for b in BANNED):
+        return None
+    for d in DATE_RX.findall(t):
+        if d not in digest_text:
+            return None
+    nums = set(NUM_RX.findall(digest_text))
+    if any(n not in nums for n in NUM_RX.findall(t)):
+        return None
+    if names is not None:
+        for m in re.finditer(r"[A-Za-z][\w'&.-]*", t):
+            w = m.group(0)
+            if not w[0].isupper():
+                continue
+            before = t[:m.start()].rstrip()
+            if not before or before[-1] in ".!?:;\"(-":  # the first word of a sentence may be capitalised
+                continue
+            if w.lower().rstrip(".") not in names and w.lower().rstrip(".") not in COMMON_CAPS:
+                return None
+    return t
+
+
+def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[dict, list[str]]:
+    """(clean, dropped): only what checks out against the digest, in the spec's shape."""
+    names = refs.get("names") or set()
+    dropped: list[str] = []
+    reply = reply if isinstance(reply, dict) else {}
+
+    def txt(v, what):
+        out = clean_text(v, digest_text, names)
+        if out is None and v:
+            dropped.append(f"{what}: {str(v)[:80]}")
+        return out
+
+    def items(key):
+        v = reply.get(key)
+        return [x for x in v if isinstance(x, dict) or isinstance(x, str)] if isinstance(v, list) else []
+
+    clean = {"note": [], "picks": [], "skips": [], "outreach": [], "followups": [], "prep": [], "check": []}
+    clean["note"] = [t for t in (txt(x, "note") for x in items("note") if isinstance(x, str)) if t]
+    cands = refs.get("candidates") or {}
+    picked_cos: set[str] = set()
+    for x in (x for x in items("picks") if isinstance(x, dict)):
+        jid = x.get("id")
+        c = cands.get(jid)
+        if not c:
+            dropped.append(f"pick: unknown id {jid}")
+            continue
+        co = (c.get("company") or "").lower()
+        if co in picked_cos or len(clean["picks"]) >= int(refs.get("picks_per_day") or 0):
+            dropped.append(f"pick: {jid} (one per company, or over today's limit)")
+            continue
+        picked_cos.add(co)
+        clean["picks"].append({"id": jid, "why": txt(x.get("why"), "why") or "", "angle": txt(x.get("angle"), "angle") or ""})
+    picked = {p["id"] for p in clean["picks"]}
+    for x in (x for x in items("skips") if isinstance(x, dict)):
+        if x.get("id") in cands and x.get("id") not in picked:
+            clean["skips"].append({"id": x["id"], "reason": txt(x.get("reason"), "skip") or "not a close fit"})
+        else:
+            dropped.append(f"skip: {x.get('id')}")
+    ppl = refs.get("people") or {}
+    recent = {r["key"]: r for r in refs.get("recent_outreach") or []}
+    soon = (now.date() - timedelta(days=3)).isoformat()
+    jobs = set(refs.get("jobs") or ()) | set(cands)
+    seen: set[str] = set()
+    for x in (x for x in items("outreach") if isinstance(x, dict)):
+        p, kind, job = ppl.get(x.get("person")), x.get("kind"), x.get("job") or None
+        if not p or kind not in KINDS or (job and job not in jobs):
+            dropped.append(f"outreach: {x.get('person')} {kind} {job}")
+            continue
+        key = outreach_key(p["name"], kind, job)
+        r = recent.get(key)
+        if key in seen or key in (refs.get("dismissed") or ()) or (r and r["day"] > soon):
+            dropped.append(f"outreach: {p['name']} {kind} (dismissed or suggested lately)")
+            continue
+        why = txt(x.get("why"), "outreach why")
+        if why is None:
+            continue
+        seen.add(key)
+        clean["outreach"].append({"person": x["person"], "kind": kind, "job": job, "why": why, "key": key})
+    nudge_keys = set(refs.get("nudges") or {})
+    clean["followups"] = [k for k in items("followups") if isinstance(k, str) and k in nudge_keys]
+    dropped += [f"followup: {k}" for k in items("followups") if isinstance(k, str) and k not in nudge_keys]
+    for x in (x for x in items("prep") if isinstance(x, dict)):
+        if x.get("job") not in jobs:
+            continue
+        its = [t for t in (txt(i, "prep") for i in (x.get("items") or []) if isinstance(i, str)) if t]
+        if its:
+            clean["prep"].append({"job": x["job"], "items": its[:5]})
+    clean["check"] = [t for t in (txt(x, "check") for x in items("check") if isinstance(x, str)) if t][:5]
+    return clean, dropped

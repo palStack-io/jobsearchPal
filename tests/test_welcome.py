@@ -127,3 +127,15 @@ def test_ai_step_without_an_ai_says_so_and_never_calls_one(env, monkeypatch):
     r = c.post("/welcome/ai-done", follow_redirects=False)
     assert r.headers["location"].startswith("/welcome?step=4") and "err=" in r.headers["location"]
     assert "Skip for now" in c.get("/welcome?step=4").text
+
+
+def test_an_existing_claimer_is_not_switched_off_by_default(env):
+    s, db, c = env
+    cfg = _cfg(s)
+    cfg["work_search"] = {"label": "DUA", "weekly_minimum": 3, "state": "MA"}  # an install from before the question
+    (s.root / "config.yaml").write_text(yaml.safe_dump(cfg))
+    s.raw.update(cfg)
+    html = c.get("/welcome?step=2").text
+    yes = html[html.index('value="yes"') - 60:html.index('value="yes"') + 40]
+    no = html[html.index('value="no"') - 60:html.index('value="no"') + 40]
+    assert "checked" in yes and "checked" not in no

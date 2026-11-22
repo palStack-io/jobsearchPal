@@ -4,6 +4,9 @@ Every page of the dashboard, the Settings tabs, and how the pal talks and helps.
 
 ## Dashboard pages
 
+- **Welcome** (`/welcome`, on a fresh install): five short steps (resume, about you, roles, your AI, email) that post
+  to the same saves as the Setup page, then **Run it now**. See [Setup](setup.md).
+
 - **Dashboard:** the horizon greeting, then **Your week** (this week's day strip, one line from what you did, or the
   coach's first line when the coach ran today with **Open your coach**, a thin
   tally for each goal you set and for the work-search log, and one place to start, usually your board's next due

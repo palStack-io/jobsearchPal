@@ -4,9 +4,18 @@
 real form, then stops. You press Submit on the dashboard, or with `autoapply-finish` on your laptop when
 the site shows a captcha or sends a verification code.
 
-**Does my computer, or Claude desktop, need to be on?** No. The daily run is started by cron (or the
-Docker scheduler) on the server and runs the agent CLI there, headless. Your laptop is only needed for
-`autoapply-finish`.
+**Does my computer, or Claude desktop, need to be on?** On a server, no: the daily run is started by cron (or
+the Docker scheduler) there and runs the agent CLI headless. On your own Mac or Windows PC, it needs to be awake at
+6:30 on weekdays, or press **Run now** whenever you sit down. Claude desktop never needs to be open.
+
+**Can I run it on a Mac or Windows PC?** Yes, with Docker Desktop: see [Setup](setup.md#on-a-mac-or-windows-pc-about-15-minutes).
+
+**My resume is a PDF, or a Word file in my own layout.** Upload it as it is. Your AI rebuilds it once in the plain
+format tailoring uses, keeps your original, adds nothing that isn't in it, and you check it first. See
+[Your resume](setup.md#your-resume).
+
+**I'm not on unemployment.** Answer no in the welcome steps. jobsearchPal then stays a job-search helper: no Work
+search page, no weekly count, no claim-day reminders.
 
 **Does it watch LinkedIn?** Through your LinkedIn job-alert emails only (see
 [Where jobs come from](how-it-works.md#where-jobs-come-from)). Add more alerts with tight filters to widen it.

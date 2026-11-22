@@ -1,6 +1,11 @@
 # Unemployment help
 
-Pick your state on the Setup page and the **Work search** page becomes your unemployment desk:
+Unemployment help is optional. Answer **yes** to "Are you claiming unemployment benefits?" in the welcome steps (or
+pick your state on Settings > Setup), and the **Work search** page becomes your unemployment desk. Answer **no** and it
+stays out of the way: no Work search page in the menu, no weekly count on the dashboard or in your brief, and no
+claim-day reminders. Change your answer any time on Settings > Setup.
+
+With your state picked:
 
 - **This week at a glance:** activities so far against your state's weekly minimum, days left until Saturday,
   your next deadline, and a one-click download of the week's proof.

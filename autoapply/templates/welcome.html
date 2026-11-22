@@ -35,8 +35,10 @@
    </div>
    <fieldset class="wl-claim"><legend>Are you claiming unemployment benefits?</legend>
     <p class="wl-hint">If you are, jobsearchPal keeps your state's weekly work-search log and reminds you about claim days. If not, it stays a job-search helper and none of that shows.</p>
-    <label class="wl-radio"><input type="radio" name="claiming" value="yes" {{ 'checked' if ws.claiming }}> Yes</label>
-    <label class="wl-radio"><input type="radio" name="claiming" value="no" {{ 'checked' if ws.claiming is sameas false or ws.claiming is not defined }}> No</label>
+    {# No answer saved yet (an install from before this question): a state means they are claiming. #}
+    {% set claims = ws.claiming if ws.claiming is defined else (ws.state is defined and ws.state) %}
+    <label class="wl-radio"><input type="radio" name="claiming" value="yes" {{ 'checked' if claims }}> Yes</label>
+    <label class="wl-radio"><input type="radio" name="claiming" value="no" {{ 'checked' if not claims }}> No</label>
     <label class="fld wl-state"><span>Your state (if yes)</span><select name="state"><option value="">Choose your state</option>{% for code, r in states %}<option value="{{ code }}" {{ 'selected' if ws.state == code }}>{{ r.name or code }}</option>{% endfor %}</select></label>
    </fieldset>
    <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=1">Back</a></div>

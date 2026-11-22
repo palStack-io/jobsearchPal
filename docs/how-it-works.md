@@ -21,6 +21,9 @@ you ─► dashboard ─► check answers, decide consents ─► Submit
 
 ## A morning, step by step
 
+0. **Your resume, once.** If a resume you uploaded is still waiting to be put in the tailoring format (see
+   [Your resume](setup.md#your-resume)), that happens first.
+
 1. **Email first.** New mail from application systems and recruiters is gathered over read-only
    IMAP. Keyword rules only pick the candidates. A model then reads each one and files it as a
    confirmation, interview, rejection, offer, recruiter contact or not job-related, and matches it to

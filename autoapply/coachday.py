@@ -316,7 +316,7 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
         v = reply.get(key)
         return [x for x in v if isinstance(x, dict) or isinstance(x, str)] if isinstance(v, list) else []
 
-    clean = {"note": [], "picks": [], "skips": [], "outreach": [], "followups": [], "prep": [], "check": []}
+    clean = {"note": [], "picks": [], "skips": [], "outreach": [], "followups": [], "prep": [], "check": [], "week": {}, "later": []}
     clean["note"] = [t for t in (txt(x, "note") for x in items("note") if isinstance(x, str)) if t]
     cands = refs.get("candidates") or {}
     picked_cos: set[str] = set()
@@ -375,7 +375,29 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
         if its:
             clean["prep"].append({"job": x["job"], "items": its[:5]})
     clean["check"] = [t for t in (txt(x, "check") for x in items("check") if isinstance(x, str)) if t][:5]
+    from . import coach as _coach, goals as _goals
+    wk = reply.get("week") if isinstance(reply.get("week"), dict) else {}
+    totals = {"apps": _goals._int(wk.get("apps"), 0, _goals.MAX_APPS),
+              **{g: _goals._hours(wk.get(f"{g}_h")) for g in ("reach", "prep", "learn")}}
+    clean["week"] = ({**totals, "why": txt(wk.get("why"), "week why") or ""} if any(totals.values()) else {})
+    # Later this week: weeks run Sunday to Saturday (coach.DAYS); a day must come after today.
+    today_i = (now.weekday() + 1) % 7
+    for x in (x for x in items("later") if isinstance(x, dict)):
+        day = x.get("day")
+        if day not in _coach.DAYS or _coach.DAYS.index(day) <= today_i or len(clean["later"]) >= 5:
+            dropped.append(f"later: {day}")
+            continue
+        t = txt(x.get("text"), "later")
+        if t:
+            clean["later"].append({"day": day, "text": t})
     return clean, dropped
+
+
+def suggested_totals(row: dict | None) -> dict | None:
+    """The coach's suggested week as goals totals (applications; minutes for the rest), or None."""
+    wk = (row or {}).get("week") or {}
+    t = {g: int(wk.get(g) or 0) for g in ("apps", "reach", "prep", "learn")}
+    return t if any(t.values()) else None
 
 
 # ---- the call ------------------------------------------------------------------------------------
@@ -634,4 +656,5 @@ def card(db, settings, day: date) -> dict | None:
             skips.append(sk)
     prep = [p | {"job": db.get(p["job"])} for p in row.get("prep") or [] if db.get(p["job"])]
     return {"note": row.get("note") or [], "picks": picks, "skips": skips, "prep": prep, "check": row.get("check") or [],
-            "people": rows(db, settings, day), "followups": row.get("followups") or []}
+            "people": rows(db, settings, day), "followups": row.get("followups") or [],
+            "later": row.get("later") or [], "week": row.get("week") or {}}

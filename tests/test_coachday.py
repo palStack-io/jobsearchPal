@@ -511,3 +511,28 @@ def test_drafts_off_means_no_drafts_call(env):
     def boom(text, model):
         raise AssertionError("no call expected")
     assert coachday.drafts(db, s, ask=boom, now=NOW)[0] == 2
+
+
+# ---- Task 12: the coach suggests a week, and puts things on later days ---------------------------
+
+def test_week_suggestion_clamped_and_converted(env):
+    from autoapply import goals
+    s, db, text, refs = _refs(env)
+    clean, _ = coachday.validate(_reply(week={"apps": 999, "reach_h": "2", "prep_h": 1.5, "learn_h": "x",
+                                              "why": "Your screens came after reaching people, so more of that."}), refs, text, NOW)
+    t = coachday.suggested_totals(clean)
+    assert t == {"apps": goals.MAX_APPS, "reach": 120, "prep": 90, "learn": 0}
+    assert clean["week"]["why"].startswith("Your screens")
+    clean, _ = coachday.validate(_reply(week={"apps": 0, "reach_h": 0}), refs, text, NOW)
+    assert coachday.suggested_totals(clean) is None
+
+
+def test_later_items_need_a_later_day(env):
+    s, db, text, refs = _refs(env)  # NOW is a Saturday: nothing later this week (weeks run Sunday to Saturday)
+    clean, _ = coachday.validate(_reply(later=[{"day": "Wed", "text": "Thank Priya Rao after your screen."}]), refs, text, NOW)
+    assert clean["later"] == []
+    mon = datetime(2026, 11, 23, 6, 30)
+    clean, _ = coachday.validate(_reply(later=[{"day": "Wed", "text": "Thank Priya Rao after your screen."},
+                                               {"day": "Mon", "text": "Today is not later."},
+                                               {"day": "Thu", "text": "Write to Bob Smith."}]), refs, text, mon)
+    assert clean["later"] == [{"day": "Wed", "text": "Thank Priya Rao after your screen."}]

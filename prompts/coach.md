@@ -30,6 +30,10 @@ What to decide:
 - followups: the open thread keys in the order you'd do them.
 - prep: for upcoming screens, up to 5 short things to practise or look up.
 - check: things you couldn't confirm (remote or not, a missing location).
+- week: a week's plan that fits their search right now, as totals: applications, and hours for reaching out,
+  interview prep and learning. Keep it doable (look at what they did last week); "why" is one line from their record.
+- later: things that belong on a later day this week (a thank-you after a screen, a check-in when it's due), each
+  with the day ("Wed") and one line.
 
 Reply with this JSON and nothing else:
 {"note": ["..."],
@@ -38,7 +42,9 @@ Reply with this JSON and nothing else:
  "outreach": [{"person": "p3", "job": "<id or null>", "kind": "referral|hiring_team|check_in|thank_you", "why": "one line they see"}],
  "followups": ["<thread key>"],
  "prep": [{"job": "<id>", "items": ["..."]}],
- "check": ["..."]}
+ "check": ["..."],
+ "week": {"apps": 4, "reach_h": 2, "prep_h": 1, "learn_h": 0, "why": "..."},
+ "later": [{"day": "Wed", "text": "..."}]}
 
 {{VOICE}}
 

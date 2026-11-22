@@ -367,3 +367,11 @@ def test_fill_of_a_removed_posting_says_closed(tmp_path, monkeypatch):
     plan.write_text(json.dumps({"url": "https://boards.greenhouse.io/a/jobs/1", "ats": "greenhouse", "files": {}}))
     cli.main(["--config", str(cfg), "fill", str(plan), "--job", "gh:a:1"])
     assert db.get("gh:a:1")["error"].startswith("This posting is closed")
+
+
+def test_coach_command_off_exits_2(tmp_path, capsys):
+    s, db, cfg = make(tmp_path)
+    with pytest.raises(SystemExit) as e:
+        cli.main(["--config", str(cfg), "coach"])
+    assert e.value.code == 2
+    assert "coach off" in capsys.readouterr().err

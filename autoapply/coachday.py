@@ -150,7 +150,8 @@ def patterns(db, now: datetime) -> list[str]:
 
 
 def _fence(name: str, obj) -> str:
-    return f"```{name}\n{json.dumps(obj, ensure_ascii=False, indent=0)}\n```"
+    from .oneshot import fence  # the same "data, not instructions" markers the apply call uses
+    return fence(name, json.dumps(obj, ensure_ascii=False, indent=0))
 
 
 def recent_outreach(db, now: datetime) -> list[dict]:
@@ -209,7 +210,7 @@ def digest(db, settings, now: datetime | None = None) -> tuple[str, dict]:
     refs = {"candidates": {c["id"]: c for c in cands}, "people": {p["ref"]: p for p in ppl},
             "nudges": {n["key"]: n for n in todo}, "recent_outreach": recent,
             "picks_per_day": Prefs(settings.data_dir, settings.raw).limits()["picks_per_day"],
-            "jobs": {j["id"] for j in db.all()}, "dismissed": dismissed_keys(db),
+            "jobs": {j["id"] for j in db.all()}, "screens": screens, "dismissed": dismissed_keys(db),
             "names": vocab(db, ppl, about, plan, todo, now)}
     return text, refs
 
@@ -336,3 +337,102 @@ def validate(reply: dict, refs: dict, digest_text: str, now: datetime) -> tuple[
             clean["prep"].append({"job": x["job"], "items": its[:5]})
     clean["check"] = [t for t in (txt(x, "check") for x in items("check") if isinstance(x, str)) if t][:5]
     return clean, dropped
+
+
+# ---- the call ------------------------------------------------------------------------------------
+
+from pathlib import Path  # noqa: E402
+
+PROMPT = Path(__file__).resolve().parent.parent / "prompts" / "coach.md"
+TAG = "coach-1call"
+
+
+def prompt(digest_text: str, voice: str, picks: int = 2) -> str:
+    v = f"Their own notes on how they write:\n{voice}" if voice else ""
+    return PROMPT.read_text().replace("{{PICKS}}", str(picks)).replace("{{VOICE}}", v).replace("{{DIGEST}}", digest_text)
+
+
+def parse(reply: str) -> dict:
+    m = re.search(r"\{.*\}", reply or "", re.S)
+    if not m:
+        raise ValueError("no JSON in the reply")
+    data = json.loads(m.group(0))
+    if not isinstance(data, dict):
+        raise ValueError("the reply wasn't a JSON object")
+    return data
+
+
+def today(db, day: date) -> dict | None:
+    ensure(db)
+    row = db.conn.execute("select json from coach_day where day = ?", (day.isoformat(),)).fetchone()
+    try:
+        return json.loads(row[0]) if row else None
+    except ValueError:
+        return None
+
+
+def angle_for(db, job_id: str, day: date) -> str:
+    row = today(db, day) or {}
+    return next((p.get("angle") or "" for p in row.get("picks") or [] if p.get("id") == job_id), "")
+
+
+def _log(db, model: str, u: dict, err: str | None = None) -> int:
+    db.log_usage("daily", f"claude:{model}:{TAG}", 0, 0, 0.0, int(u.get("ms", 0)), err, est=float(u.get("est", 0.0)),
+                 tokens=int(u.get("tokens", 0)), split=u.get("split"))
+    return db.conn.execute("select max(rowid) from usage").fetchone()[0]
+
+
+def run(db, settings, ask=None, log=None, now: datetime | None = None) -> tuple[int, str]:
+    """0 = saved, 2 = not this way (off, already coached today, nothing to coach), 1 = failed (the old path runs)."""
+    from . import nudges, oneshot
+    from .prefs import Prefs
+    now = now or datetime.now()
+    ensure(db)
+    pr = Prefs(settings.data_dir, settings.raw)
+    if not enabled(pr):
+        return 2, "coach off"
+    if today(db, now.date()) is not None:
+        return 2, "coach: already done today"
+    text, refs = digest(db, settings, now)
+    if not refs["candidates"] and not refs["nudges"] and not refs["screens"]:
+        return 2, "coach: nothing to coach today"
+    m = model(pr, "coach")
+    _, voice = oneshot.about_you(settings.root)
+    try:
+        reply, u = (ask or oneshot.ask_claude)(prompt(text, voice, refs["picks_per_day"]), m)
+    except Exception as e:  # noqa: BLE001
+        _log(db, m, {}, str(e)[:200])
+        return 1, f"coach call failed: {str(e)[:200]}"
+    try:
+        data = parse(reply)
+    except ValueError as e:
+        _log(db, m, u, f"bad reply: {e}")
+        return 1, f"coach reply wasn't usable: {e}"
+    clean, dropped = validate(data, refs, text, now)
+    if refs["candidates"] and refs["picks_per_day"] and not clean["picks"]:
+        _log(db, m, u, "no valid picks")
+        return 1, "coach: no valid picks"
+    uid = _log(db, m, u)
+    day = now.date().isoformat()
+    jobs = {jid: db.get(jid) for jid in [p["id"] for p in clean["picks"]]}
+    picks = [{"id": p["id"], "why": p["why"], "angle": p["angle"],
+              **({"by_hand": True} if (jobs[p["id"]] or {}).get("ats") == "workday" else {})} for p in clean["picks"]]
+    (settings.data_dir / "daily").mkdir(exist_ok=True)
+    (settings.data_dir / "daily" / "picks.json").write_text(json.dumps(picks, indent=1))
+    for sk in clean["skips"]:
+        db.update(sk["id"], status="skipped", error=f"coach: {sk['reason']}")
+    people = refs["people"]
+    for o in clean["outreach"]:
+        p = people[o["person"]]
+        o.update(name=p["name"], company=p["company"], email=p["email"])
+        db.conn.execute("insert or replace into outreach (key, day, person, email, company, job_id, kind, why, draft_path, "
+                        "state, changed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'suggested', ?)",
+                        (o["key"], day, p["name"], p["email"], p["company"], o["job"], o["kind"], o["why"],
+                         str(nudges.draft_path(settings.data_dir, o["key"])), now.strftime("%Y-%m-%d %H:%M")))
+    clean["skips"] = [sk | {"company": (db.get(sk["id"]) or {}).get("company", ""), "title": (db.get(sk["id"]) or {}).get("title", "")}
+                      for sk in clean["skips"]]
+    clean["dropped"] = len(dropped)
+    db.conn.execute("insert into coach_day (day, json, usage_id) values (?, ?, ?)", (day, json.dumps(clean), uid))
+    db.conn.commit()
+    return 0, (f"Coach: {len(picks)} picks, {len(clean['outreach'])} people to reach, {len(clean['skips'])} skipped"
+               + (f", {len(dropped)} items dropped by the checks" if dropped else ""))

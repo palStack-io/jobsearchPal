@@ -236,3 +236,108 @@ def test_one_pick_per_company_and_limit(env):
         skips=[{"id": "gh:hooli:1", "reason": "also picked"}]), refs, text, NOW)
     assert [p["id"] for p in clean["picks"]] == ["gh:render:1", "gh:hooli:1"]
     assert clean["skips"] == []
+
+
+# ---- Task 4: the call, saving, the CLI ----------------------------------------------------------
+
+import json  # noqa: E402
+
+
+def _on(s):
+    p = Prefs(s.data_dir, s.raw)
+    p.data["coach"] = True
+    p.save()
+
+
+def _good_reply(db, s):
+    _, refs = coachday.digest(db, s, NOW)
+    return json.dumps(_reply(
+        note=["Priya Rao wrote back on Thu 12 Nov. Reply to her first.", "Today's picks lean toward analytics roles."],
+        picks=[{"id": "gh:render:1", "why": "Close to your Scribd screen", "angle": "your dbt work"}],
+        skips=[{"id": "gh:hooli:1", "reason": "Not a close fit"}],
+        outreach=[{"person": _ref_of(refs, "Dana Wu"), "job": "gh:render:1", "kind": "hiring_team", "why": "Dana Wu leads the team"}],
+        check=["Render lists Remote; confirm the time zone."]))
+
+
+def _asker(text_reply, seen=None):
+    def ask(text, model):
+        if seen is not None:
+            seen.append(model)
+        return text_reply, {"tokens": 12000, "ms": 5, "est": 0.0}
+    return ask
+
+
+def test_run_saves_and_writes_picks(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    code, summary = coachday.run(db, s, ask=_asker("Here:\n" + _good_reply(db, s)), now=NOW)
+    assert code == 0, summary
+    picks = json.loads((s.data_dir / "daily" / "picks.json").read_text())
+    assert picks == [{"id": "gh:render:1", "why": "Close to your Scribd screen", "angle": "your dbt work"}]
+    row = coachday.today(db, NOW.date())
+    assert row["note"][0].startswith("Priya Rao")
+    assert coachday.angle_for(db, "gh:render:1", NOW.date()) == "your dbt work"
+    out = db.conn.execute("select person, company, kind, state, draft_path from outreach").fetchall()
+    assert [tuple(r[:4]) for r in out] == [("Dana Wu", "Render", "hiring_team", "suggested")]
+    assert out[0][4].endswith(".md")
+    assert any("coach-1call" in r[0] for r in db.conn.execute("select model from usage"))
+
+
+def test_run_skips_marked_with_reason(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    coachday.run(db, s, ask=_asker(_good_reply(db, s)), now=NOW)
+    j = db.get("gh:hooli:1")
+    assert j["status"] == "skipped" and j["error"] == "coach: Not a close fit"
+
+
+def test_run_bad_json_returns_1_and_saves_nothing(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    code, _ = coachday.run(db, s, ask=_asker("Sure! Here's"), now=NOW)
+    assert code == 1
+    assert coachday.today(db, NOW.date()) is None
+    assert not (s.data_dir / "daily" / "picks.json").exists()
+    assert db.get("gh:hooli:1")["status"] == "new"
+
+
+def test_run_nothing_to_coach_returns_2_without_call(env):
+    s, db = env
+    _on(s)
+
+    def boom(text, model):
+        raise AssertionError("no call expected")
+    assert coachday.run(db, s, ask=boom, now=NOW)[0] == 2
+
+
+def test_run_off_returns_2(env):
+    s, db = env
+    _seed(db)
+    assert coachday.run(db, s, ask=_asker(_good_reply(db, s)), now=NOW)[0] == 2
+
+
+def test_second_run_same_day_keeps_row_and_makes_no_call(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    assert coachday.run(db, s, ask=_asker(_good_reply(db, s)), now=NOW)[0] == 0
+
+    def boom(text, model):
+        raise AssertionError("no call expected")
+    assert coachday.run(db, s, ask=boom, now=NOW)[0] == 2
+    assert coachday.today(db, NOW.date())["note"]
+
+
+def test_model_from_prefs_reaches_ask(env):
+    s, db = env
+    _seed(db)
+    _on(s)
+    p = Prefs(s.data_dir, s.raw)
+    p.data["coach_model"] = "opus"
+    p.save()
+    seen = []
+    coachday.run(db, s, ask=_asker(_good_reply(db, s), seen), now=NOW)
+    assert seen == ["opus"]

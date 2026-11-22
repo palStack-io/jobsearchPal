@@ -216,7 +216,7 @@ def test_coach_page_shows_note_today_and_later(env):
     _outreach(db, day=date.today().isoformat())
     html = _client(s, db).get("/coach").text
     assert "<h1>Your coach</h1>" in html and 'aria-current="page"' in html
-    assert html.index("Priya Rao wrote back") < html.index(">Today<") < html.index("Later this week")
+    assert html.index("Priya Rao wrote back") < html.index(">Where to aim<") < html.index(">Getting ready<")
     assert "Thank Priya Rao after your screen." in html and "Dana Wu" in html
     assert "Your coach</span>" in html  # the side nav label
 
@@ -260,7 +260,7 @@ def test_page_order_is_note_week_today_later_more(env):
     _row_with(db, later=[{"day": "Sat", "text": "Check in with Render."}])
     _outreach(db, day=date.today().isoformat())
     html = _client(s, db).get("/coach").text
-    marks = ['class="yc-next"', ">This week<", ">Today<", ">Later this week<", ">Worth checking", ">Your plan for the week"]
+    marks = ['class="yc-next"', ">This week<", ">Where to aim<", ">People who can help<", ">Getting ready<", ">Worth checking", ">Your plan for the week"]
     at = [html.index(m) for m in marks]
     assert at == sorted(at), dict(zip(marks, at))
 
@@ -271,8 +271,8 @@ def test_one_filled_button_in_today(env):
     _coach_row(db)
     _outreach(db, day=date.today().isoformat())
     html = _client(s, db).get("/coach").text
-    today = html[html.index(">Today<"):html.index("</section>", html.index(">Today<"))]
-    assert today.count("yc-btn primary") == 1 and today.count("yc-btn") >= 2
+    body = html[html.index(">Where to aim<"):html.index(">Worth checking")]
+    assert body.count("yc-btn primary") == 1 and body.count("yc-btn") >= 2
 
 
 def test_more_menu_holds_person_actions(env):
@@ -302,3 +302,25 @@ def test_week_numbers_count_up_on_the_page(env):
     html = _client(s, db).get("/coach").text
     week = html[html.index(">This week<"):]
     assert week.count("data-count=") >= 3
+
+
+
+# ---- refocus (2026-11-22): the coach is strategy; replies and follow-ups stay in the dashboard's To do ----
+
+def test_coach_page_has_no_reply_rows(env, monkeypatch):
+    from autoapply import nudges
+    s, db = env
+    _coach_row(db)
+    monkeypatch.setattr(nudges, "compute", lambda *a, **k: [{"key": "k1", "kind": "reply", "title": "Reply to Jason Spaar",
+                                                            "why": "They wrote 2 days ago.", "to": "j@x.org", "subject": "Hi",
+                                                            "draft": "", "job": None, "event": None}])
+    html = _client(s, db).get("/coach").text
+    assert "Reply to Jason Spaar" not in html
+
+
+def test_people_section_invites_contacts_when_empty(env):
+    s, db = env
+    _coach_row(db)
+    html = _client(s, db).get("/coach").text
+    sec = html[html.index(">People who can help<"):]
+    assert 'href="/dua#people"' in sec[:1500]

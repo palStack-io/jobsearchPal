@@ -91,9 +91,11 @@ Motion is finite and plays once; with Reduce Motion the finished picture shows.
 
 ## The coach (Your coach page)
 
-When the morning run's coach has run (Settings > Daily run > Coach), **Your coach** opens with its morning: the note
-(what's working, one next thing), **Today** (picks with what each letter leads with, the first follow-ups, and people
-to reach), **Later this week** (things it put on a day), then the rest. People to reach each have a
+When the morning run's coach has run (Settings > Daily run > Coach), **Your coach** is your strategy page (refocused
+2026-11-22; replies and follow-ups stay in the dashboard's To do): the coach's direction for the week in one large
+line, **This week** (the day strip and three counting numbers), **Where to aim** (today's picks with what each letter
+leads with), **People who can help** (or an invitation to add people you know), **Getting ready** (interview prep
+and things it put on a later day), then Worth checking, Skipped (undo) and Your plan for the week. People each have a
 drafted note: **Send** opens it in Gmail, or your mail app through `mailto:`; **I sent it**, **Not now** (hidden for 3
 days), **Dismiss** (never again), and **Edit** to change the note or add an address you found), prep for upcoming
 screens, **Worth checking** (what it couldn't confirm) and the roles it skipped, each with **Undo**. A suggestion with an

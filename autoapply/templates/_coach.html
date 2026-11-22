@@ -1,14 +1,12 @@
-{# Your coach, direction A (2026-11-21): Today, Later this week, then Worth checking and Skipped as quiet disclosure rows.
+{# Your coach, direction A, refocused 2026-11-22 on strategy (where to aim, who can help, getting ready); replies and
+   follow-ups stay in the dashboard's To do. Then then Worth checking and Skipped as quiet disclosure rows.
    One filled button on the page (the first Today row); everything else for a row lives in its More menu. #}
 {% set c = coach_card %}
 {% macro icon(kind) %}{% if kind == 'reply' %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
 {% elif kind == 'apply' %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
 {% else %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 8v6M22 11h-6"/></svg>{% endif %}{% endmacro %}
 
-{% if today_rows %}<section class="yc-sec" id="coach" aria-labelledby="yc-today-h">
- <h2 id="yc-today-h">Today</h2>
- <div class="yc-card yc-list">
- {% for r in today_rows %}<div class="yc-item yc-{{ r.kind }}">
+{% macro item(r) %}<div class="yc-item yc-{{ r.kind }}">
   <span class="yc-ic" aria-hidden="true">{{ icon(r.kind) }}</span>
   <div class="yc-txt"><div class="yc-title">{{ r.title }}</div>{% if r.detail %}<div class="yc-detail">{{ r.detail }}</div>{% endif %}
    {% if r.person %}<details class="yc-edit"><summary>Edit the note{% if not r.person.email %} or add their address{% endif %}</summary>
@@ -26,17 +24,28 @@
     {% else %}<form method="post" action="/nudge/{{ r.nudge }}"><button name="action" value="done">Done</button><input type="hidden" name="days" value="3"><button name="action" value="snooze">Remind me in 3 days</button></form>{% endif %}
     </div></details>{% endif %}
   </div>
- </div>{% endfor %}
- </div>
-</section>{% endif %}
+ </div>{% endmacro %}
 
-{% if c and (c.later or c.prep) %}<section class="yc-sec" aria-labelledby="yc-later-h">
- <h2 id="yc-later-h">Later this week</h2>
+{% if c %}<section class="yc-sec" id="coach" aria-labelledby="yc-aim-h">
+ <h2 id="yc-aim-h">Where to aim</h2>
+ {% if aim_rows %}<div class="yc-card yc-list">{% for r in aim_rows %}{{ item(r) }}{% endfor %}</div>
+ {% else %}<p class="yc-empty">No new roles stood out today. The coach looks again tomorrow morning.</p>{% endif %}
+</section>
+
+<section class="yc-sec" aria-labelledby="yc-people-h">
+ <h2 id="yc-people-h">People who can help</h2>
+ {% if people_rows %}<p class="yc-detail">Each note is drafted for you. You send it from your own email; nothing goes out on its own.</p>
+ <div class="yc-card yc-list">{% for r in people_rows %}{{ item(r) }}{% endfor %}</div>
+ {% else %}<p class="yc-empty">Referrals open more doors than applications alone. <a href="/dua#people">Add people you know</a> at companies you'd like to work for, and the coach will suggest who to ask and draft the note.</p>{% endif %}
+</section>
+
+{% if c.later or c.prep %}<section class="yc-sec" aria-labelledby="yc-ready-h">
+ <h2 id="yc-ready-h">Getting ready</h2>
  <ul class="yc-later">
- {% for x in c.later %}<li><span class="yc-day">{{ x.day }}</span><span>{{ x.text }}</span></li>{% endfor %}
  {% for p in c.prep %}<li><span class="yc-day">Prep</span><span><b>{{ p.job.company }}:</b> {{ p['items']|join('; ') }}{% if p.job %} · <a href="/prep/{{ p.job.id|urlencode }}">prep pack</a>{% endif %}</span></li>{% endfor %}
+ {% for x in c.later %}<li><span class="yc-day">{{ x.day }}</span><span>{{ x.text }}</span></li>{% endfor %}
  </ul>
-</section>{% endif %}
+</section>{% endif %}{% endif %}
 
 {% if c and (c.check or c.skips) %}<section class="yc-rows" aria-label="More from the coach">
  {% if c.check %}<details class="yc-row"><summary>Worth checking <span class="yc-n">· {{ c.check|length }}</span></summary>

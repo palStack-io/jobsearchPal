@@ -646,15 +646,10 @@ def make_app(settings, db: DB) -> FastAPI:
         met = [m for m in goals.new_met(db, now.date()) if m["scope"] != "week"]
         coach_card = coachday.card(db, settings, now.date())
         suggested = None if wk_plan else coachday.suggested_totals(coach_card)
-        follow = []
-        if coach_card:
-            todo = [n for n in nudges.compute(db, settings.data_dir, settings=settings) if n.get("kind") in ("reply", "chase", "application", "interview")]
-            for n in coachday.order_todo(todo, coach_card["followups"])[:3]:
-                n["compose"] = nudges.gmail_compose_url(n)
-                follow.append(n)
         wk_panel = goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0])
-        resp = page("plan.html", nav="coach", coach_card=coach_card, follow=follow, suggested=bool(suggested),
-                    today_rows=coachday.today_rows(coach_card, follow), week_strip=wk_panel["strip"],
+        aim_rows, people_rows = coachday.page_rows(coach_card)
+        resp = page("plan.html", nav="coach", coach_card=coach_card, suggested=bool(suggested),
+                    aim_rows=aim_rows, people_rows=people_rows, week_strip=wk_panel["strip"],
                     week_nums=coachday.week_numbers(db, now.date()), ws_label=work_search(settings)[0],
                     today_label=f"{now.strftime('%A')} {now.day} {now.strftime('%B')}",
                     suggested_why=(coach_card or {}).get("week", {}).get("why", "") if suggested else "", s=s, back=back, plan=wk_plan, plan_line=coach.plan_line(wk_plan),

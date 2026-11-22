@@ -5,7 +5,10 @@ What happens each morning, where roles come from, and how replies, interviews an
 ```
 6:30am weekdays (cron or the Docker scheduler) ─► scripts/daily.sh, in short steps:
   no AI:     autoapply sync-email (a small model sorts the emails) · autoapply find (boards, job sites)
-  light model, one fresh session each (prompts/stages/):
+  the coach (Settings > Daily run), one call each, checked against your data:
+    ├─ autoapply drafts-once   follow-ups and outreach ─► drafted notes you send yourself
+    └─ autoapply coach         your record + patterns + people + candidates ─► note, picks, skips, people to reach
+  light model, one fresh session each (prompts/stages/), when the coach is off or a call fails:
     ├─ prep      interviews ─► prep pack: reported questions with sources, your stories
     ├─ drafts    follow-up reminders ─► drafted replies
     └─ rank      autoapply candidates (pre-ranked in Python) + alert emails ─► today's picks
@@ -25,8 +28,11 @@ you ─► dashboard ─► check answers, decide consents ─► Submit
 2. **Interview prep and follow-ups.** Any application with a new interview email gets a prep pack, and
    each [follow-up reminder](#follow-up-reminders) gets a drafted reply (see [Interview prep](#interview-prep)).
 3. **Find roles** from the sources below. Anything already tracked or applied to is skipped.
-4. **Rank and pick** the best one or two, and skip the clear misses with a reason (the Stats page
-   shows why roles were skipped).
+4. **Coach, rank and pick.** With the coach on, one call reads your whole search and writes a short note
+   (what's working, the next thing), picks the best one or two with what each letter should lead with, skips the
+   clear misses with a reason (undo on the dashboard) and suggests people to reach, from your contacts, people who
+   wrote to you and names in a posting. Python checks every id, name, number and date against your data first. With
+   it off, or if the call fails, the rank session does this step as before (the Stats page shows why roles were skipped).
 5. **Tailor** a resume and cover letter from your base resume and `CLAUDE.local.md`, plus a
    `notes.md` with the fit/gap table, form answers and pay ask. Letters follow **How your letters sound**
    (Settings, then Letters): tone, how a letter opens, length, words to never use, your own notes and letters you

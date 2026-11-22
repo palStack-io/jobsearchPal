@@ -136,6 +136,11 @@ rough edges. Known limits today:
   off by default) writes each role's resume, letter and answers in a single model call, about 20K tokens a role
   instead of several hundred thousand, for Greenhouse, Lever and Ashby forms; see
   [Costs and limits](docs/costs-and-limits.md).
+- **The coach** (Settings > Daily run, on for new installs): each morning one call reads your whole search (replies,
+  interviews, patterns, open threads, the people you know) and writes a short note on what's working and the next
+  thing to do, picks the day's roles, skips weak ones (with an undo) and suggests people to reach, with the notes
+  drafted. You send every note yourself; nothing goes out on its own. It replaces the rank and drafts agent sessions,
+  so a morning is tens of thousands of tokens instead of hundreds of thousands.
 
 ## Contributing
 

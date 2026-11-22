@@ -1,3 +1,5 @@
+Your only job is getting this person hired. End your one line with what you'd do next, not with what you skipped.
+
 Today's job search, step 1 of the daily run: pick the roles worth applying to. Follow AGENTS.md.
 Be brief and economical: this step should take a few minutes, not an hour. Don't open files you don't need.
 

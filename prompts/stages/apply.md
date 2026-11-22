@@ -1,3 +1,5 @@
+Your only job is getting this person hired. End your one line with what you'd do next, not with what you skipped.
+
 Today's job search, one application: {{JOB_ID}}. Follow AGENTS.md (read CLAUDE.local.md and materials/context/*.md
 first). Work only on this role.
 {{PREP_ONLY}}

@@ -40,6 +40,14 @@ sends it to the paid lookup, once (on one real install each lookup step averaged
 OpenRouter (skipped once the monthly budget is reached, then it uses your Claude subscription), about 20,000 through
 Claude Code, most of that Claude Code's own overhead.
 
+**The coach (Settings > Daily run).** Before the coach, the morning's agent sessions spent roughly 450,000 tokens
+on one real install (rank about 185,000, reading alert emails about 170,000, drafts about 100,000), most of it
+re-reading their own context. With the coach on, the app gathers your record, the patterns, open threads, the people
+you know and today's candidates into one digest (about 15,000 tokens), and one call returns the note, picks, skips,
+people to reach and prep. One more call writes every draft. Target: under 80,000 tokens a morning, before the
+applications themselves. Every name, number and date in the reply is checked against the digest; anything else is
+dropped. If a call fails, the agent sessions run as before. Usage shows as `coach-1call` and `drafts-1call`.
+
 **Tailor in one call (Settings > Daily run > Advanced, off by default).** An apply step run as an agent session
 re-reads its whole context on every turn: on one real install that was 360,000 to 780,000 tokens a role over 20 to
 35 turns, about 90% of it re-reads. With this on, the app gathers the posting, your base resume, your notes

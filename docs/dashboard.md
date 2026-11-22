@@ -86,6 +86,15 @@ Light and dark mode, and it works on a phone. It looks like the other palStack a
 app itself from `/static/fonts`, no font service), a light sidebar, and a sunrise scene on the dashboard and the sign-in page.
 Motion is finite and plays once; with Reduce Motion the finished picture shows.
 
+## The coach card
+
+When the morning run's coach has run (Settings > Daily run > Coach), a card sits below the welcome: the coach's note
+(what's working, one next thing), today's picks with what each letter leads with, **People to reach** (each with a
+drafted note: **Send** opens it in Gmail, or your mail app through `mailto:`; **I sent it**, **Not now** (hidden for 3
+days), **Dismiss** (never again), and **Edit** to change the note or add an address you found), prep for upcoming
+screens, **Worth checking** (what it couldn't confirm) and the roles it skipped, each with **Undo**. A suggestion with an
+address turns to sent on its own once your Sent mail shows a message to it. The To do list follows the coach's order.
+
 ## Settings page
 
 Four tabs. The menu's Settings item opens **Setup** first, with a badge while a required step is missing.

@@ -173,6 +173,35 @@ def test_job_card_offers_finish_here_when_healthy(tmp_path, monkeypatch):
     assert card.index("Finish it here") < card.index("autoapply-finish")
 
 
+def test_job_card_offers_finish_here_without_a_captcha(tmp_path, monkeypatch):
+    """Every filled form gets the button, not only a captcha handoff: the box used to be checked only for a
+    handoff, so a plain filled job said the browser "isn't answering" without asking it."""
+    _health(monkeypatch)
+    db, c, _ = _setup(tmp_path, ON)
+    db.update("manual:gh", report_json={"errors": []})
+    html = c.get("/job/manual:gh").text
+    assert 'action="/finish-here/manual%3Agh"' in html and "data-finish-here" in html
+    assert "isn't answering" not in html
+
+
+def test_serve_keeps_idle_connections_longer_than_the_page_polls(tmp_path, monkeypatch):
+    """The job page polls every 5 s; uvicorn's default 5 s keep-alive closed the socket as the browser reused it,
+    and a button pressed then never reached the server (2026-11-23)."""
+    import re as _re
+    from pathlib import Path as _P
+    import uvicorn
+    from autoapply import cli
+    seen = {}
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: seen.update(kw))
+    monkeypatch.setattr(cli.config, "load", lambda *a, **k: Settings(root=tmp_path, raw={"data_dir": str(tmp_path / "data")}, profile=PROFILE), raising=False)
+    try:
+        cli.main(["serve"])
+    except SystemExit:
+        pass
+    poll = int(_re.search(r"setInterval\(check,(\d+)\)", (_P(cli.__file__).parent / "templates/job.html").read_text()).group(1))
+    assert seen.get("timeout_keep_alive", 5) * 1000 > poll * 2
+
+
 def test_job_card_unchanged_when_off(tmp_path):
     _, c, _ = _setup(tmp_path)
     html = c.get("/job/manual:gh").text

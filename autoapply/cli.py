@@ -50,6 +50,13 @@ from .fillers import fill, scan
 from .fillers.base import detect
 
 
+# How long the dashboard keeps an idle browser connection open. uvicorn's default is 5 s, and the job page checks
+# its status every 5 s, so the server kept closing a connection just as the browser reused it: a button pressed at
+# that moment (Finish it here, 2026-11-23) died before reaching the server ("Couldn't reach jobsearchPal").
+# Longer than the poll, like nginx's 75 s.
+KEEP_ALIVE_SECONDS = 75
+
+
 def _out(obj):
     print(json.dumps(obj, indent=1, default=str))
 
@@ -677,7 +684,8 @@ def main(argv=None):
         r = s.raw.get("review", {})
         # In Docker the dashboard listens on all interfaces inside the container; compose decides what's exposed.
         host = os.environ.get("AUTOAPPLY_HOST") or r.get("host", "127.0.0.1")
-        uvicorn.run(make_app(s, db), host=host, port=int(os.environ.get("AUTOAPPLY_PORT") or r.get("port", 8787)))
+        uvicorn.run(make_app(s, db), host=host, port=int(os.environ.get("AUTOAPPLY_PORT") or r.get("port", 8787)),
+                    timeout_keep_alive=KEEP_ALIVE_SECONDS)
 
 
 def reset_password(s, email: str = "", ask=None, ask_secret=None):

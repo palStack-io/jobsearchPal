@@ -1128,7 +1128,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     answers=plan.get("answers", {}), docx=docx, running=rs, apply_link=_web_link(job.get("apply_url") or job.get("url") or ""),
                     notes=(n := _notes(plan)), notes_html=notesdoc.render(n), plan_text=json.dumps(shown, indent=1),
                     handoff=(h := _handoff(job, report)), command_ran=finish.ran(db, job_id),
-                    finish_box=_finish_box(health_check=bool(h), with_version=False),
+                    finish_box=_finish_box(health_check=bool(h) or job["status"] == "filled", with_version=False),
                     sent_mark=finish.last_mark(db, job_id) if job["status"] == "submitted" else None)
 
     def _finish_box(health_check: bool = True, with_version: bool = True) -> dict | None:

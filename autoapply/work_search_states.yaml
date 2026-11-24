@@ -16,7 +16,8 @@
 #   part_time_earnings_allowed  part-time pay you can earn in a week before benefits are reduced (DOL, Jan 2026)
 #   resea / resea_url  what a RESEA selection involves in that state, where researched (MA so far)
 #   final_pay, severance_effect, mini_cobra, separation_notice, state_warn  layoff facts for Your next step, each
-#                   {text, url, source, confidence, checked}; shown only when official, high and checked within 365 days
+#                   {text, url, source, confidence, checked, yearly?}; shown only when official, high and checked within
+#                   365 days. yearly: true = a figure in the text resets every January (tools/next_steps_status.py)
 #   source          official = the agency's own site; confidence: high / medium (agency gives no exact
 #                   number) / low (couldn't confirm on the agency site; check before relying on it)
 #   checked         when the entry was last compared with its source
@@ -1641,6 +1642,7 @@ states:
       source: official
       confidence: high
       checked: '2026-11-24'
+      yearly: true  # the dollar threshold is reset every January
       note: Threshold changes every year.
     mini_cobra:
       text: 'In Pennsylvania, employers with 2 to 19 people are covered by state continuation (mini-COBRA): up to 9 months of medical coverage after you leave. Dental and vision aren''t included.'

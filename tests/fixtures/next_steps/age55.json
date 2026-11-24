@@ -1,0 +1,23 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-11-24",
+  "state": null,
+  "coverage_end": "unknown",
+  "age": "55_59",
+  "size": "unknown",
+  "has": [
+   "401k"
+  ],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "includes_ids": [
+   "age-55-rule",
+   "rollover-direct",
+   "small-balance"
+  ]
+ }
+}

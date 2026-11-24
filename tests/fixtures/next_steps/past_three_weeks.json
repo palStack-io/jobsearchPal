@@ -1,0 +1,34 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-11-01",
+  "state": null,
+  "coverage_end": "2026-11-30",
+  "age": "40_54",
+  "size": "20_99",
+  "has": [
+   "severance"
+  ],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "today_ids": [
+   "file-claim",
+   "dont-sign-yet-40",
+   "save-records"
+  ],
+  "past_ids": [
+   "file-claim",
+   "dont-sign-yet-40"
+  ],
+  "next_id": "cobra-letter",
+  "due": {
+   "file-claim": "2026-11-07",
+   "dont-sign-yet-40": "2026-11-22",
+   "cobra-letter": "2026-12-15",
+   "cobra-or-marketplace": "2027-01-29"
+  }
+ }
+}

@@ -30,7 +30,7 @@ autoapply = "autoapply.cli:main"
 include = ["autoapply*"]
 
 [tool.setuptools.package-data]
-autoapply = ["palstack_admin_kit/VERSION", "fillers/scan.js", "templates/*.html", "work_search_states.yaml", "market.yaml", "static/fonts/*", "static/novnc/*", "static/novnc/*/*", "static/novnc/*/*/*", "static/novnc/*/*/*/*", "static/novnc/*/*/*/*/*"]
+autoapply = ["palstack_admin_kit/VERSION", "fillers/scan.js", "templates/*.html", "work_search_states.yaml", "next_steps.yaml", "market.yaml", "static/fonts/*", "static/novnc/*", "static/novnc/*/*", "static/novnc/*/*/*", "static/novnc/*/*/*/*", "static/novnc/*/*/*/*/*"]
 
 [build-system]
 requires = ["setuptools>=68"]

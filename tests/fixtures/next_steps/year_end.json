@@ -1,0 +1,24 @@
+{
+ "today": "2026-12-31",
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-12-31",
+  "state": null,
+  "coverage_end": "2026-12-31",
+  "age": null,
+  "size": "unknown",
+  "has": [
+   "401k_loan"
+  ],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "due": {
+   "file-claim": "2027-01-06",
+   "cobra-or-marketplace": "2027-03-01",
+   "tax-forms": "2027-01-31",
+   "loan-offset": "2027-04-15"
+  }
+ }
+}

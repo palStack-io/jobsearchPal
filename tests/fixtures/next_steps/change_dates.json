@@ -1,0 +1,29 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "change",
+  "last_day": null,
+  "state": null,
+  "coverage_end": "unknown",
+  "age": "60p",
+  "size": "100p",
+  "has": [],
+  "vest_date": "2027-02-01",
+  "bonus_date": "2026-12-20",
+  "noncompete": "no"
+ },
+ "expect": {
+  "next_id": "bonus-date",
+  "due": {
+   "vest-date": "2027-02-01",
+   "bonus-date": "2026-12-20"
+  },
+  "includes_ids": [
+   "medicare-window"
+  ],
+  "excludes_ids": [
+   "noncompete"
+  ]
+ }
+}

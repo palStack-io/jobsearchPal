@@ -272,7 +272,7 @@ def import_plan(settings, db, answers: dict, today: date, replace: bool = False,
             continue
         first = s["body"].split(". ")[0].rstrip(".") + "."
         src = f"Source: {s['source']['name']}." if s["source"] else "A general reminder."
-        benefits.add_task(db, s["title"], s["due"] or "", "task", f"{first} {src} {tag}")
+        benefits.add_task(db, s["title"], s["due"] or "", "next_step", f"{first} {src} {tag}")
         added += 1
     return {"added": added, "skipped": skipped, "removed": removed, "claiming_set": claiming_set}
 

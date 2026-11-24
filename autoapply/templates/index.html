@@ -167,9 +167,9 @@ It uses AI credit. Nothing is filled or sent."><input type="hidden" name="mode" 
  {% macro todo_row(n) %}<div class="todo">
   {# Red only for what is urgent: an appeal, or a benefits step due within two days or overdue. Other dates are sunrise amber,
      claim day included: it comes every week and is routine, not an alarm. #}
-  {% set urgent = n.kind == 'appeal' or (n.kind in ('resea', 'task') and n.days is number and n.days > -999 and n.days >= -2) %}
-  <div class="body"><div class="t"><span class="pill {{ 'interview' if n.kind == 'interview' else ('recruiter' if n.kind in ('reply', 'chase') else ('rejected' if urgent else ('deadline' if n.kind in ('resea', 'claim', 'task', 'worksearch') else 'waiting'))) }}">{{ {'interview': 'interview', 'reply': 'reply', 'chase': 'check in', 'application': 'follow up',
-   'claim': 'claim day', 'worksearch': 'work search', 'resea': 'RESEA', 'task': 'benefits', 'agency': 'agency letter', 'appeal': 'decision'}[n.kind] }}</span><span>{{ n.title }}</span></div><div class="m" title="{{ n.about }} · {{ n.why }}">{{ n.about|truncate(70) }} · {{ n.why }}</div>
+  {% set urgent = n.kind == 'appeal' or (n.kind in ('resea', 'task', 'next') and n.days is number and n.days > -999 and n.days >= -2) %}
+  <div class="body"><div class="t"><span class="pill {{ 'interview' if n.kind == 'interview' else ('recruiter' if n.kind in ('reply', 'chase') else ('rejected' if urgent else ('deadline' if n.kind in ('resea', 'claim', 'task', 'worksearch', 'next') else 'waiting'))) }}">{{ {'interview': 'interview', 'reply': 'reply', 'chase': 'check in', 'application': 'follow up',
+   'claim': 'claim day', 'worksearch': 'work search', 'resea': 'RESEA', 'task': 'benefits', 'next': 'next step', 'agency': 'agency letter', 'appeal': 'decision'}[n.kind] }}</span><span>{{ n.title }}</span></div><div class="m" title="{{ n.about }} · {{ n.why }}">{{ n.about|truncate(70) }} · {{ n.why }}</div>
    {% if n.draft %}<details><summary>Draft reply</summary><pre class="draft">{{ n.draft }}</pre>
     <button type="button" class="btn sm" onclick="copyText(this,this.previousElementSibling.textContent)">Copy</button></details>{% endif %}</div>
   <div class="acts">{% if n.compose %}<a class="btn sm" href="{{ n.compose }}" target="_blank" rel="noopener">Reply in Gmail</a>{% endif %}

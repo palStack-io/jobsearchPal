@@ -124,7 +124,7 @@ def compute(db: DB, data_dir: Path | None = None, now: datetime | None = None, i
             p = draft_path(data_dir, n["key"])
             n["draft_path"] = str(p)
             n["draft"] = p.read_text() if p.exists() else ""
-    order = {"appeal": 0, "claim": 0, "interview": 1, "resea": 1, "task": 1, "agency": 2, "worksearch": 2,
+    order = {"appeal": 0, "claim": 0, "interview": 1, "resea": 1, "task": 1, "next": 1, "agency": 2, "worksearch": 2,
              "reply": 3, "chase": 4, "application": 5}
     out.sort(key=lambda n: (order[n["kind"]], -n["days"]))
     return out if include_hidden else [n for n in out if n["state"] == "open"]

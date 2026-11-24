@@ -147,7 +147,7 @@ def add_task(db, title: str, due: str = "", kind: str = "task", note: str = "") 
     ensure(db)
     d = _date(due)
     cur = db.conn.execute("insert into ui_tasks (title, due, kind, note) values (?, ?, ?, ?)",
-                          (title.strip()[:160], d.isoformat() if d else None, kind if kind in ("task", "resea") else "task", note[:400]))
+                          (title.strip()[:160], d.isoformat() if d else None, kind if kind in ("task", "resea", "next_step") else "task", note[:400]))
     db.conn.commit()
     return cur.lastrowid
 
@@ -307,9 +307,10 @@ def todos(db, settings, rule: dict | None, floor: int, this_week: int, last_week
     for t in tasks(db):
         d = _date(t["due"])
         if d is None or (d - today).days <= 14 or t["kind"] == "resea":  # RESEA steps can stop benefits: always shown
-            when = "no date yet: add it from your letter" if d is None else (
+            nxt = t["kind"] == "next_step"  # a step from Your next step (2026-11-24): its own label, no letter to wait for
+            when = ("any time" if nxt else "no date yet: add it from your letter") if d is None else (
                 f"due {d.strftime('%a %b %-d')}" + (" (overdue)" if d < today else f", in {(d - today).days} days" if d > today else " (today)"))
-            item(f"task-{t['id']}", "resea" if t["kind"] == "resea" else "task", t["title"], when,
+            item(f"task-{t['id']}", "resea" if t["kind"] == "resea" else ("next" if nxt else "task"), t["title"], when,
                  t["note"] or ("Missing a RESEA step can stop your benefits." if t["kind"] == "resea" else "From your unemployment to-dos."),
                  days=(today - d).days if d else -999)  # soonest date first, undated last
     for e in db.events():

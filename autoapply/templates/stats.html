@@ -13,6 +13,13 @@
  <span class="st-ind" aria-hidden="true"></span>
 </div>
 <div class="st-pane" role="tabpanel" id="p-overview" aria-labelledby="t-overview" {% if tab != 'overview' %}hidden{% endif %}>
+{% if plan_progress %}{# Your plan (2026-11-24): the steps from Your next step, counted here on this computer only. #}
+<section class="card st-plan" aria-labelledby="st-plan-h" style="margin-bottom:14px">
+ <h2 id="st-plan-h" style="margin:0 0 6px">Your plan <span class="count">from Your next step</span></h2>
+ <p style="margin:0 0 10px"><b><span data-count="{{ plan_progress.done }}">{{ plan_progress.done }}</span> of {{ plan_progress.total }}</b> steps done{{ ', and that counts' if plan_progress.done }}.</p>
+ {% if plan_progress.next %}<ul style="list-style:none;margin:0;padding:0;display:grid;gap:6px">{% for n in plan_progress.next %}<li style="display:flex;gap:12px;font-size:15px"><span style="flex:none;width:110px;font-weight:600;color:var(--accent-ink);font-variant-numeric:tabular-nums">{{ n.when.split(' (')[0] }}</span><span>{{ n.title }}{% if '(' in n.when %} <span class="muted">· the usual date has passed</span>{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+ <p class="muted" style="margin:10px 0 0;font-size:14px">Counted on this computer only. To change your plan: Settings, then Something changed?</p>
+</section>{% endif %}
 <section class="card st-lead">
  <p class="st-headline">{{ head.lead }}</p>{% if head.more %}<p class="st-more">{{ head.more }}</p>{% endif %}
  <div class="st-nums">

@@ -288,3 +288,60 @@ def back_to_work(settings, db, set_claim: bool = True) -> dict:
     removed = db.conn.execute("delete from ui_tasks where done = 0 and note like ?", ("%[next_step:%",)).rowcount
     db.conn.commit()
     return {"removed": removed}
+
+
+# ---- the quiet "Something changed?" line and the plan's progress (2026-11-24; local only, nothing is sent) --------
+QUIET_DAYS = 21
+
+
+def sign(settings, db, today: date) -> dict | None:
+    """One gentle line for the dashboard when the app sees a sign that the person's situation may have changed, or
+    None. Each sign shows once: Not now (nudge state "done") puts it away for good, and a new sign gets a new key."""
+    import hashlib
+    states = db.nudge_states()
+    ws = settings.raw.get("work_search") or {}
+    claiming = ws.get("claiming", bool(ws.get("state")))
+    if not claiming:
+        for e in db.events():
+            if e["kind"] != "agency":
+                continue
+            try:
+                age = (today - date.fromisoformat(str(e["at"])[:10])).days
+            except ValueError:
+                continue
+            if 0 <= age <= 30:
+                key = "sit:agency:" + hashlib.sha1(str(e["id"]).encode()).hexdigest()[:12]
+                if key not in states:
+                    return {"key": key, "line": "An email from your state's unemployment agency came in. If your "
+                            "situation changed, jobsearchPal can put the claim steps on your list."}
+                break
+    sent = [str(j["submitted_at"])[:10] for j in db.by_status("submitted") if j.get("submitted_at")]
+    if sent:
+        last = max(sent)
+        try:
+            quiet = (today - date.fromisoformat(last)).days
+        except ValueError:
+            return None
+        key = f"sit:quiet:{last}"
+        if quiet >= QUIET_DAYS and key not in states:
+            return {"key": key, "line": "A quiet few weeks. That happens, and rest counts too. If something changed, "
+                    "like a layoff or a new job, you can tell jobsearchPal."}
+    return None
+
+
+def progress(db, today: date) -> dict | None:
+    """The plan's own count for the Stats page: steps done of steps, and the next three still open. None without a
+    plan. Kept on this computer; nothing is sent."""
+    from . import benefits
+    rows = [t for t in benefits.tasks(db, include_done=True) if t["kind"] == "next_step"]
+    if not rows:
+        return None
+    left = sorted((t for t in rows if not t["done"]), key=lambda t: t["due"] or "9999")
+    nxt = []
+    for t in left[:3]:
+        when = "Any time"
+        if t["due"]:
+            d = date.fromisoformat(t["due"])
+            when = d.strftime("%a, %b %-d") + (" (the usual date has passed)" if d < today else "")
+        nxt.append({"title": t["title"], "when": when})
+    return {"done": sum(1 for t in rows if t["done"]), "total": len(rows), "next": nxt}

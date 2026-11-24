@@ -321,7 +321,7 @@ def make_app(settings, db: DB) -> FastAPI:
         if settings.raw.get("_from_example"):
             return RedirectResponse("/welcome?step=0", status_code=303)  # fresh install: your situation first
         from . import prep
-        from . import nudges
+        from . import next_steps, nudges
         todo = nudges.compute(db, settings.data_dir, settings=settings)
         # The weekly work-search count lives in Your week on the dashboard (11/18); the claim-day item stays a to-do.
         todo = [n for n in todo if not (n.get("kind") == "worksearch" and "behind-" in str(n.get("key")))]
@@ -384,7 +384,7 @@ def make_app(settings, db: DB) -> FastAPI:
                     today_goals=today_goals, just_met={m["key"] for m in met},
                     so_far=goals.summary(today_goals["week_so_far"]) if today_goals else "",
                     week_panel=coachday.with_panel(goals.panel(db, now.date(), s["this_week"], s["dua_floor"], work_search(settings)[0]), coach_card),
-                    start=_start(s, now.date()), last_wk=last_wk,
+                    start=_start(s, now.date()), last_wk=last_wk, sit_sign=next_steps.sign(settings, db, now.date()),
                     last_wk_summary=goals.summary(last_wk["did"]) if last_wk else "")
         if request.headers.get("x-in-page"):
             return resp  # an in-page form post following its redirect: the page the person sees comes next, so keep these
@@ -1064,8 +1064,9 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.get("/stats")
     def stats_page(tab: str = "overview"):
+        from . import next_steps
         d = stats.detail(db, floor=work_search(settings)[1])
-        return page("stats.html", s=d, head=stats.headline(d), nav="stats",
+        return page("stats.html", s=d, head=stats.headline(d), nav="stats", plan_progress=next_steps.progress(db, date.today()),
                     tab=tab if tab in ("overview", "pipeline", "sources", "work") else "overview")
 
     @app.get("/skills")

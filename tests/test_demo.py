@@ -118,3 +118,12 @@ def test_board_and_learning_plan_work_in_the_demo(demo_app):
     learn.make_plan(db, s, ["dbt"], ask=lambda p: (_ for _ in ()).throw(AssertionError("no model in the demo")))
     assert learn.plan(db)["status"] == "ready" and learn.plan(db)["model"] == "sample"
     assert demo.post_allowed("/skills/plan") and demo.post_allowed("/skills/plan/start")
+
+
+def test_demo_allows_your_situation():
+    """A visitor can try Your situation and Something changed? on the public demo (2026-11-24); it only writes the
+    demo's own config and to-dos, which the hourly reset throws away."""
+    from autoapply import demo
+    for p in ("/situation/start", "/situation/answers", "/situation/confirm"):
+        assert demo.post_allowed(p)
+    assert not demo.post_allowed("/situation/start/run")

@@ -36,6 +36,9 @@
 .tabs a:hover{text-decoration:none;background:var(--surface-2)}.tabs a[aria-current]{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
 .emails td{vertical-align:top}.emails summary{list-style:none;font-weight:400}.emails summary::-webkit-details-marker{display:none}
 .eform{display:grid;grid-template-columns:190px minmax(0,1fr);gap:8px}.eform select{padding:6px 8px;font-size: 14px}
+/* Safari ignores padding on a native select (the category dot sat on the first letter, 2026-11-24): turn the native
+   look off and draw the arrow, so padding works in every browser. */
+.eform select{appearance:none;-webkit-appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px;text-overflow:ellipsis}
 /* Quiet until used (design audit 2026-11-16): every row showed two full-width boxes, mostly "Not about an
    application", so the inbox read as a form. The choices look like labels and become boxes on hover or focus. */
 .eform select{border-color:transparent;background-color:var(--surface-2);color:var(--ink-2);border-radius:999px;transition:border-color .15s var(--ease-out),background-color .15s var(--ease-out)}

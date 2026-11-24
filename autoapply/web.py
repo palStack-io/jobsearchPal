@@ -29,6 +29,8 @@ env.filters["hue"] = lambda s: sum(ord(c) * (i + 7) for i, c in enumerate((s or 
 # "confirmed" (the stored kind) read as a confirmed interview; it only means the application was received.
 # "rejected" reads as "closed" in lists: the count stays exact, it just stops leading (VOICE.md).
 env.filters["label"] = lambda k: {"confirmed": "received", "rejected": "closed", "no reply": "no reply yet"}.get(k, k)
+from .goals import _lower_words as _lw  # noqa: E402  "DUA" stays "DUA" in a sentence (2026-11-24)
+env.filters["lower_words"] = _lw
 env.filters["pillcls"] = lambda k: {"rejected": "closed"}.get(k, k)  # a closed application is a neutral fact, not an alarm (red)
 
 

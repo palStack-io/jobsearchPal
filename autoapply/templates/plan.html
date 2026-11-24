@@ -19,7 +19,7 @@
   <div class="yc-nums">
    <div><div class="yc-num"><span data-count="{{ week_nums.sent }}">{{ week_nums.sent }}</span></div><div class="yc-lbl">application{{ '' if week_nums.sent == 1 else 's' }} sent</div></div>
    <div><div class="yc-num"><span data-count="{{ week_nums.replies }}">{{ week_nums.replies }}</span></div><div class="yc-lbl">repl{{ 'y' if week_nums.replies == 1 else 'ies' }}</div></div>
-   {% if s.dua_floor %}<div><div class="yc-num"><span data-count="{{ s.this_week }}">{{ s.this_week }}</span> <span class="yc-of">of {{ s.dua_floor }}</span></div><div class="yc-lbl">{{ ws_label|lower }}{{ ', covered' if s.this_week >= s.dua_floor }}</div></div>{% endif %}
+   {% if s.dua_floor %}<div><div class="yc-num"><span data-count="{{ s.this_week }}">{{ s.this_week }}</span> <span class="yc-of">of {{ s.dua_floor }}</span></div><div class="yc-lbl">{{ ws_label|lower_words }}{{ ', covered' if s.this_week >= s.dua_floor }}</div></div>{% endif %}
   </div>
  </div>
 </section>

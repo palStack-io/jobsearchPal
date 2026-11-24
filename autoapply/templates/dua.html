@@ -107,7 +107,7 @@
   <form method="post" action="/contacts"><input type="hidden" name="action" value="delete"><input type="hidden" name="cid" value="{{ c.id }}"><button class="btn ghost sm" aria-label="Remove {{ c.name }}"><svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-x"/></svg></button></form></li>{% endfor %}</ul>
  {% else %}<p class="muted" style="margin:6px 0 0">No one yet. One message this week is a good start.</p>{% endif %}
  <form method="post" action="/contacts" class="counts-form"><input type="hidden" name="action" value="counts">
-  <label><input type="checkbox" name="counts" value="yes" {% if contacts_count %}checked{% endif %} onchange="this.form.submit()"> Count these toward my {{ ws_label|lower }} each week</label>
+  <label><input type="checkbox" name="counts" value="yes" {% if contacts_count %}checked{% endif %} onchange="this.form.submit()"> Count these toward my {{ ws_label|lower_words }} each week</label>
   <noscript><button class="btn sm ghost">Save</button></noscript>
   <span class="muted">Off until you turn it on. Many states accept networking and contacting employers; some don't.{% if rule %} Check {{ rule.name }}'s rule above.{% endif %} Your agency's notice is what counts.</span></form>
 </section>

@@ -279,3 +279,23 @@ def test_lookback_of_a_planned_week_with_nothing_done(db):
     goals.save_week(db, WK, _t(apps=5), WEEKDAYS, "", "", WK)
     lb = goals.lookback(db, date(2026, 11, 15))
     assert lb["planned"] and goals.summary(lb["did"]) == ""
+
+
+@pytest.mark.parametrize("label, shown", [("DUA", "DUA"), ("Work search", "work search"), ("MassHire log", "MassHire log")])
+def test_panel_tally_keeps_acronyms(db, label, shown):
+    """The work-search tally read "6 of 3 dua" (2026-11-24): lowercasing broke the agency's acronym. Only an ordinary
+    capitalised word is lowered."""
+    p = goals.panel(db, TODAY, 6, 3, label)
+    assert p["tallies"][-1]["label"] == shown
+
+
+def test_strip_counts_each_day_for_the_rings(db):
+    """The Your week rings (2026-11-24) show a number: applications sent that day. With no plan set, a day is not a
+    rest day (it showed as a wave before); it's just a day."""
+    _sent(db, 1, "2026-11-09")
+    _sent(db, 2, "2026-11-09")
+    _sent(db, 3, "2026-11-11")
+    strip = goals.panel(db, TODAY, 0, 0, "Work search")["strip"]
+    by = {d["day"]: d for d in strip}
+    assert by["Mon"]["count"] == 2 and by["Wed"]["count"] == 1 and by["Tue"]["count"] == 0
+    assert not any(d["rest"] for d in strip)

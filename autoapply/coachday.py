@@ -638,12 +638,17 @@ def order_todo(todo: list[dict], followups: list[str]) -> list[dict]:
     return sorted(todo, key=lambda n: rank.get(n.get("key"), len(rank)))
 
 
+PICK_DONE = {"submitted", "skipped"}
+
+
 def card(db, settings, day: date) -> dict | None:
     """What the dashboard's coach card shows today, or None when the coach hasn't run today."""
     row = today(db, day)
     if not row:
         return None
-    picks = [p | {"job": db.get(p["id"])} for p in row.get("picks") or [] if db.get(p["id"])]
+    # The picks are the morning's snapshot; the job's status is live. A role applied to or skipped since then leaves
+    # Where to aim (2026-11-24).
+    picks = [p | {"job": j} for p in row.get("picks") or [] if (j := db.get(p["id"])) and j["status"] not in PICK_DONE]
     recent = []
     for back in range(SKIP_UNDO_DAYS):
         recent += (today(db, day - timedelta(days=back)) or {}).get("skips") or []

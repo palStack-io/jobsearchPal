@@ -88,7 +88,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In Alaska, severance counts as deductible income and may reduce your weekly unemployment benefits. Report the gross amount when you file.
+      text: In Alaska, severance must be reported at its gross amount in the week you get it, and a deduction may be taken from your weekly unemployment benefits.
       url: https://dol.alaska.gov/unemployment/documents/uihandbook.pdf
       source: official
       confidence: high
@@ -313,7 +313,7 @@ states:
       checked: '2026-11-24'
       note: C.G.S. 31-236(a)(4)(B), effective Jan 1, 2024. Accrued vacation paid on separation is excluded.
     mini_cobra:
-      text: 'In Connecticut, people on a fully insured plan at an employer with fewer than 20 workers are covered by state continuation: up to 30 months after a layoff. Self-funded plans aren''t.'
+      text: In Connecticut, if you're on a Connecticut fully insured employer plan, you can keep it for up to 30 months after a layoff, whatever the employer's size. Self-funded plans aren't covered.
       url: https://portal.ct.gov/cid/consumer-resource-library/health-insurance/cobra-connecticut-state-continuation-coverage
       source: official
       confidence: high
@@ -909,7 +909,7 @@ states:
       checked: '2026-11-24'
       note: Must be a Maryland resident; written request within 45 days of leaving.
     state_warn:
-      text: Maryland's own law covers employers with 50 or more workers laying off 15 or more (or a quarter of staff) within 3 months, and asks for 60 days' notice.
+      text: Maryland's own law covers employers with 50 or more workers laying off at least a quarter of their staff, and never fewer than 15 people, within 3 months, and asks for 60 days' notice.
       url: https://labor.maryland.gov/employment/warn.shtml
       source: official
       confidence: high
@@ -1557,7 +1557,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In Oklahoma, severance owed under company policy or a contract is deducted from benefits, minus $100, in the weeks you receive it. Severance paid before your claim starts isn't.
+      text: In Oklahoma, report severance when you file. If the state decides it's deductible, the amount minus $100 is taken from your benefit in each week you receive it. Payments wait until that's decided.
       url: https://oklahoma.gov/content/dam/ok/en/workforce/documents/rapid-response/Severance-FAQ-Handout.pdf
       source: official
       confidence: high
@@ -1673,7 +1673,7 @@ states:
     # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
     # high confidence and checked within 365 days.
     final_pay:
-      text: In Puerto Rico, when your job ends your employer must pay all the vacation you've built up so far, even if it's less than a year's worth.
+      text: In Puerto Rico, if the vacation law covers you (not executives, administrators or professionals), your employer must pay all the vacation you've built up when your job ends, even if it's less than a year's worth.
       url: https://trabajo.pr.gov/docs/Libreria_Laboral/Leyes/Ley%20180-1998,%20Ley%20de%20Vacaciones%20y%20Licencia%20por%20Enfermedad%20de%20Puerto%20Rico.pdf
       source: official
       confidence: high
@@ -1706,7 +1706,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In Rhode Island, severance or dismissal pay can reduce your benefits or delay when they start. Tell the state about it when you file.
+      text: In Rhode Island, severance or dismissal pay can reduce your unemployment benefits or how long you can get them. Tell the state about it when you file.
       url: https://dlt.ri.gov/sites/g/files/xkgbur571/files/2025-11/FINAL%20UI%20Benefit%20Rights%20-%20Nov.%202025.pdf
       source: official
       confidence: high
@@ -1836,7 +1836,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In Tennessee, unemployment benefits are denied for any week covered by severance or wages in lieu of notice. You can file or reopen your claim once those payments end.
+      text: In Tennessee, unemployment benefits are denied for any week covered by wages in lieu of notice or by severance equal to what you'd have earned that week. You can still file in your first week out of work.
       url: https://www.tn.gov/content/dam/tn/workforce/documents/Forms/LB-0489.pdf
       source: official
       confidence: high
@@ -2056,7 +2056,7 @@ states:
       checked: '2026-11-24'
       note: Claimant handbook UIB-6 is a 2017 revision.
     state_warn:
-      text: In the US Virgin Islands, a closing that lets go at least half of a facility's staff needs 90 days' notice to workers, and employers owe a week's pay for each year worked.
+      text: In the US Virgin Islands, a closing that lets go at least half of a facility's staff needs 90 days' notice to workers.
       url: https://www.vidol.gov/employee-rights/
       source: official
       confidence: high
@@ -2100,7 +2100,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     state_warn:
-      text: Washington's own WARN law covers employers with 50 or more full-time workers and asks for 60 days' notice before a closing or a layoff of 50 or more full-time workers at one site.
+      text: Washington's own WARN law covers employers with 50 or more full-time workers in the state and asks for 60 days' notice before a closing or a layoff of 50 or more full-time workers within 30 days.
       url: https://esd.wa.gov/employer-requirements/layoffs-and-employee-notifications/warn-requirements
       source: official
       confidence: high

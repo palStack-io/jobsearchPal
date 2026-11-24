@@ -123,3 +123,9 @@ def test_done_lists_first_steps(fresh):
     c.post("/situation/answers", data=LAID)
     html = c.get("/welcome?step=done").text
     assert "First on your list" in html and "File for unemployment" in html
+
+
+def test_dashboard_says_what_changed(existing):
+    s, db, c = existing
+    r = c.post("/situation/confirm", data={"door": "working"}, follow_redirects=False)
+    assert "Good news" in c.get(r.headers["location"]).text

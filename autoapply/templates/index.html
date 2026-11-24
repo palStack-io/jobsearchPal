@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import week_bars, hbars, co, applied_btn %}
 {% block body %}
+{% if msg %}<p class="notice" role="status" style="display:block;margin:0 0 14px">{{ msg }}</p>{% endif %}
 {% from "_horizon.html" import scene, scene_css, horizon_css %}{{ horizon_css() }}{{ scene_css() }}
 {% import "_goals.html" as g %}{{ g.goals_css() }}
 <section class="card welcome" aria-labelledby="hello">

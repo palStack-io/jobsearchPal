@@ -246,7 +246,8 @@ def preview_changes(settings, db, answers: dict, today: date, facts: dict | None
     return out
 
 
-def import_plan(settings, db, answers: dict, today: date, replace: bool = False, facts: dict | None = None) -> dict:
+def import_plan(settings, db, answers: dict, today: date, replace: bool = False, facts: dict | None = None,
+                set_claim: bool = True) -> dict:
     """Turn a plan into to-do rows and, on a fresh install or a confirmed change (replace), set the claim.
     Never sets claim_start: that's the day the person filed, which only they know."""
     from . import benefits, setup
@@ -256,7 +257,7 @@ def import_plan(settings, db, answers: dict, today: date, replace: bool = False,
         raise ValueError("Pick the state you worked in, so the claim steps and the work-search log follow its rules.")
     claiming_set = False
     claim = _claim_change(settings, a)
-    if claim and (replace or _fresh(settings)):
+    if claim and set_claim and (replace or _fresh(settings)):
         setup.save_claim(settings, claim[0], claim[1], facts["states"].get(claim[1]) if claim[1] else None)
         claiming_set = True
     benefits.ensure(db)
@@ -277,11 +278,12 @@ def import_plan(settings, db, answers: dict, today: date, replace: bool = False,
     return {"added": added, "skipped": skipped, "removed": removed, "claiming_set": claiming_set}
 
 
-def back_to_work(settings, db) -> dict:
+def back_to_work(settings, db, set_claim: bool = True) -> dict:
     """'I'm working again': the unemployment side off, the unfinished plan steps gone. The work-search log keeps its
     history (it is the person's record for the agency)."""
     from . import benefits, setup
-    setup.save_claim(settings, False)
+    if set_claim:
+        setup.save_claim(settings, False)
     benefits.ensure(db)
     removed = db.conn.execute("delete from ui_tasks where done = 0 and note like ?", ("%[next_step:%",)).rowcount
     db.conn.commit()

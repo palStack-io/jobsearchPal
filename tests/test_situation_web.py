@@ -129,3 +129,17 @@ def test_dashboard_says_what_changed(existing):
     s, db, c = existing
     r = c.post("/situation/confirm", data={"door": "working"}, follow_redirects=False)
     assert "Good news" in c.get(r.headers["location"]).text
+
+
+def test_public_demo_leaves_the_shared_claim_alone(existing, monkeypatch):
+    """jobsdemo is one copy shared by every visitor (2026-11-24): a visitor's confirm adds or clears the steps but never
+    turns the unemployment side on or off for everyone else until the hourly reset."""
+    from autoapply import demo
+    s, db, c = existing
+    monkeypatch.setattr(demo, "ON", True)
+    before = _cfg(s)
+    code = next_steps.encode_code(json.loads((FIX / "laid_off_today_ma.json").read_text())["answers"])
+    c.post("/situation/confirm", data={"code": code, "door": "laid"})
+    assert _cfg(s) == before and _tasks(db)
+    c.post("/situation/confirm", data={"door": "working"})
+    assert _cfg(s) == before and _tasks(db) == []

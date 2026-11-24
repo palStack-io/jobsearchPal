@@ -1663,15 +1663,15 @@ def make_app(settings, db: DB) -> FastAPI:
 
     @app.post("/situation/confirm")
     async def situation_confirm(request: Request):
-        from . import next_steps
+        from . import demo, next_steps
         f = await request.form()
         try:
             if f.get("door") == "working":
-                r = next_steps.back_to_work(settings, db)
+                r = next_steps.back_to_work(settings, db, set_claim=not demo.ON)  # the public demo is shared: the claim stays
                 msg = "Good news. The unemployment side is off" + (f", and {r['removed']} steps are cleared." if r["removed"] else ".")
             else:
                 a = next_steps.decode_code(str(f.get("code") or ""), state_rules())
-                r = next_steps.import_plan(settings, db, a, date.today(), replace=True)
+                r = next_steps.import_plan(settings, db, a, date.today(), replace=True, set_claim=not demo.ON)
                 msg = f"Done. {r['added']} steps are on your to-do list."
         except ValueError as e:
             return page("situation.html", nav="settings", err=str(e))

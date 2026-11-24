@@ -311,7 +311,7 @@ def todos(db, settings, rule: dict | None, floor: int, this_week: int, last_week
             when = ("any time" if nxt else "no date yet: add it from your letter") if d is None else (
                 f"due {d.strftime('%a %b %-d')}" + (" (overdue)" if d < today else f", in {(d - today).days} days" if d > today else " (today)"))
             item(f"task-{t['id']}", "resea" if t["kind"] == "resea" else ("next" if nxt else "task"), t["title"], when,
-                 t["note"] or ("Missing a RESEA step can stop your benefits." if t["kind"] == "resea" else "From your unemployment to-dos."),
+                 re.sub(r"\s*\[next_step:[^\]]+\]", "", t["note"] or "") or ("Missing a RESEA step can stop your benefits." if t["kind"] == "resea" else "From your unemployment to-dos."),
                  days=(today - d).days if d else -999)  # soonest date first, undated last
     for e in db.events():
         if e["kind"] != "agency":

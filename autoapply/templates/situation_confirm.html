@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Confirm the changes{% endblock %}
+{% block body %}{% from "_situation.html" import styles %}
+{# Confirm before changing (2026-11-24): an install that's already set up sees every change first; nothing is written
+   until Confirm. #}
+<div class="wl">
+ <header class="wl-head"><div class="wl-step">Something changed?</div>
+  <h1>{{ "I'm sorry it happened. Here's what jobsearchPal will change." if door == 'laid' else ("Good news. Here's what jobsearchPal will change." if door == 'working' else "Here's what jobsearchPal will change.") }}</h1>
+  <p class="wl-lead">Nothing changes until you confirm. Your applications, contacts and history stay as they are.</p></header>
+ <section class="wl-card">
+  <ul class="sc-list">{% for c in changes %}<li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{% if c.startswith('Remove') or c.startswith('Turn off') %}<path d="M5 12h14"/>{% else %}<path d="M12 5v14M5 12h14"/>{% endif %}</svg><span>{{ c }}</span></li>{% endfor %}</ul>
+  {% if door == 'laid' %}<p class="wl-hint">Not set: the day you filed your claim. Add it on the work-search page once you've filed, and jobsearchPal works out the weeks left.</p>{% endif %}
+  <form method="post" action="/situation/confirm" class="wl-acts">
+   <input type="hidden" name="code" value="{{ code }}"><input type="hidden" name="door" value="{{ door }}">
+   <button class="btn primary">Confirm these changes</button>
+   <a class="btn ghost" href="/situation">Change my answers</a><a class="btn ghost" href="/settings">Cancel</a>
+  </form>
+ </section>
+</div>
+{{ styles() }}
+{% endblock %}

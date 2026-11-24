@@ -5,6 +5,9 @@
                   'daily': 'The morning pass finds roles, tailors your materials and fills forms. It never submits.',
                   'costs': 'What the daily pass may do each day, and what it costs.'}[tab] %}
 {% include "_tabs.html" %}
+<section class="card mt sit-row" aria-labelledby="sit-h" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+ <div><h2 id="sit-h" style="margin:0">Something changed?</h2><p class="muted" style="margin:4px 0 0">Laid off, thinking about a change, or working again. jobsearchPal shows what it would change before it changes anything.</p></div>
+ <a class="btn" href="/situation">Update my situation</a></section>
 {% if finish_box %}<p class="notice finish-health{{ ' info' if finish_box.ok and not (finish_box.version and finish_box.app_version and finish_box.version not in ('dev', finish_box.app_version)) }}" style="display:block"><b>Browser on your server:</b>
  {% if not finish_box.ok %}not answering. Start it again with <code>docker compose -f docker-compose.finish.yml up -d</code>
   (or <code>docker compose --profile finish up -d</code> with Docker); until then, finish on your Mac.

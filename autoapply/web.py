@@ -319,7 +319,7 @@ def make_app(settings, db: DB) -> FastAPI:
     @app.get("/")
     def index(request: Request, msg: str = "", log: str = "", planned: str = ""):
         if settings.raw.get("_from_example"):
-            return RedirectResponse("/welcome", status_code=303)  # fresh install: one short step at a time
+            return RedirectResponse("/welcome?step=0", status_code=303)  # fresh install: your situation first
         from . import prep
         from . import nudges
         todo = nudges.compute(db, settings.data_dir, settings=settings)
@@ -1565,7 +1565,7 @@ def make_app(settings, db: DB) -> FastAPI:
         that saves it, with `wizard` = the step; the Setup page keeps everything else."""
         from . import agentlogin, setup
         st = setup.status(settings, os.environ)
-        n = step if step == "done" else (step if step.isdigit() and 1 <= int(step) <= 5 else "1")
+        n = step if step == "done" else (step if step.isdigit() and 0 <= int(step) <= 5 else "1")
         ws = settings.raw.get("work_search") or {}
         prof = settings.profile or {}
         account = auth.load(settings.data_dir) or {}
@@ -1573,7 +1573,110 @@ def make_app(settings, db: DB) -> FastAPI:
                     states=sorted(state_rules().items()), ws=ws, prof=prof, account_email=account.get("email", ""),
                     titles=", ".join((settings.raw.get("search") or {}).get("title_keywords") or []),
                     us_only=(settings.raw.get("search") or {}).get("us_only", True),
-                    agent_login=_agent_login_ctx())
+                    agent_login=_agent_login_ctx(), plan_rows=_plan_rows() if n == "done" else [])
+
+    # ---- Your next step (2026-11-24): welcome step 0, and Settings > Something changed? ----
+    def _plan_rows(limit: int = 3) -> list[dict]:
+        from . import benefits
+        rows = sorted((t for t in benefits.tasks(db) if t["kind"] == "next_step"), key=lambda t: t["due"] or "9999")[:limit]
+        for t in rows:
+            t["when"] = datetime.strptime(t["due"], "%Y-%m-%d").strftime("%a, %b %-d") if t["due"] else "Any time"
+        return rows
+
+    def _situation_answers(f, door: str) -> dict:
+        today = date.today().isoformat()
+        cov = str(f.get("coverage") or "unknown")
+        last = str(f.get("last_day") or "") or None
+        return {"v": 1, "path": ("told" if last and last > today else "laid_off") if door == "laid" else "change",
+                "last_day": last, "state": str(f.get("state") or "") or None,
+                "coverage_end": (str(f.get("coverage_date") or "") or "unknown") if cov == "date" else cov,
+                "age": str(f.get("age") or "unknown"), "size": str(f.get("size") or "unknown"),
+                "has": [str(x) for x in f.getlist("has")] if hasattr(f, "getlist") else [],
+                "vest_date": str(f.get("vest_date") or "") or None, "bonus_date": str(f.get("bonus_date") or "") or None,
+                "noncompete": str(f.get("noncompete") or "unknown")}
+
+    def _questions(mode: str, door: str, answers: dict | None = None, err: str = "", imported: bool = False):
+        return page("situation_questions.html", nav="settings", mode=mode, door=door, answers=answers or {},
+                    states=sorted(state_rules().items()), err=err, imported=imported)
+
+    @app.get("/situation")
+    def situation(err: str = ""):
+        return page("situation.html", nav="settings", err=err[:300])
+
+    @app.post("/situation/start")
+    async def situation_start(request: Request):
+        """A door was picked. A plan file or code from the website fills the questions in; nothing is saved yet."""
+        from . import next_steps, setup
+        f = await request.form()
+        mode = "settings" if f.get("mode") == "settings" else "welcome"
+        door = str(f.get("door") or "laid")
+        if door == "looking":
+            if next_steps._fresh(settings):
+                setup.save_claim(settings, False)
+            return RedirectResponse("/welcome?step=1&msg=" + quote("Got it. Straight to the search."), status_code=303)
+        if door == "working":
+            return page("situation_confirm.html", nav="settings", door="working", code="", changes=[
+                "Turn off the unemployment side: the work-search log and claim reminders. Your log's history stays.",
+                "Remove the unfinished steps from your plan. The ones you finished stay as a record."])
+        door = "change" if door == "change" else "laid"
+        answers, imported = None, False
+        up = f.get("planfile")
+        raw = (await up.read()) if getattr(up, "filename", "") else b""
+        code = str(f.get("code") or "").strip()
+        try:
+            if raw:
+                answers = next_steps.validate_answers(json.loads(raw.decode("utf-8", "replace")), state_rules())
+            elif code:
+                answers = next_steps.decode_code(code, state_rules())
+        except (ValueError, json.JSONDecodeError) as e:
+            msg = str(e) if isinstance(e, ValueError) and not isinstance(e, json.JSONDecodeError) else "That plan file didn't read right. Try saving it again from the planner."
+            if mode == "settings":
+                return page("situation.html", nav="settings", err=msg)
+            return RedirectResponse("/welcome?step=0&err=" + quote(msg), status_code=303)
+        if answers:
+            imported = True
+            door = "change" if answers["path"] == "change" else "laid"
+        return _questions(mode, door, answers, imported=imported)
+
+    @app.post("/situation/answers")
+    async def situation_answers(request: Request):
+        """Fresh install from the welcome flow: the plan goes straight onto the to-do list. Anyone else sees the
+        confirm screen first."""
+        from . import next_steps
+        f = await request.form()
+        mode = "settings" if f.get("mode") == "settings" else "welcome"
+        door = "change" if f.get("door") == "change" else "laid"
+        a = _situation_answers(f, door)
+        try:
+            a = next_steps.validate_answers(a, state_rules())
+            if a["path"] in ("laid_off", "told") and not a["state"]:
+                raise ValueError("Pick the state you worked in, so the claim steps and the work-search log follow its rules.")
+            if mode == "welcome" and next_steps._fresh(settings):
+                r = next_steps.import_plan(settings, db, a, date.today())
+                env.globals["ws_label"] = (settings.raw.get("work_search") or {}).get("label", "Work search")
+                return RedirectResponse("/welcome?step=1&msg=" + quote(
+                    f"Your plan is on your to-do list: {r['added']} steps. Now, the search."), status_code=303)
+            changes = next_steps.preview_changes(settings, db, a, date.today())
+        except ValueError as e:
+            return _questions(mode, door, a if isinstance(a, dict) else None, err=str(e))
+        return page("situation_confirm.html", nav="settings", door=door, code=next_steps.encode_code(a), changes=changes)
+
+    @app.post("/situation/confirm")
+    async def situation_confirm(request: Request):
+        from . import next_steps
+        f = await request.form()
+        try:
+            if f.get("door") == "working":
+                r = next_steps.back_to_work(settings, db)
+                msg = "Good news. The unemployment side is off" + (f", and {r['removed']} steps are cleared." if r["removed"] else ".")
+            else:
+                a = next_steps.decode_code(str(f.get("code") or ""), state_rules())
+                r = next_steps.import_plan(settings, db, a, date.today(), replace=True)
+                msg = f"Done. {r['added']} steps are on your to-do list."
+        except ValueError as e:
+            return page("situation.html", nav="settings", err=str(e))
+        env.globals["ws_label"] = (settings.raw.get("work_search") or {}).get("label", "Work search")
+        return RedirectResponse("/?msg=" + quote(msg), status_code=303)
 
     @app.post("/welcome/about")
     async def welcome_about(request: Request):

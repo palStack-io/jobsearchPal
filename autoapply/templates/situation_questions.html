@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Your situation{% endblock %}
+{% block body %}{% from "_situation.html" import styles %}
+{# The planner's questions in the app (2026-11-24): the same answers as palstack.io/next-step, on one page. Every
+   question can be left as it is. A plan imported from the website arrives here filled in. #}
+{% set a = answers %}
+<div class="wl">
+ <header class="wl-head">
+  <div class="wl-step">{{ 'Step 1 of 6 · Your situation' if mode == 'welcome' else 'Something changed?' }}</div>
+  <h1>{{ "Let's find your next step" if door == 'laid' else "Let's plan your move" }}</h1>
+  <p class="wl-lead">{{ "Being let go is a lot at once. A few answers turn it into dated steps, each with the rule behind it. Skip any you don't know." if door == 'laid' else "A few answers show what you'd keep or lose depending on when and how you leave. Skip any you don't know." }}</p>
+ </header>
+ {% if err %}<p class="wl-msg bad" role="alert">{{ err }}</p>{% elif imported %}<p class="wl-msg" role="status">Your plan from palstack.io is filled in below. Check it, then continue.</p>{% endif %}
+ <section class="wl-card">
+ <form method="post" action="/situation/answers" class="sq">
+  <input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="door" value="{{ door }}">
+  <label class="fld" style="max-width:260px"><span class="q">{{ 'Your last day of work' if door == 'laid' else 'A leaving date, if you have one' }}</span>
+   <input type="date" name="last_day" value="{{ a.last_day or '' }}"></label>
+  <label class="fld" style="max-width:320px"><span class="q">The state you worked in</span>
+   <select name="state"><option value="">Choose a state</option>{% for code, r in states %}<option value="{{ code }}" {{ 'selected' if a.state == code }}>{{ r.name or code }}</option>{% endfor %}</select>
+   {% if door == 'laid' %}<span class="why">You file for unemployment there, even if you live somewhere else.</span>{% endif %}</label>
+  <fieldset><legend>When does your health cover from work end?</legend>
+   <div class="opts">{% for v, l in [('end_of_month', 'End of that month'), ('date', 'A different date'), ('unknown', "I don't know yet"), ('none', "I didn't have it")] %}
+    <label class="opt"><input type="radio" name="coverage" value="{{ v }}" {{ 'checked' if (a.coverage_end == v) or (v == 'date' and a.coverage_end and a.coverage_end[:2] == '20') }}>{{ l }}</label>{% endfor %}</div>
+   <label class="fld" style="max-width:260px"><span>The date, if different</span><input type="date" name="coverage_date" value="{{ a.coverage_end if a.coverage_end and a.coverage_end[:2] == '20' else '' }}"></label></fieldset>
+  <fieldset><legend>Your age</legend><p class="why">Some rules change at 40, 55 and 65. It stays on this computer.</p>
+   <div class="opts">{% for v, l in [('u40', 'Under 40'), ('40_54', '40 to 54'), ('55_59', '55 to 59'), ('60p', '60 or over')] %}<label class="opt"><input type="radio" name="age" value="{{ v }}" {{ 'checked' if a.age == v }}>{{ l }}</label>{% endfor %}</div></fieldset>
+  <fieldset><legend>About how many people work for your employer?</legend>
+   <div class="opts">{% for v, l in [('u20', 'Fewer than 20'), ('20_99', '20 to 99'), ('100p', '100 or more'), ('unknown', "I'm not sure")] %}<label class="opt"><input type="radio" name="size" value="{{ v }}" {{ 'checked' if a.size == v }}>{{ l }}</label>{% endfor %}</div></fieldset>
+  <fieldset><legend>Which of these do you have?</legend>
+   <div class="opts">{% for v, l in [('severance', 'A severance offer'), ('401k', 'A 401(k) or 403(b)'), ('401k_loan', 'A 401(k) loan'), ('equity', 'Stock options or shares'), ('hsa', 'An HSA'), ('fsa', 'A health FSA'), ('life', 'Life insurance through work'), ('student_loans', 'Federal student loans')] %}
+    <label class="opt"><input type="checkbox" name="has" value="{{ v }}" {{ 'checked' if v in (a.has or []) }}>{{ l }}</label>{% endfor %}</div></fieldset>
+  {% if door == 'change' %}
+  <div class="two">
+   <label class="fld"><span class="q">Shares or options vest on</span><input type="date" name="vest_date" value="{{ a.vest_date or '' }}"></label>
+   <label class="fld"><span class="q">The bonus pays on</span><input type="date" name="bonus_date" value="{{ a.bonus_date or '' }}"></label></div>
+  <fieldset><legend>Did you sign a non-compete or non-solicit?</legend>
+   <div class="opts">{% for v, l in [('yes', 'Yes'), ('no', 'No'), ('unknown', "I'm not sure")] %}<label class="opt"><input type="radio" name="noncompete" value="{{ v }}" {{ 'checked' if a.noncompete == v }}>{{ l }}</label>{% endfor %}</div></fieldset>
+  {% endif %}
+  <div class="wl-acts"><button class="btn primary">{{ 'Make my plan' if mode == 'welcome' else 'See what changes' }}</button>
+   <a class="btn ghost" href="{{ '/welcome?step=0' if mode == 'welcome' else '/situation' }}">Back</a>
+   {% if mode == 'welcome' %}<a class="btn ghost" href="/welcome?step=1">Skip this step</a>{% endif %}</div>
+  <p class="wl-hint">Reminders, not advice: the letters from your state and your plan documents decide your own case.</p>
+ </form>
+ </section>
+</div>
+{{ styles() }}
+{% endblock %}

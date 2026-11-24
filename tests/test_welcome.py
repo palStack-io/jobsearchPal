@@ -32,14 +32,14 @@ def test_fresh_install_opens_welcome(env):
     s, db, c = env
     s.raw["_from_example"] = True
     r = c.get("/", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/welcome"
+    assert r.status_code == 303 and r.headers["location"] == "/welcome?step=0"  # your situation first (2026-11-24)
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("n", [0, 1, 2, 3, 4, 5])
 def test_each_step_renders(env, n):
     s, db, c = env
     html = c.get(f"/welcome?step={n}").text
-    assert f"Step {n} of 5" in html
+    assert f"Step {n + 1} of 6" in html  # six steps since Your situation came first (2026-11-24)
 
 
 def test_done_screen_offers_run_now(env):

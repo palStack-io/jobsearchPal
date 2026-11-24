@@ -1,0 +1,54 @@
+{# Your situation (2026-11-24): the first welcome step, and Settings > Something changed? (mode 'settings').
+   Each door goes to the questions; a plan from palstack.io/next-step fills them in first. #}
+{% macro situation(mode, err='') %}
+<form method="post" action="/situation/start" enctype="multipart/form-data" class="sit">
+ <input type="hidden" name="mode" value="{{ mode }}">
+ {% if err %}<p class="wl-msg bad" role="alert">{{ err }}</p>{% endif %}
+ <fieldset class="sit-doors"><legend class="sr">Your situation</legend>
+  <label class="sit-door"><input type="radio" name="door" value="laid" checked><span><b>I was laid off</b><small>Or I've been told I will be. Dated steps first: the claim, your health window, your 401(k). Then the search.</small></span></label>
+  <label class="sit-door"><input type="radio" name="door" value="change"><span><b>I'm thinking about a change</b><small>Still employed. Plan the move, and search quietly.</small></span></label>
+  {% if mode == 'settings' %}
+  <label class="sit-door"><input type="radio" name="door" value="working"><span><b>I'm working again</b><small>Turns the unemployment side off and clears the steps you no longer need. Your history stays.</small></span></label>
+  {% else %}
+  <label class="sit-door"><input type="radio" name="door" value="looking"><span><b>Just looking</b><small>No dates to track. Straight to the search.</small></span></label>
+  {% endif %}
+ </fieldset>
+ <details class="sit-import"><summary>Made a plan at palstack.io/next-step? Bring it in</summary>
+  <div class="sit-import-in">
+   <label class="fld"><span>The plan file (next-step-plan.json)</span><input type="file" name="planfile" accept=".json,application/json"></label>
+   <label class="fld"><span>Or paste the plan code</span><input type="text" name="code" placeholder="NS1.…" autocomplete="off" spellcheck="false"></label>
+   <p class="wl-hint">It fills in the questions on the next screen. You check them before anything is saved.</p>
+  </div>
+ </details>
+ <div class="wl-acts"><button class="btn primary">Continue</button>
+  {% if mode == 'settings' %}<a class="btn ghost" href="/settings">Cancel</a>{% else %}<a class="btn ghost" href="/welcome?step=1">Skip this step</a>{% endif %}</div>
+</form>
+{% endmacro %}
+
+{% macro styles() %}
+<style>
+.sit{display:flex;flex-direction:column;gap:16px}
+.sit-doors{border:0;margin:0;padding:0;display:grid;gap:10px}
+.sit-door{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface);cursor:pointer;transition:border-color .15s var(--ease-out),background-color .15s var(--ease-out)}
+.sit-door:hover{border-color:var(--ink-3)}
+.sit-door:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sit-door input{margin:3px 0 0;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.sit-door b{display:block;font-size:16px}.sit-door small{display:block;font-size:14px;color:var(--ink-2);margin-top:2px;line-height:1.45}
+.sit-import{border:1px dashed var(--line-2);border-radius:12px;padding:12px 16px}.sit-import summary{cursor:pointer;font-weight:600;color:var(--accent-ink);font-size:14px}
+.sit-import-in{display:grid;gap:12px;margin-top:12px}
+.sq{display:flex;flex-direction:column;gap:22px}
+.sq fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sq legend,.sq .q{font-size:16px;font-weight:600;margin-bottom:2px}
+.sq .opts{display:flex;flex-wrap:wrap;gap:8px}
+.sq .opt{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid var(--line-2);border-radius:999px;font-size:15px;cursor:pointer;background:var(--surface)}
+.sq .opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.sq .opt input{accent-color:var(--accent);margin:0}
+.sq .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;max-width:520px}
+.sq .why{font-size:14px;color:var(--ink-3);margin:0}
+.sc-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sc-list li{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.5}.sc-list li:last-child{border-bottom:0}
+.sc-list svg{flex:none;margin-top:2px}
+@media (max-width:640px){.sq .two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.sit-door{transition:none}}
+</style>
+{% endmacro %}

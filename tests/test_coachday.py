@@ -554,3 +554,23 @@ def test_week_numbers_count_this_week_only(env):
 def test_nudge_copy_plural():
     from autoapply import nudges
     assert nudges.ago(0) == "less than a day ago" and nudges.ago(1) == "1 day ago" and nudges.ago(10) == "10 days ago"
+
+
+def test_picks_drop_out_once_applied_or_skipped(env):
+    """Where to aim (2026-11-24): a role the person applied to (or skipped) after the morning's coach run leaves the
+    picks; the coach's choice is a morning snapshot, the job's status is live."""
+    from datetime import date
+    s, db = env
+    _seed(db)
+    coachday.ensure(db)
+    for jid, co in (("gh:a:1", "Aco"), ("gh:b:1", "Bco"), ("gh:c:1", "Cco")):
+        _job(db, jid, co, "Analytics Engineer", "new")
+    db.conn.execute("insert into coach_day (day, json) values (?, ?)", (date.today().isoformat(), json.dumps(
+        {"note": ["Hi."], "picks": [{"id": j, "why": "fit", "angle": ""} for j in ("gh:a:1", "gh:b:1", "gh:c:1")], "skips": []})))
+    db.conn.commit()
+    db.update("gh:a:1", status="submitted")
+    db.update("gh:b:1", status="skipped")
+    picks = coachday.card(db, s, date.today())["picks"]
+    assert [p["id"] for p in picks] == ["gh:c:1"]
+    aim, _ = coachday.page_rows(coachday.card(db, s, date.today()))
+    assert [r["who"] for r in aim] == ["Cco"]

@@ -236,8 +236,11 @@ def _strip(p: Mapping | None, acts: Mapping, week: date, today: date) -> list[di
         plan = {g: int(v) for g, v in (per_day.get(name) or {}).items() if g in GOALS and int(v or 0) > 0}
         a = acts[d.isoformat()]
         fr = [(_frac(a[g], n)) for g, n in plan.items()]
+        # A rest day is a day the plan leaves free; with no plan at all a day is just a day (2026-11-24: the whole
+        # week drew as rest-day waves). count = applications sent that day, the number inside its ring.
         out.append({"day": name, "date": d, "planned": bool(plan), "frac": sum(fr) / len(fr) if fr else 0.0,
-                    "rest": not plan, "today": d == today, "past": d < today,
+                    "rest": bool(per_day) and not plan, "today": d == today, "past": d < today,
+                    "count": a["apps"], "planned_apps": plan.get("apps", 0),
                     "active": any(a[g] for g in GOALS) or bool(a["people"])})
     return out
 
@@ -377,6 +380,12 @@ def today_line(v: Mapping | None) -> str:
                       for b in v["blocks"])
 
 
+def _lower_words(label: str) -> str:
+    """Lowercase ordinary words for a tally ("Work search" -> "work search") but keep acronyms and names with inner
+    capitals ("DUA", "MassHire"): "6 of 3 dua" read as a typo (2026-11-24)."""
+    return " ".join(w if w[1:] != w[1:].lower() else w.lower() for w in label.split())
+
+
 def panel(db, today: date, this_week: int, floor: int, ws_label: str) -> dict:
     """The dashboard's compact Your week (11/18): this week's strip, one warm line from the record, and a few thin
     tallies (each goal you set, plus the work-search log against the state's minimum). Counts only go up; a short day
@@ -407,6 +416,6 @@ def panel(db, today: date, this_week: int, floor: int, ws_label: str) -> dict:
                             "planned": r["planned"] if r["goal"] == "apps" else fmt_minutes(r["planned"]),
                             "frac": r["frac"]})
     if floor:
-        tallies.append({"label": ws_label.lower(), "did": this_week, "planned": floor,
+        tallies.append({"label": _lower_words(ws_label), "did": this_week, "planned": floor,
                         "frac": min(1.0, this_week / floor) if floor else 0.0})
     return {"strip": v["strip"], "line": line, "tallies": tallies, "planned": v["planned"]}

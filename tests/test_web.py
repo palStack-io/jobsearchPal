@@ -406,3 +406,12 @@ def test_finish_command_is_offered_on_every_filled_form(tmp_path, base_url, pdfs
     html = c.get("/job/manual:gh").text
     assert "Finish it yourself instead" in html and "autoapply-finish manual:gh" in html
 
+
+
+def test_email_selects_draw_their_own_arrow():
+    """Safari drops padding on a native select, so the category dot sat on the first letter (2026-11-24). The email
+    row selects turn the native look off and draw their own arrow."""
+    from pathlib import Path
+    css = (Path(__file__).parents[1] / "autoapply/templates/emails.html").read_text()
+    rule = next(l for l in css.splitlines() if l.startswith(".eform select{appearance"))
+    assert "-webkit-appearance:none" in rule and "background-image" in rule and "padding-right" in rule

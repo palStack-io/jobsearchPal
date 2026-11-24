@@ -10,17 +10,17 @@
 .g-ring.met .fl{stroke:var(--sun)}.g-ring .ck{fill:none;stroke:var(--sun);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 @keyframes g-ring{from{stroke-dasharray:0 200}}
 .g-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;max-width:420px;margin:14px 0 0;padding:0;list-style:none}
-.g-day{display:grid;justify-items:center;gap:5px;font-size: 13px;color:var(--ink-3)}
-.g-day .sun{width:9px;height:9px;border-radius:50%;background:var(--sun);visibility:hidden}.g-day.met .sun{visibility:visible}
-.g-col{position:relative;width:100%;max-width:38px;height:58px;border-radius:11px;background:var(--g-pool);border:1px solid var(--line-2);overflow:hidden}
-.g-col .w{position:absolute;left:0;right:0;bottom:0;height:var(--f);background:var(--g-water);border-top:2px solid var(--accent);animation:g-rise .8s var(--ease-out) 1 backwards;animation-delay:calc(var(--i) * 70ms)}
-.g-col .w[style*="--f:0%"]{border-top:0}
-.g-day.rest .g-col{background:transparent;border-color:transparent}
-.g-day.rest .g-col svg{position:absolute;left:0;right:0;bottom:6px;width:100%;height:10px}
-.g-day.rest .g-col path{fill:none;stroke:var(--accent-soft);stroke-width:2.2;stroke-linecap:round}
-.g-day .dot{position:absolute;left:50%;bottom:8px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--accent)}
-.g-day.today .g-col{border:2px solid var(--accent)}.g-day.today b{color:var(--accent-ink)}.g-day b{font-weight:600}
 @keyframes g-rise{from{height:0}}
+.g-day{display:grid;justify-items:center;gap:6px;font-size: 13px;color:var(--ink-3)}.g-day b{font-weight:600}.g-day.today b{color:var(--accent-ink)}
+.g-rg{position:relative;width:var(--rg,40px);height:var(--rg,40px);border-radius:50%}.g-rg svg{position:absolute;inset:0;display:block;width:100%;height:100%}
+.g-rg .tr{fill:none;stroke:var(--line-2);stroke-width:4}.g-rg .fl{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;animation:g-ring .7s var(--ease-out) 1 backwards;animation-delay:calc(var(--i) * 60ms)}
+.g-rg .n{position:absolute;inset:0;display:grid;place-items:center;font-size: 14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.g-rg .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.g-did .g-rg .tr{fill:var(--accent);stroke:var(--accent)}.g-did .g-rg .n{color:var(--bg)}
+.g-met .g-rg .tr{fill:var(--sun);stroke:var(--sun)}.g-met .g-rg .n{color:#1d2420}
+.g-future .g-rg .tr{stroke-width:1.5;stroke-dasharray:3 4}.g-future .g-rg .n{color:var(--ink-3);font-weight:500}
+.g-rest .g-rg .tr{stroke-width:1.5;stroke-dasharray:1 5;stroke-linecap:round}
+.g-day.today .g-rg{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent)}
 .g-today{margin:22px 0 0}.g-today h2{margin:0}.g-today .sub{font-size:14px;color:var(--ink-2);margin:2px 0 12px}
 .g-rows{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .g-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center}
@@ -65,8 +65,8 @@
  .g-weeks li{grid-template-columns:repeat(2,minmax(0,1fr))}.g-weeks li>b{grid-column:1/-1}}
 .g-panel{display:grid;gap:12px;padding:18px 22px;margin:0 0 14px}.g-panel.g-today{margin:0 0 14px}
 .g-panel-top{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.g-panel .g-strip{margin:0;max-width:none;width:auto;grid-template-columns:repeat(7,26px);gap:6px;flex:none}
-.g-panel .g-col{height:42px;border-radius:8px}.g-panel .g-day{font-size:12px;gap:4px}.g-panel .g-day .sun{width:7px;height:7px}
+.g-panel .g-strip{margin:0;max-width:none;width:auto;grid-template-columns:repeat(7,36px);gap:6px;flex:none;--rg:34px}
+.g-panel .g-day{font-size:12px;gap:6px}.g-panel .g-rg .n{font-size:13px}
 .g-panel-txt{flex:1 1 300px;min-width:0;display:grid;gap:4px}.g-panel-txt h2{margin:0}
 .g-panel-line{margin:0;font-size:14px;color:var(--ink-2);text-wrap:pretty}
 .g-tally{display:flex;gap:6px 18px;flex-wrap:wrap;list-style:none;margin:4px 0 0;padding:0;font-size:13px;color:var(--ink-3)}
@@ -78,7 +78,7 @@
 .g-start{display:flex;gap:10px;align-items:center;background:var(--surface-2);border-radius:12px;padding:8px 8px 8px 12px;font-size:14px;color:var(--ink-2)}
 .g-start svg{color:var(--accent);flex:none}.g-start span{flex:1}.g-start b{color:var(--ink);font-weight:600}
 @media (max-width:620px){.g-panel-txt{order:-1}.g-panel .g-strip{width:100%;grid-template-columns:repeat(7,minmax(0,1fr))}.g-panel-acts{order:3;margin-left:-11px}.g-start{flex-wrap:wrap}}
-@media (prefers-reduced-motion:reduce){.g-tb i,.g-ring .fl,.g-col .w,.just-met .g-ring,.g-today.just-met-day,.g-saved,.g-lookback[open]{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.g-tb i,.g-ring .fl,.g-rg .fl,.just-met .g-ring,.g-today.just-met-day,.g-saved,.g-lookback[open]{animation:none!important}}
 </style>{% endmacro %}
 
 {% macro ring(frac, met=False, size=44) %}{% set c = 113.1 %}
@@ -86,12 +86,15 @@
  <circle class="tr" cx="22" cy="22" r="18"/>{% if frac > 0 %}<circle class="fl" cx="22" cy="22" r="18" stroke-dasharray="{{ '%.1f'|format(frac * c) }} {{ c }}"/>{% endif %}
  {% if met %}<path class="ck" d="M15.5 22.5l4.5 4.5 8.5-9"/>{% endif %}</svg>{% endmacro %}
 
+{# Your week, one ring per day (Harun picked rings with the number inside, 2026-11-24). The number is applications sent
+   that day; the ring fills toward the day's plan and turns gold when it's done. No plan: a day with something done
+   fills teal. Future days are dashed (with the planned number, muted); rest days are dotted and empty. #}
 {% macro strip(days) %}<ol class="g-strip" aria-label="Your week, day by day">
- {% for d in days %}{% set met = d.planned and d.frac >= 1 %}
- <li class="g-day{{ ' rest' if d.rest }}{{ ' today' if d.today }}{{ ' met' if met }}" aria-label="{{ d.day }}: {{ 'rest day' if d.rest else ('plan done' if met else (d.frac * 100)|round|int ~ '% of the plan') }}">
-  <i class="sun" aria-hidden="true"></i>
-  <span class="g-col" aria-hidden="true">{% if d.rest %}<svg viewBox="0 0 38 10" preserveAspectRatio="none"><path d="M2 6c5-4 9-4 14 0s9 4 14 0 6-3 6-3"/></svg>{% if d.active %}<i class="dot"></i>{% endif %}
-   {% else %}<i class="w" style="--f:{{ (d.frac * 100)|round|int }}%;--i:{{ loop.index0 }}"></i>{% endif %}</span>
+ {% for d in days %}{% set met = d.planned and d.frac >= 1 %}{% set future = not d.today and not d.past %}
+ {% set state = 'rest' if d.rest else ('future' if future else ('met' if met else ('plan' if d.planned else ('did' if d.count or d.active else 'none')))) %}
+ <li class="g-day g-{{ state }}{{ ' today' if d.today }}" aria-label="{{ d.day }}: {{ 'rest day' if d.rest else ('planned' if future and d.planned else ('' if future else (d.count ~ ' application' ~ ('' if d.count == 1 else 's') ~ (', plan done' if met else (', ' ~ (d.frac * 100)|round|int ~ '% of the plan' if d.planned else ''))))) }}">
+  <span class="g-rg" aria-hidden="true"><svg viewBox="0 0 44 44"><circle class="tr" cx="22" cy="22" r="18"/>{% if state == 'plan' and d.frac > 0 %}<circle class="fl" cx="22" cy="22" r="18" stroke-dasharray="{{ '%.1f'|format(d.frac * 113.1) }} 113.1" style="--i:{{ loop.index0 }}"/>{% endif %}</svg>
+   <span class="n">{% if state in ('met', 'plan', 'did') %}{% if d.count %}<span data-count="{{ d.count }}">{{ d.count }}</span>{% else %}<i class="dot"></i>{% endif %}{% elif state == 'future' and d.planned_apps %}{{ d.planned_apps }}{% endif %}</span></span>
   <b>{{ d.day }}</b></li>{% endfor %}
 </ol>{% endmacro %}
 

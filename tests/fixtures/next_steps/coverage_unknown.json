@@ -1,0 +1,29 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-11-24",
+  "state": null,
+  "coverage_end": "unknown",
+  "age": null,
+  "size": "100p",
+  "has": [
+   "fsa",
+   "life"
+  ],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "today_ids": [
+   "file-claim",
+   "save-records",
+   "ask-coverage-end"
+  ],
+  "find_out_ids": [
+   "fsa-spend",
+   "cobra-or-marketplace",
+   "life-insurance"
+  ]
+ }
+}

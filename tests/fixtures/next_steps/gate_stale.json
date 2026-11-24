@@ -1,0 +1,27 @@
+{
+ "today": "2026-11-24",
+ "facts_patch": {
+  "states": {
+   "MA": {
+    "checked": "2024-01-01"
+   }
+  }
+ },
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-11-24",
+  "state": "MA",
+  "coverage_end": "unknown",
+  "age": null,
+  "size": "unknown",
+  "has": [],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "state_note_ids": [],
+  "state_url_ids": [
+   "file-claim"
+  ]
+ }
+}

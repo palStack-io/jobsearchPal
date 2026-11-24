@@ -1,0 +1,37 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "told",
+  "last_day": "2026-12-15",
+  "state": null,
+  "coverage_end": "unknown",
+  "age": "u40",
+  "size": "unknown",
+  "has": [
+   "severance"
+  ],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "today_ids": [
+   "save-records",
+   "dont-sign-yet",
+   "ask-coverage-end"
+  ],
+  "next_id": "file-claim-told",
+  "due": {
+   "file-claim-told": "2026-12-15",
+   "cobra-letter": "2027-01-28"
+  },
+  "find_out_ids": [
+   "cobra-or-marketplace"
+  ],
+  "past_ids": [],
+  "state_note_ids": [],
+  "excludes_ids": [
+   "file-claim",
+   "dont-sign-yet-40"
+  ]
+ }
+}

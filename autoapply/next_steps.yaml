@@ -1,0 +1,582 @@
+# Your next step: the planner's steps, for the website (palstack.io/next-step) and the app's onboarding.
+#
+# DRAFT 2026-11-24, fact-checked by a reviewer against each source on 2026-11-24 (22 fixes), not yet approved. Before any step is public it is checked against its source by a reviewer and
+# approved by Harun; record that here ("approved by Harun, <date>"). Every step is a reminder, not advice: the
+# person's own letters (COBRA election notice, state notices) and plan documents decide their own case.
+#
+# Fields (both engines read them the same way; tests/fixtures/next_steps/*.json hold them to it):
+#   id        unique, kebab-case; the app tags its to-do rows [next_step:<id>]
+#   path      laid_off | told | change (one or more)
+#   section   today_pool | week1 | health | money90 | bills | before_you_go | ongoing
+#   rank      lower first (Today takes up to 3 today_pool steps by rank)
+#   when      all must hold: has_all [answers.has], age_in [u40 '40_54' '55_59' 60p unknown],
+#             size_in [u20 '20_99' 100p unknown], coverage known|unknown|none|any_cover (known or unknown),
+#             last_day known|unknown,
+#             noncompete_in [yes no unknown], vest known, bonus known
+#   due       {from: L|C|today|vest|bonus|tax_day|jan31, days: n}; L = last day, C = health cover end
+#             (end_of_month = the last day of L's month), tax_day = April 15 and jan31 = January 31 of the
+#             year after L. An anchor that isn't known puts the step in "Find out first".
+#   general   true: a plain reminder with no rule behind it (no source); the page says so
+#   state_field  a work_search_states.yaml field whose line is added for the person's state, only when the
+#             state entry is official, high confidence and checked within 365 days.
+version: 2026-11-24.3
+checked: '2026-11-24'
+steps:
+- id: file-claim
+  path:
+  - laid_off
+  section: today_pool
+  rank: 1
+  due:
+    from: L
+    days: 6
+  state_field: waiting_week
+  title: File for unemployment
+  body: File online with your state as soon as you can, in the state where you worked. In many states, weeks before you
+    file can't be paid. Severance doesn't stop you applying; let the state decide.
+  source: &id001
+    name: 'U.S. Department of Labor: Unemployment insurance'
+    url: https://www.dol.gov/general/topic/unemployment-insurance
+  checked: '2026-11-24'
+- id: save-records
+  path:
+  - laid_off
+  - told
+  - change
+  section: today_pool
+  rank: 2
+  title: Save your records while you still have access
+  body: Your pay stubs, benefit summaries, offer letter and reviews, and your personal contacts. Keep copies somewhere that's
+    yours. Don't take confidential company files.
+  source:
+    name: 'CFPB: What to do after an unexpected job loss'
+    url: https://www.consumerfinance.gov/consumer-tools/unexpected-job-loss/
+  checked: '2026-11-23'
+- id: dont-sign-yet-40
+  path:
+  - laid_off
+  - told
+  section: today_pool
+  rank: 3
+  when:
+    has_all:
+    - severance
+    age_in:
+    - '40_54'
+    - '55_59'
+    - 60p
+  title: Don't sign the severance agreement yet
+  body: At 40 or over, the law gives you at least 21 days to consider it (45 in a group layoff), counted from the day you
+    got the final offer, then 7 days to change your mind after signing. Use the time.
+  source:
+    name: 'EEOC: Understanding waivers of discrimination claims in severance agreements'
+    url: https://www.eeoc.gov/laws/guidance/qa-understanding-waivers-discrimination-claims-employee-severance-agreements
+  checked: '2026-11-24'
+- id: dont-sign-yet
+  path:
+  - laid_off
+  - told
+  section: today_pool
+  rank: 3
+  when:
+    has_all:
+    - severance
+    age_in:
+    - u40
+    - unknown
+  title: Don't sign the severance agreement on the spot
+  body: Under 40 there's no federal minimum time to decide, so ask for a few days in writing. At 40 or over you get at least
+    21.
+  source:
+    name: 'EEOC: Understanding waivers of discrimination claims in severance agreements'
+    url: https://www.eeoc.gov/laws/guidance/qa-understanding-waivers-discrimination-claims-employee-severance-agreements
+  checked: '2026-11-23'
+- id: ask-coverage-end
+  path:
+  - laid_off
+  - told
+  - change
+  section: today_pool
+  rank: 5
+  when:
+    coverage: unknown
+  title: Ask HR the day your health cover ends
+  body: 'It starts two clocks: the window to pick a new plan and the COBRA letter. Cover can end on your last day or at
+    the end of that month, depending on the plan.'
+  source:
+    name: 'HealthCare.gov: Special Enrollment Period'
+    url: https://www.healthcare.gov/coverage-outside-open-enrollment/special-enrollment-period/
+  checked: '2026-11-24'
+- id: money-dates
+  path:
+  - change
+  section: today_pool
+  rank: 3
+  title: Look up your money dates
+  body: When your shares or options vest, when the bonus pays, and when the 401(k) match lands. Leaving a week before one
+    of them can cost it.
+  checked: '2026-11-24'
+  general: true
+- id: quiet-search
+  path:
+  - change
+  section: today_pool
+  rank: 4
+  title: Search on your own phone and email
+  body: Keep the search off work devices and work accounts. Your employer can usually see what's on them.
+  checked: '2026-11-24'
+  general: true
+- id: file-claim-told
+  path:
+  - told
+  section: week1
+  rank: 1
+  due:
+    from: L
+    days: 0
+  state_field: waiting_week
+  title: File for unemployment the week your job ends
+  body: Not before your last day. File online in the state where you worked. Severance doesn't stop you filing; let the
+    state decide.
+  source: *id001
+  checked: '2026-11-24'
+- id: tax-withholding
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 2
+  title: Ask for 10% tax withholding when you file
+  body: Unemployment benefits are taxable income. You can have 10% held back for federal tax (Form W-4V), so less is due
+    at tax time. Your state sends a 1099-G by January 31.
+  source:
+    name: IRS Publication 4128, Tax Impact of Job Loss
+    url: https://www.irs.gov/pub/irs-pdf/p4128.pdf
+  checked: '2026-11-24'
+- id: certify-weekly
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 3
+  title: Certify every week, the first one too
+  body: Most states ask you to claim each week, or every two. Keep claiming in your first week too; many states require
+    it even if that week isn't paid.
+  source: *id001
+  checked: '2026-11-24'
+- id: fsa-spend
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 4
+  when:
+    has_all:
+    - fsa
+  due:
+    from: C
+    days: 0
+  title: Use your health FSA before your cover ends
+  body: A health FSA usually pays only for care while you're covered, so book what you can before then.
+  source:
+    name: IRS Publication 969
+    url: https://www.irs.gov/publications/p969
+  checked: '2026-11-23'
+- id: warn-notice
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 5
+  when:
+    size_in:
+    - 100p
+  title: A big layoff needs 60 days' notice
+  body: Employers with 100 or more people usually have to give 60 days' notice of a closing or mass layoff. If yours didn't,
+    you may be owed pay and benefits for up to 60 days.
+  source:
+    name: 'U.S. Department of Labor: A worker''s guide to advance notice of closings and layoffs'
+    url: https://www.dol.gov/sites/dolgov/files/ETA/layoff/pdfs/WorkerWARN2003.pdf
+  checked: '2026-11-24'
+- id: cobra-or-marketplace
+  path:
+  - laid_off
+  - told
+  section: health
+  rank: 1
+  when:
+    coverage: any_cover
+  due:
+    from: C
+    days: 60
+  title: Pick COBRA or a Marketplace plan
+  body: You can pick a Marketplace plan from 60 days before to 60 days after your cover ends. Dropping COBRA later by choice
+    doesn't reopen this window; you'd wait for open enrollment.
+  source:
+    name: 'HealthCare.gov: Special Enrollment Period'
+    url: https://www.healthcare.gov/coverage-outside-open-enrollment/special-enrollment-period/
+  checked: '2026-11-24'
+- id: cobra-letter
+  path:
+  - laid_off
+  - told
+  section: health
+  rank: 2
+  when:
+    coverage: any_cover
+    size_in:
+    - '20_99'
+    - 100p
+    - unknown
+  due:
+    from: L
+    days: 44
+  title: Watch for the COBRA letter
+  body: It usually comes by mail within about 44 days of your last day. From then you have at least 60 days to choose COBRA,
+    and 45 days after you choose it to pay the first premium.
+  source:
+    name: 'U.S. Department of Labor: An Employee''s Guide to Health Benefits Under COBRA'
+    url: https://www.dol.gov/sites/dolgov/files/ebsa/about-ebsa/our-activities/resource-center/publications/an-employees-guide-health-benefits-under-cobra-2022.pdf
+  checked: '2026-11-24'
+- id: cobra-backdated
+  path:
+  - laid_off
+  - told
+  section: health
+  rank: 3
+  when:
+    coverage: any_cover
+    size_in:
+    - '20_99'
+    - 100p
+    - unknown
+  title: COBRA is backdated to the day your cover ended
+  body: Choose COBRA inside your window and pay, and it covers you from the day your old cover ended, so the plan can pay
+    for care in the gap under its usual rules. That's why the first bill can include more than one month.
+  source:
+    name: 'U.S. Department of Labor: FAQs on COBRA continuation health coverage for workers'
+    url: https://www.dol.gov/agencies/ebsa/about-ebsa/our-activities/resource-center/faqs/cobra-continuation-health-coverage-workers
+  checked: '2026-11-24'
+- id: mini-cobra
+  path:
+  - laid_off
+  - told
+  section: health
+  rank: 3
+  when:
+    coverage: any_cover
+    size_in:
+    - u20
+  title: Small employer? Ask about your state's version of COBRA
+  body: Federal COBRA covers employers with 20 or more people. Many states have their own rules for smaller ones; ask HR
+    or your state's insurance department.
+  source:
+    name: 'U.S. Department of Labor: An Employee''s Guide to Health Benefits Under COBRA'
+    url: https://www.dol.gov/sites/dolgov/files/ebsa/about-ebsa/our-activities/resource-center/publications/an-employees-guide-health-benefits-under-cobra-2022.pdf
+  checked: '2026-11-23'
+- id: medicare-window
+  path:
+  - laid_off
+  - told
+  - change
+  section: health
+  rank: 4
+  when:
+    age_in:
+    - 60p
+  title: 65 or over? Medicare has its own window
+  body: If you're 65 or over, you have 8 months, starting the month after your job or its cover ends (whichever is first),
+    to sign up for Medicare. COBRA doesn't pause this clock.
+  source:
+    name: 'U.S. Department of Labor: An Employee''s Guide to Health Benefits Under COBRA'
+    url: https://www.dol.gov/sites/dolgov/files/ebsa/about-ebsa/our-activities/resource-center/publications/an-employees-guide-health-benefits-under-cobra-2022.pdf
+  checked: '2026-11-24'
+- id: life-insurance
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 1
+  when:
+    has_all:
+    - life
+  due:
+    from: C
+    days: 31
+  title: Keep your work life insurance, if you want it
+  body: Converting it to your own policy, or carrying it on, usually has to be done within about 31 days of it ending. Your
+    certificate of insurance has the exact rule.
+  checked: '2026-11-24'
+  general: true
+- id: stock-options
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 2
+  when:
+    has_all:
+    - equity
+  due:
+    from: L
+    days: 85
+  title: Check your stock options' exercise window
+  body: Incentive stock options keep their tax treatment only if you exercise within 3 months of leaving, and your plan's
+    deadline may be shorter. Unvested shares usually end with the job. Read your grant.
+  source:
+    name: 26 U.S. Code § 422, Incentive stock options
+    url: https://www.law.cornell.edu/uscode/text/26/422
+  checked: '2026-11-24'
+- id: rollover-direct
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 3
+  when:
+    has_all:
+    - 401k
+  title: Move your 401(k) directly, don't cash it out
+  body: You can leave it, roll it to an IRA or a new employer's plan, or cash out. A direct rollover has nothing held back.
+    A check to you has 20% withheld, and cashing out before 59½ usually adds 10% more.
+  source:
+    name: 'IRS: Rollovers of retirement plan and IRA distributions'
+    url: https://www.irs.gov/retirement-plans/plan-participant-employee/rollovers-of-retirement-plan-and-ira-distributions
+  checked: '2026-11-23'
+- id: age-55-rule
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 4
+  when:
+    has_all:
+    - 401k
+    age_in:
+    - '55_59'
+  title: 55 or over? Think before rolling into an IRA
+  body: Leaving the job in or after the year you turn 55 lets you take money from that employer's plan without the 10% extra
+    tax. That doesn't carry over to an IRA.
+  source:
+    name: IRS Topic 558, Additional tax on early distributions
+    url: https://www.irs.gov/taxtopics/tc558
+  checked: '2026-11-23'
+- id: small-balance
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 5
+  when:
+    has_all:
+    - 401k
+  title: A small 401(k) can be moved for you
+  body: If the balance is $7,000 or less, the plan may (if its rules allow) move it to an IRA it picks, or pay out $1,000
+    or less, unless you choose first.
+  source:
+    name: 'IRS: Instructions for Forms 1099-R and 5498'
+    url: https://www.irs.gov/pub/irs-pdf/i1099r.pdf
+  checked: '2026-11-24'
+- id: loan-offset
+  path:
+  - laid_off
+  - told
+  section: money90
+  rank: 6
+  when:
+    has_all:
+    - 401k_loan
+  due:
+    from: tax_day
+    days: 0
+  title: A 401(k) loan can still be rolled over
+  body: An unpaid loan is usually taken from your balance after you leave. If you put the same amount into an IRA or plan
+    from other money by your tax-return due date for that year (extensions included), it isn't taxed.
+  source:
+    name: 'IRS: Plan loan offsets'
+    url: https://www.irs.gov/retirement-plans/plan-loan-offsets
+  checked: '2026-11-24'
+- id: hsa-yours
+  path:
+  - laid_off
+  - told
+  - change
+  section: money90
+  rank: 7
+  when:
+    has_all:
+    - hsa
+  title: Your HSA is yours
+  body: It goes with you, and you can keep using it for medical costs.
+  source:
+    name: IRS Publication 969
+    url: https://www.irs.gov/publications/p969
+  checked: '2026-11-23'
+- id: call-lenders
+  path:
+  - laid_off
+  - told
+  section: bills
+  rank: 1
+  title: Call your lenders before a payment is late
+  body: Mortgage, rent, cards and car loan. Ask for more time or a waived fee, and stop autopays you can't cover.
+  source:
+    name: 'CFPB: What to do after an unexpected job loss'
+    url: https://www.consumerfinance.gov/consumer-tools/unexpected-job-loss/
+  checked: '2026-11-23'
+- id: student-loans
+  path:
+  - laid_off
+  - told
+  section: bills
+  rank: 2
+  when:
+    has_all:
+    - student_loans
+  title: Lower or pause your federal student loans
+  body: Unemployment deferment can pause payments for up to 3 years in total; interest still runs on unsubsidized loans.
+    Ask your servicer about income-driven repayment too.
+  source:
+    name: 'Federal Student Aid: Unemployment deferment request'
+    url: https://studentaid.gov/sites/default/files/UnemploymentDeferment-en-us.pdf
+  checked: '2026-11-24'
+- id: local-help
+  path:
+  - laid_off
+  - told
+  section: bills
+  rank: 3
+  title: Free help is close by
+  body: 211 connects you with local help for rent, utilities and food. Call or text 211.
+  source:
+    name: '211'
+    url: https://www.211.org/
+  checked: '2026-11-24'
+- id: quit-ends-ui
+  path:
+  - change
+  section: before_you_go
+  rank: 1
+  title: Quitting usually ends unemployment
+  body: Every state turns down a claim after a quit without good cause, and many count only reasons tied to the job. If
+    a layoff is rumoured, waiting for it can keep severance and benefits.
+  source:
+    name: 'U.S. Department of Labor: Comparison of State UI Laws, nonmonetary eligibility'
+    url: https://oui.doleta.gov/unemploy/pdf/uilawcompar/2023/nonmonetary.pdf
+  checked: '2026-11-24'
+- id: vest-date
+  path:
+  - change
+  section: before_you_go
+  rank: 2
+  when:
+    vest: known
+  due:
+    from: vest
+    days: 0
+  title: Your shares vest
+  body: Leaving before this date usually means leaving them behind.
+  checked: '2026-11-24'
+  general: true
+- id: bonus-date
+  path:
+  - change
+  section: before_you_go
+  rank: 3
+  when:
+    bonus: known
+  due:
+    from: bonus
+    days: 0
+  title: Your bonus pays
+  body: Many plans pay a bonus only to people still employed on the day. Check yours.
+  checked: '2026-11-24'
+  general: true
+- id: cover-end-timing
+  path:
+  - change
+  section: before_you_go
+  rank: 4
+  title: Your last day can decide a month of health cover
+  body: Cover can end on your last day or at the end of that month, depending on the plan. Ask HR before you pick the date.
+  checked: '2026-11-24'
+  general: true
+- id: vacation-payout
+  path:
+  - change
+  section: before_you_go
+  rank: 5
+  title: Unused vacation is paid out only in some states
+  body: Federal law doesn't require it. Some states do, and otherwise your employer's policy decides. Check before you plan
+    to use it up or cash it in.
+  source:
+    name: 'U.S. Department of Labor: Vacation leave'
+    url: https://www.dol.gov/general/topic/workhours/vacation_leave
+  checked: '2026-11-24'
+- id: notice-cut-short
+  path:
+  - change
+  section: before_you_go
+  rank: 6
+  title: If you give notice and they end it early
+  body: In some states, like California, it counts as a layoff if you lose pay for the rest of your notice; if you're paid
+    through the date, it stays a quit. File anyway if it happens.
+  source:
+    name: 'California EDD: Voluntary quit VQ 135'
+    url: https://edd.ca.gov/en/UIBDG/Voluntary_Quit_VQ_135
+  checked: '2026-11-24'
+- id: noncompete
+  path:
+  - change
+  section: before_you_go
+  rank: 7
+  when:
+    noncompete_in:
+    - true
+    - unknown
+  title: Read any non-compete you signed
+  body: The federal ban on non-competes was struck down, so your state's law decides. Read the agreement before you tell
+    a new employer.
+  source:
+    name: 'FTC: Accedes to vacatur of the Non-Compete Clause Rule (2025-09-05)'
+    url: https://www.ftc.gov/news-events/news/press-releases/2025/09/federal-trade-commission-files-accede-vacatur-non-compete-clause-rule
+  checked: '2026-11-24'
+- id: resea
+  path:
+  - laid_off
+  - told
+  section: ongoing
+  rank: 1
+  title: If you're picked for a RESEA meeting, go
+  body: Many states pick some people for reemployment meetings at a career center. They're required, and missing one can
+    stop benefits. jobsearchPal puts the dates on your list.
+  source:
+    name: 'U.S. Department of Labor: RESEA'
+    url: https://www.dol.gov/agencies/eta/american-job-centers/RESEA
+  checked: '2026-11-24'
+- id: tax-forms
+  path:
+  - laid_off
+  - told
+  section: ongoing
+  rank: 2
+  due:
+    from: jan31
+    days: 0
+  title: Your W-2 and 1099-G arrive
+  body: Your employer's W-2 and your state's 1099-G for unemployment come by January 31. Keep them for your return.
+  source:
+    name: IRS Publication 4128, Tax Impact of Job Loss
+    url: https://www.irs.gov/pub/irs-pdf/p4128.pdf
+  checked: '2026-11-23'
+- id: after-you-leave
+  path:
+  - change
+  section: ongoing
+  rank: 1
+  title: Once you've left
+  body: The health window, the COBRA letter and your 401(k) choices apply to you too. Come back after your last day for the dated list.
+  source:
+    name: 'CFPB: What to do after an unexpected job loss'
+    url: https://www.consumerfinance.gov/consumer-tools/unexpected-job-loss/
+  checked: '2026-11-24'

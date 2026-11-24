@@ -46,8 +46,8 @@ def _resume() -> bytes:
 def test_fresh_install_goes_to_welcome_and_nothing_runs(fresh, tmp_path):
     s, c = fresh
     r = c.get("/", follow_redirects=False)  # the welcome flow since 2026-11-22; the Setup page stays under Settings
-    assert r.status_code == 303 and r.headers["location"] == "/welcome"
-    assert "Step 1 of 5" in c.get("/welcome").text
+    assert r.status_code == 303 and r.headers["location"] == "/welcome?step=0"
+    assert "Step 1 of 6" in c.get("/welcome?step=0").text
     assert "Base resume" in c.get("/setup").text
     with pytest.raises(SystemExit):
         config.load(str(tmp_path / "config.yaml"))  # every other command refuses to run on the example

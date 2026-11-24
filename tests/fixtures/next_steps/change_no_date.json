@@ -1,0 +1,35 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "change",
+  "last_day": null,
+  "state": null,
+  "coverage_end": "unknown",
+  "age": null,
+  "size": "unknown",
+  "has": [],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "today_ids": [
+   "save-records",
+   "money-dates",
+   "quiet-search"
+  ],
+  "next_id": null,
+  "find_out_ids": [],
+  "past_ids": [],
+  "includes_ids": [
+   "quit-ends-ui",
+   "noncompete",
+   "after-you-leave"
+  ],
+  "excludes_ids": [
+   "vest-date",
+   "bonus-date",
+   "file-claim",
+   "medicare-window"
+  ]
+ }
+}

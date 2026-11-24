@@ -120,17 +120,24 @@ networks:
 ```
 
 Then open `http://localhost:8787/` (or `http://<server>:8787/` with `BIND` set, below). A fresh install opens
-**Create your account** (email and password; sign-in is required from then on), then **five welcome steps**, one
-short screen each:
+**Create your account** (email and password; sign-in is required from then on), then **six welcome steps**, one
+short screen each, every one with **Skip**:
 
-1. **Your resume**, as a Word file or a PDF (see [Your resume](#your-resume) below).
-2. **About you**: name, email, city, and **"Are you claiming unemployment benefits?"** No: jobsearchPal stays a
+1. **Your situation**: **I was laid off** (or told I will be), **I'm thinking about a change**, or **Just looking**.
+   The first two ask a few questions (your last day, state, when your health cover ends, age band, employer size, and
+   what you have: severance, a 401(k), stock options...) and put dated steps on your to-do list, each with the rule
+   behind it: file the claim, the 60-day health window (COBRA is backdated), severance review time, 401(k) rollover.
+   A plan made at [palstack.io/next-step](https://palstack.io/next-step) can be brought in as its file or code; it
+   fills in the questions. Just looking adds no steps. Later, **Settings > Something changed?** reopens these choices,
+   plus **I'm working again**, and shows every change on a confirm screen before saving anything.
+2. **Your resume**, as a Word file or a PDF (see [Your resume](#your-resume) below).
+3. **About you**: name, email, city, and **"Are you claiming unemployment benefits?"** No: jobsearchPal stays a
    job-search helper, with no Work search page and no weekly count. Yes: pick your state, and its weekly rule is used
-   (see [Unemployment help](unemployment.md)).
-3. **What you're looking for**: job titles, and US roles only.
-4. **Connect your AI**: sign in with ChatGPT (open a link, enter a code) or paste a Claude token (the step shows the
+   (see [Unemployment help](unemployment.md)). Both come pre-filled when step 1 already knows them.
+4. **What you're looking for**: job titles, and US roles only.
+5. **Connect your AI**: sign in with ChatGPT (open a link, enter a code) or paste a Claude token (the step shows the
    one command to install Claude Code). Not ready? **Skip for now**; nothing is prepared until an AI is connected.
-5. **Your email** (optional): Gmail, iCloud or Yahoo with an app password, with the steps to make one.
+6. **Your email** (optional): Gmail, iCloud or Yahoo with an app password, with the steps to make one.
 
 The last screen says what's still missing, if anything, and offers **Run it now**. Everything the welcome steps set,
 and much more, lives on **Settings > Setup**, which keeps the full version of each step:

@@ -15,6 +15,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Install
         run: |
           sudo apt-get update -q && sudo apt-get install -yq poppler-utils

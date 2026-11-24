@@ -51,3 +51,9 @@ you run only when a call fails or a role needs a web search.
   lines and makes the PDFs. Don't write python-docx scripts for this.
   Name files `<Last name> Resume - <Company>.pdf` and `<Last name> Cover Letter - <Company>.pdf`
   unless `CLAUDE.local.md` says otherwise.
+
+## Your next step (the planner)
+- `autoapply/next_steps.yaml` holds the planner's steps (dates, plain sentences, sources); `autoapply/next_steps.py` and
+  `planner/planner.js` are two engines held to the same fixtures (`tests/fixtures/next_steps/`). The website copy of
+  the engine and facts comes from `scripts/export_planner.py`. Never edit the steps during a daily run.
+- Steps from a plan are to-do rows of kind `next_step`, tagged `[next_step:<id>]` in the note. Leave them to the person.

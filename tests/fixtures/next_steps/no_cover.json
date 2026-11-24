@@ -1,0 +1,24 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "path": "laid_off",
+  "last_day": "2026-11-24",
+  "state": null,
+  "coverage_end": "none",
+  "age": null,
+  "size": "u20",
+  "has": [],
+  "noncompete": "unknown"
+ },
+ "expect": {
+  "find_out_ids": [],
+  "excludes_ids": [
+   "cobra-or-marketplace",
+   "cobra-letter",
+   "cobra-backdated",
+   "mini-cobra",
+   "ask-coverage-end"
+  ]
+ }
+}

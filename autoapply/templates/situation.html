@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Something changed?{% endblock %}
+{% block body %}{% from "_situation.html" import situation, styles %}
+<div class="wl">
+ <header class="wl-head"><div class="wl-step">Settings</div><h1>Something changed?</h1>
+  <p class="wl-lead">Laid off, thinking about a change, or working again. Tell jobsearchPal, and it shows you what it would change before it changes anything.</p></header>
+ <section class="wl-card">{{ situation('settings', err) }}</section>
+</div>
+{{ styles() }}
+{% endblock %}

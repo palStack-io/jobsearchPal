@@ -109,9 +109,15 @@ docker compose up -d                        # dashboard + the daily scheduler (p
 docker compose --profile finish up -d       # optional: Finish it here (a browser on this server for captchas)
 ```
 
-Open `http://localhost:8787/`, create your account, and five short welcome steps take you through the rest: your
-resume (Word or PDF), a few details (including whether you're claiming unemployment), the roles you want, your AI and,
-if you like, your email. Then press **Run it now** to see your first roles.
+Open `http://localhost:8787/`, create your account, and six short welcome steps take you through the rest: **your
+situation** (laid off, thinking about a change, or just looking), your resume (Word or PDF), a few details, the roles
+you want, your AI and, if you like, your email. Every step has Skip. Then press **Run it now** to see your first roles.
+
+Just laid off, or thinking about leaving? **[Your next step](https://palstack.io/next-step)** shows what to do and by
+when (the claim, the 60-day health window, severance, your 401(k)) with nothing to install, and jobsearchPal's first
+step takes the plan it saves. Your situation can change later: **Settings > Something changed?**
+
+![Your situation, the first welcome step](docs/situation.png)
 
 ![The welcome steps](docs/welcome.png) The full guide, including a plain install without Docker and reaching the dashboard from your
 phone, is in [docs/setup.md](docs/setup.md).

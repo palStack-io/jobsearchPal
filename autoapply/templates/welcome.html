@@ -2,25 +2,32 @@
 {% block title %}Welcome{% endblock %}
 {% block body %}
 {# The welcome flow (2026-11-22): five short steps, each posting to the route that saves it with `wizard` = the step. #}
-{% set names = {'1': 'Your resume', '2': 'About you', '3': 'What you are looking for', '4': 'Connect your AI', '5': 'Your email'} %}
+{% from "_situation.html" import situation, styles as sit_styles %}
+{% set names = {'0': 'Where are you right now?', '1': 'Your resume', '2': 'About you', '3': 'What you are looking for', '4': 'Connect your AI', '5': 'Your email'} %}
 <div class="wl">
  {% if step != 'done' %}
  <header class="wl-head">
-  <div class="wl-step">Step {{ step }} of 5</div>
+  <div class="wl-step">Step {{ step|int + 1 }} of 6</div>
   <h1>{{ names[step] }}</h1>
-  <ol class="wl-dots" aria-label="Progress">{% for i in range(1, 6) %}<li class="{{ 'on' if i|string == step }}{{ ' done' if i < step|int }}"><span class="sr">Step {{ i }}</span></li>{% endfor %}</ol>
+  <ol class="wl-dots" aria-label="Progress">{% for i in range(0, 6) %}<li class="{{ 'on' if i|string == step }}{{ ' done' if i < step|int }}"><span class="sr">Step {{ i + 1 }}</span></li>{% endfor %}</ol>
  </header>
  {% endif %}
  {% if err %}<p class="wl-msg bad" role="alert">{{ err }}</p>{% elif msg %}<p class="wl-msg" role="status">{{ msg }}</p>{% endif %}
 
- {% if step == '1' %}
+ {% if step == '0' %}
+ <section class="wl-card">
+  <p class="wl-lead">This decides what jobsearchPal does first. A layoff puts the claim, your health window and your 401(k) on your to-do list with their dates, before the search.</p>
+  {{ situation('welcome') }}
+ </section>
+
+ {% elif step == '1' %}
  <section class="wl-card">
   <p class="wl-lead">Upload the resume you'd send today, as a Word file or a PDF. If it isn't in the plain format tailoring uses, your AI puts it in that format once, using only what's already in it, and you check it.</p>
   <form method="post" action="/setup/resume" enctype="multipart/form-data" class="wl-form">
    <input type="hidden" name="wizard" value="1">
    <label class="fld"><span>Your resume{% if st.resume.done %} · saved ({{ st.resume.note }}){% endif %}</span>
     <input type="file" name="docx" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
-   <div class="wl-acts"><button class="btn primary">Upload and continue</button><a class="btn ghost" href="/welcome?step=2">{{ 'Next' if st.resume.done else 'Skip for now' }}</a></div>
+   <div class="wl-acts"><button class="btn primary">Upload and continue</button><a class="btn ghost" href="/welcome?step=2">{{ 'Next' if st.resume.done else 'Skip for now' }}</a><a class="btn ghost" href="/welcome?step=0">Back</a></div>
   </form>
  </section>
 
@@ -41,7 +48,7 @@
     <label class="wl-radio"><input type="radio" name="claiming" value="no" {{ 'checked' if not claims }}> No</label>
     <label class="fld wl-state"><span>Your state (if yes)</span><select name="state"><option value="">Choose your state</option>{% for code, r in states %}<option value="{{ code }}" {{ 'selected' if ws.state == code }}>{{ r.name or code }}</option>{% endfor %}</select></label>
    </fieldset>
-   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=1">Back</a></div>
+   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=3">Skip for now</a><a class="btn ghost" href="/welcome?step=1">Back</a></div>
   </form>
  </section>
 
@@ -52,7 +59,7 @@
     <textarea name="titles" rows="3" placeholder="data analyst, business analyst, analytics engineer">{{ titles }}</textarea></label>
    <p class="wl-hint">Short titles match more: "data analyst" also finds "Senior Data Analyst, Operations". You can add skipped words, companies and more job sources later in Settings.</p>
    <label class="wl-radio"><input type="checkbox" name="us_only" value="1" {{ 'checked' if us_only }}> US roles only (remote roles count when they don't name another country)</label>
-   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=2">Back</a></div>
+   <div class="wl-acts"><button class="btn primary">Save and continue</button><a class="btn ghost" href="/welcome?step=4">Skip for now</a><a class="btn ghost" href="/welcome?step=2">Back</a></div>
   </form>
  </section>
 
@@ -87,16 +94,22 @@
  {% else %}
  <section class="wl-card wl-done">
   <h1>{{ "Almost there" if left else "You're set" }}</h1>
+  {% if plan_rows %}<div class="wl-plan"><h2>First on your list</h2><ol>{% for t in plan_rows %}<li><span class="wl-when">{{ t.when }}</span><span>{{ t.title }}</span></li>{% endfor %}</ol>
+   <p class="wl-hint">Every step from your plan is on the dashboard's to-do list, with its date and the rule behind it.</p></div>{% endif %}
   {% if left %}<p class="wl-lead">{{ "One thing is" if left|length == 1 else (left|length ~ " things are") }} still missing before jobsearchPal can prepare applications: {{ left|map('replace', 'agent', 'connecting your AI')|map('replace', 'interests', 'job titles')|map('replace', 'profile', 'your name and email')|join(', ') }}. <a href="/welcome?step={{ {'resume': 1, 'profile': 2, 'interests': 3, 'agent': 4}[left[0]] }}">Finish it</a></p>
   {% else %}<p class="wl-lead">Every weekday at 6:30 in the morning, jobsearchPal finds new roles, prepares the best fits and leaves them for you to send. Nothing is ever submitted without you. Want to see it work now?</p>{% endif %}
   <div class="wl-acts">
    <form method="post" action="/run"><button class="btn {{ 'primary' if not left }}" {{ 'disabled' if left }}>Run it now</button></form>
-   <a class="btn ghost" href="/">Go to the dashboard</a></div>
+   <a class="btn {{ 'primary' if left else 'ghost' }}" href="/">Go to the dashboard</a></div>
   <p class="wl-hint">Everything you set here, and much more (job sources, how your letters sound, resume looks), is under Settings.</p>
  </section>
  {% endif %}
 </div>
+{{ sit_styles() }}
 <style>
+.wl-plan{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:12px;background:var(--accent-soft)}
+.wl-plan h2{margin:0;font-size:16px}.wl-plan ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.wl-plan li{display:flex;gap:12px;font-size:15px}.wl-when{flex:none;width:96px;font-weight:700;color:var(--accent-ink);font-variant-numeric:tabular-nums}
 .wl{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .wl-head{display:flex;flex-direction:column;gap:8px}.wl-head h1,.wl-done h1{margin:0;font-size:28px;font-weight:700;line-height:1.2}
 .wl-step{font-size:13px;font-weight:600;color:var(--accent-ink)}

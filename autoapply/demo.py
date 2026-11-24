@@ -19,7 +19,8 @@ ON = os.environ.get("AUTOAPPLY_DEMO") == "1"
 ALLOWED_POSTS = re.compile(
     r"^/(?:applications/log|pal/seen|decline/.+|nudge/[^/]+|plan|plan/day|plan/note|contacts|reflect|letters|setback"
     r"|titles/add|leads|leads/add|leads/paste|lead/.+/description|skills/mark|emails/.+|dua/claim|dua/task|job/.+"
-    r"|board/(?:add|remove|move|step|save|applied)|skills/plan|skills/plan/start)$"  # the board is data; the plan is a sample here
+    r"|board/(?:add|remove|move|step|save|applied)|skills/plan|skills/plan/start"  # the board is data; the plan is a sample here
+    r"|situation/(?:start|answers|confirm))$"  # Your situation (2026-11-24): config and to-dos in the demo's own throwaway data
 )
 # Job page actions that only change the database; "refill" and "submit" open a real browser on a real site.
 ALLOWED_JOB_ACTIONS = {"skip", "manual", "command", "unsend"}

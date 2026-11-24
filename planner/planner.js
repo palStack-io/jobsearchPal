@@ -139,7 +139,7 @@ export function plan(answers, facts, todayIn) {
     }
     const [note, url] = step.state_field && a.state ? stateLine(facts, a.state, step.state_field, today) : [null, null];
     const s = { id: step.id, title: step.title, body: String(step.body).split(/\s+/).join(' '), due: due === null ? null : isoDay(due),
-      past: due !== null && due < today, source: step.source, state_note: note, state_url: url,
+      past: due !== null && due < today, source: step.source || null, state_note: note, state_url: url,
       _section: step.section, _rank: Number(step.rank ?? 99) };
     (unknown && step.section !== 'today_pool' ? findOut : made).push(s);
   }

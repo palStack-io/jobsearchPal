@@ -75,7 +75,10 @@ def test_every_step_has_source_checked_and_unique_id():
     steps = next_steps.load_facts()["steps"]
     assert len({s["id"] for s in steps}) == len(steps)
     for s in steps:
-        assert s["source"]["url"].startswith("https://") and s["source"]["name"], s["id"]
+        if s.get("general"):
+            assert "source" not in s, s["id"]  # a general reminder cites nothing rather than a page that doesn't cover it
+        else:
+            assert s["source"]["url"].startswith("https://") and s["source"]["name"], s["id"]
         assert date.fromisoformat(s["checked"]), s["id"]
         assert s["section"] in next_steps.SECTIONS, s["id"]
 

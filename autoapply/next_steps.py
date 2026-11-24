@@ -166,7 +166,7 @@ def plan(answers: dict, facts: dict, today: date) -> dict:
         note, url = (state_line(facts, a["state"], step["state_field"], today) if step.get("state_field") and a["state"]
                      else (None, None))
         s = {"id": step["id"], "title": step["title"], "body": " ".join(str(step["body"]).split()),
-             "due": due.isoformat() if due else None, "past": bool(due and due < today), "source": step["source"],
+             "due": due.isoformat() if due else None, "past": bool(due and due < today), "source": step.get("source"),
              "state_note": note, "state_url": url, "_section": step["section"], "_rank": int(step.get("rank") or 99)}
         (find_out if unknown and step["section"] != "today_pool" else made).append(s)
     past = [s for s in made if s["past"]]
@@ -190,3 +190,4 @@ def plan(answers: dict, facts: dict, today: date) -> dict:
 
 def _public(s: dict) -> dict:
     return {k: v for k, v in s.items() if not k.startswith("_")}
+

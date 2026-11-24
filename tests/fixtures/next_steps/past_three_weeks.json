@@ -16,17 +16,15 @@
  "expect": {
   "today_ids": [
    "file-claim",
-   "dont-sign-yet-40",
-   "save-records"
+   "save-records",
+   "dont-sign-yet-40"
   ],
   "past_ids": [
-   "file-claim",
-   "dont-sign-yet-40"
+   "file-claim"
   ],
   "next_id": "cobra-letter",
   "due": {
    "file-claim": "2026-11-07",
-   "dont-sign-yet-40": "2026-11-22",
    "cobra-letter": "2026-12-15",
    "cobra-or-marketplace": "2027-01-29"
   }

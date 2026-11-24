@@ -56,4 +56,7 @@ you run only when a call fails or a role needs a web search.
 - `autoapply/next_steps.yaml` holds the planner's steps (dates, plain sentences, sources); `autoapply/next_steps.py` and
   `planner/planner.js` are two engines held to the same fixtures (`tests/fixtures/next_steps/`). The website copy of
   the engine and facts comes from `scripts/export_planner.py`. Never edit the steps during a daily run.
+- Facts expire: a state line shows only if checked within 365 days. `python tools/next_steps_status.py` lists what is
+  due (330 days, or each January for a `yearly: true` figure); a cron on llm emails Harun when something is. How to
+  re-check: monorepo skill `palstack-yearly-facts`, section jobsearchPal.
 - Steps from a plan are to-do rows of kind `next_step`, tagged `[next_step:<id>]` in the note. Leave them to the person.

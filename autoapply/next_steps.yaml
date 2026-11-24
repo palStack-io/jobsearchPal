@@ -19,7 +19,7 @@
 #   general   true: a plain reminder with no rule behind it (no source); the page says so
 #   state_field  a work_search_states.yaml field whose line is added for the person's state, only when the
 #             state entry is official, high confidence and checked within 365 days.
-version: 2026-11-24.2
+version: 2026-11-24.3
 checked: '2026-11-24'
 steps:
 - id: file-claim
@@ -338,7 +338,7 @@ steps:
     - 401k
   title: Move your 401(k) directly, don't cash it out
   body: You can leave it, roll it to an IRA or a new employer's plan, or cash out. A direct rollover has nothing held back.
-    A cheque to you has 20% withheld, and cashing out before 59½ usually adds 10% more.
+    A check to you has 20% withheld, and cashing out before 59½ usually adds 10% more.
   source:
     name: 'IRS: Rollovers of retirement plan and IRA distributions'
     url: https://www.irs.gov/retirement-plans/plan-participant-employee/rollovers-of-retirement-plan-and-ira-distributions
@@ -575,8 +575,7 @@ steps:
   section: ongoing
   rank: 1
   title: Once you've left
-  body: The health window, the COBRA letter and your 401(k) choices apply to you too. Come back and choose "I've left my
-    job" for the dated list.
+  body: The health window, the COBRA letter and your 401(k) choices apply to you too. Come back after your last day for the dated list.
   source:
     name: 'CFPB: What to do after an unexpected job loss'
     url: https://www.consumerfinance.gov/consumer-tools/unexpected-job-loss/

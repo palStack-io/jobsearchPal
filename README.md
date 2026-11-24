@@ -117,6 +117,8 @@ Just laid off, or thinking about leaving? **[Your next step](https://palstack.io
 when (the claim, the 60-day health window, severance, your 401(k)) with nothing to install, and jobsearchPal's first
 step takes the plan it saves. Your situation can change later: **Settings > Something changed?**
 
+![Your situation, the first welcome step](docs/situation.png)
+
 ![The welcome steps](docs/welcome.png) The full guide, including a plain install without Docker and reaching the dashboard from your
 phone, is in [docs/setup.md](docs/setup.md).
 

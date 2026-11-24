@@ -103,6 +103,11 @@ def state_line(facts: dict, state: str | None, field: str, today: date) -> tuple
     """(the state's line for this field, the state's agency link). The line only passes the gate; the link always shows."""
     entry = (facts.get("states") or {}).get(state or "") or {}
     url = entry.get("url") or None
+    val = entry.get(field)
+    if isinstance(val, dict):  # a layoff fact (2026-11-24): its own text, source and gate
+        if val.get("text") and _gate_ok(val, today):
+            return str(val["text"]), val.get("url") or url
+        return None, url
     if not entry or field not in entry or not _gate_ok(entry, today):
         return None, url
     name = entry.get("name") or state
@@ -163,8 +168,15 @@ def plan(answers: dict, facts: dict, today: date) -> dict:
                 unknown = True
             else:
                 due = base + timedelta(days=int(step["due"].get("days") or 0))
-        note, url = (state_line(facts, a["state"], step["state_field"], today) if step.get("state_field") and a["state"]
-                     else (None, None))
+        note, url = None, None
+        if step.get("state_field") and a["state"]:
+            fields = step["state_field"] if isinstance(step["state_field"], list) else [step["state_field"]]
+            got = [state_line(facts, a["state"], f, today) for f in fields]
+            notes = [n for n, _ in got if n]
+            note = " ".join(notes) or None
+            url = next((u for n, u in got if n and u), None) or next((u for _, u in got if u), None)
+        if step.get("state_only") and not note:
+            continue  # a step that is only its state's rule: no checked rule for this state, no step
         s = {"id": step["id"], "title": step["title"], "body": " ".join(str(step["body"]).split()),
              "due": due.isoformat() if due else None, "past": bool(due and due < today), "source": step.get("source"),
              "state_note": note, "state_url": url, "_section": step["section"], "_rank": int(step.get("rank") or 99)}
@@ -273,7 +285,9 @@ def import_plan(settings, db, answers: dict, today: date, replace: bool = False,
             continue
         first = s["body"].split(". ")[0].rstrip(".") + "."
         src = f"Source: {s['source']['name']}." if s["source"] else "A general reminder."
-        benefits.add_task(db, s["title"], s["due"] or "", "next_step", f"{first} {src} {tag}")
+        if s.get("state_note"):
+            first = f"{first} {s['state_note']}"
+        benefits.add_task(db, s["title"], s["due"] or "", "next_step", f"{first} {src}"[:400 - len(tag) - 1] + " " + tag)  # the tag always fits
         added += 1
     return {"added": added, "skipped": skipped, "removed": removed, "claiming_set": claiming_set}
 

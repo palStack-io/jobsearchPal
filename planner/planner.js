@@ -85,6 +85,10 @@ export function stateLine(facts, state, field, today) {
   const entry = (facts.states || {})[state || ''];
   if (!entry) return [null, null];
   const url = entry.url || null;
+  const val = entry[field];
+  if (val && typeof val === 'object') { // a layoff fact (2026-11-24): its own text, source and gate
+    return val.text && gateOk(val, today) ? [String(val.text), val.url || url] : [null, url];
+  }
   if (!(field in entry) || !gateOk(entry, today)) return [null, url];
   const name = entry.name || state;
   if (field === 'waiting_week') {
@@ -137,7 +141,14 @@ export function plan(answers, facts, todayIn) {
       if (base === null || base === undefined) unknown = true;
       else due = base + Number(step.due.days || 0);
     }
-    const [note, url] = step.state_field && a.state ? stateLine(facts, a.state, step.state_field, today) : [null, null];
+    let note = null; let url = null;
+    if (step.state_field && a.state) {
+      const fields = Array.isArray(step.state_field) ? step.state_field : [step.state_field];
+      const got = fields.map((f) => stateLine(facts, a.state, f, today));
+      note = got.filter(([n]) => n).map(([n]) => n).join(' ') || null;
+      url = (got.find(([n, u]) => n && u) || got.find(([, u]) => u) || [null, null])[1];
+    }
+    if (step.state_only && !note) continue; // a step that is only its state's rule
     const s = { id: step.id, title: step.title, body: String(step.body).split(/\s+/).join(' '), due: due === null ? null : isoDay(due),
       past: due !== null && due < today, source: step.source || null, state_note: note, state_url: url,
       _section: step.section, _rank: Number(step.rank ?? 99) };

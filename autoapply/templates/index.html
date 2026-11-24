@@ -2,6 +2,13 @@
 {% from "macros.html" import week_bars, hbars, co, applied_btn %}
 {% block body %}
 {% if msg %}<p class="notice" role="status" style="display:block;margin:0 0 14px">{{ msg }}</p>{% endif %}
+{# Something changed? (2026-11-24): one quiet line, only on a sign (an agency email while not claiming, or three quiet
+   weeks after applying); once per sign; Not now puts it away. #}
+{% if sit_sign %}<section class="card sit-sign" aria-label="Something changed?" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 18px;margin:0 0 14px">
+ <p style="margin:0;flex:1 1 320px;font-size:15px;color:var(--ink-2)">{{ sit_sign.line }}</p>
+ <a class="btn sm" href="/situation">Something changed?</a>
+ <form method="post" action="/nudge/{{ sit_sign.key }}" style="margin:0"><input type="hidden" name="action" value="done"><button class="btn sm ghost">Not now</button></form>
+</section>{% endif %}
 {% from "_horizon.html" import scene, scene_css, horizon_css %}{{ horizon_css() }}{{ scene_css() }}
 {% import "_goals.html" as g %}{{ g.goals_css() }}
 <section class="card welcome" aria-labelledby="hello">

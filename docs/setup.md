@@ -129,7 +129,10 @@ short screen each, every one with **Skip**:
    behind it: file the claim, the 60-day health window (COBRA is backdated), severance review time, 401(k) rollover.
    A plan made at [palstack.io/next-step](https://palstack.io/next-step) can be brought in as its file or code; it
    fills in the questions. Just looking adds no steps. Later, **Settings > Something changed?** reopens these choices,
-   plus **I'm working again**, and shows every change on a confirm screen before saving anything.
+   plus **I'm working again**, and shows every change on a confirm screen before saving anything. The dashboard offers
+   it once, quietly, when it sees a sign: an email from your state's unemployment agency while you aren't claiming, or
+   three weeks with no applications. **Not now** puts that line away. Stats shows your plan's progress (steps done of
+   steps, and the next three); it is counted on your computer and never sent anywhere.
 2. **Your resume**, as a Word file or a PDF (see [Your resume](#your-resume) below).
 3. **About you**: name, email, city, and **"Are you claiming unemployment benefits?"** No: jobsearchPal stays a
    job-search helper, with no Work search page and no weekly count. Yes: pick your state, and its weekly rule is used

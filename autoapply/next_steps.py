@@ -191,3 +191,98 @@ def plan(answers: dict, facts: dict, today: date) -> dict:
 def _public(s: dict) -> dict:
     return {k: v for k, v in s.items() if not k.startswith("_")}
 
+
+# ---- the app side: a plan becomes to-dos (2026-11-24) ------------------------------------------------------------
+TAG = "[next_step:{}]"
+
+
+def plan_steps(answers: dict, facts: dict, today: date) -> list[dict]:
+    """The steps that become to-do rows: everything in Today, then every dated step, in date order."""
+    p = plan(answers, facts, today)
+    seen, out = set(), []
+    for s in p["today"] + sorted((s for g in p["groups"] for s in g["steps"] if s["due"]), key=lambda s: s["due"]):
+        if s["id"] not in seen:
+            seen.add(s["id"])
+            out.append(s)
+    return out
+
+
+def _claim_change(settings, answers: dict) -> tuple[bool, str] | None:
+    """(claiming, state) to write, or None to leave the claim as it is."""
+    if answers["path"] in ("laid_off", "told"):
+        return (True, answers["state"]) if answers.get("state") else None
+    return (False, "")
+
+
+def _fresh(settings) -> bool:
+    ws = settings.raw.get("work_search") or {}
+    return "claiming" not in ws and not ws.get("state")
+
+
+def preview_changes(settings, db, answers: dict, today: date, facts: dict | None = None) -> list[str]:
+    """What a confirmed import would change, in plain sentences. Writes nothing."""
+    from . import benefits
+    facts = facts or load_facts()
+    a = validate_answers(answers, facts["states"])
+    out = []
+    claim = _claim_change(settings, a)
+    ws = settings.raw.get("work_search") or {}
+    if claim and claim[0] and not (ws.get("claiming", bool(ws.get("state"))) and ws.get("state") == claim[1]):
+        st = facts["states"].get(claim[1]) or {}
+        n = st.get("weekly_minimum")
+        out.append(f"Turn on unemployment for {st.get('name', claim[1])}: the work-search log"
+                   + (f", {n} activities a week" if n else "") + ", claim-day and RESEA reminders.")
+    elif claim and not claim[0] and ws.get("claiming", bool(ws.get("state"))):
+        out.append("Turn off the unemployment side: the work-search log and claim reminders. Your log's history stays.")
+    steps = plan_steps(a, facts, today)
+    dated = [s for s in steps if s["due"]]
+    out.append(f"Add {len(steps)} steps to your to-do list" + (f", {len(dated)} of them with a date." if dated else "."))
+    benefits.ensure(db)
+    old = db.conn.execute("select count(*) from ui_tasks where done = 0 and note like ?", ("%[next_step:%",)).fetchone()[0]
+    kept = db.conn.execute("select count(*) from ui_tasks where done = 1 and note like ?", ("%[next_step:%",)).fetchone()[0]
+    if old:
+        out.append(f"Remove {old} unfinished {'step' if old == 1 else 'steps'} from your earlier plan."
+                   + (f" The {kept} you finished stay as a record." if kept else ""))
+    return out
+
+
+def import_plan(settings, db, answers: dict, today: date, replace: bool = False, facts: dict | None = None) -> dict:
+    """Turn a plan into to-do rows and, on a fresh install or a confirmed change (replace), set the claim.
+    Never sets claim_start: that's the day the person filed, which only they know."""
+    from . import benefits, setup
+    facts = facts or load_facts()
+    a = validate_answers(answers, facts["states"])
+    if a["path"] in ("laid_off", "told") and not a["state"] and (replace or _fresh(settings)):
+        raise ValueError("Pick the state you worked in, so the claim steps and the work-search log follow its rules.")
+    claiming_set = False
+    claim = _claim_change(settings, a)
+    if claim and (replace or _fresh(settings)):
+        setup.save_claim(settings, claim[0], claim[1], facts["states"].get(claim[1]) if claim[1] else None)
+        claiming_set = True
+    benefits.ensure(db)
+    removed = 0
+    if replace:
+        removed = db.conn.execute("delete from ui_tasks where done = 0 and note like ?", ("%[next_step:%",)).rowcount
+        db.conn.commit()
+    added = skipped = 0
+    for s in plan_steps(a, facts, today):
+        tag = TAG.format(s["id"])
+        if db.conn.execute("select 1 from ui_tasks where note like ?", (f"%{tag}%",)).fetchone():
+            skipped += 1
+            continue
+        first = s["body"].split(". ")[0].rstrip(".") + "."
+        src = f"Source: {s['source']['name']}." if s["source"] else "A general reminder."
+        benefits.add_task(db, s["title"], s["due"] or "", "task", f"{first} {src} {tag}")
+        added += 1
+    return {"added": added, "skipped": skipped, "removed": removed, "claiming_set": claiming_set}
+
+
+def back_to_work(settings, db) -> dict:
+    """'I'm working again': the unemployment side off, the unfinished plan steps gone. The work-search log keeps its
+    history (it is the person's record for the agency)."""
+    from . import benefits, setup
+    setup.save_claim(settings, False)
+    benefits.ensure(db)
+    removed = db.conn.execute("delete from ui_tasks where done = 0 and note like ?", ("%[next_step:%",)).rowcount
+    db.conn.commit()
+    return {"removed": removed}

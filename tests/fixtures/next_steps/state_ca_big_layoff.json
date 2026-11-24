@@ -1,0 +1,32 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "last_day": "2026-11-24",
+  "coverage_end": "end_of_month",
+  "age": "40_54",
+  "noncompete": "unknown",
+  "path": "laid_off",
+  "state": "CA",
+  "size": "100p",
+  "has": [
+   "severance"
+  ]
+ },
+ "expect": {
+  "includes_ids": [
+   "final-paycheck",
+   "severance-and-claim",
+   "warn-notice"
+  ],
+  "state_note_ids": [
+   "file-claim",
+   "warn-notice",
+   "final-paycheck",
+   "severance-and-claim"
+  ],
+  "excludes_ids": [
+   "separation-notice"
+  ]
+ }
+}

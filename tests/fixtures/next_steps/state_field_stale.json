@@ -1,0 +1,35 @@
+{
+ "today": "2026-11-24",
+ "facts_patch": {
+  "states": {
+   "NY": {
+    "final_pay": {
+     "text": "old",
+     "url": "https://dol.ny.gov/",
+     "source": "official",
+     "confidence": "high",
+     "checked": "2024-01-01"
+    }
+   }
+  }
+ },
+ "answers": {
+  "v": 1,
+  "last_day": "2026-11-24",
+  "coverage_end": "end_of_month",
+  "age": "40_54",
+  "noncompete": "unknown",
+  "path": "laid_off",
+  "state": "NY",
+  "size": "20_99",
+  "has": []
+ },
+ "expect": {
+  "excludes_ids": [
+   "final-paycheck"
+  ],
+  "includes_ids": [
+   "separation-notice"
+  ]
+ }
+}

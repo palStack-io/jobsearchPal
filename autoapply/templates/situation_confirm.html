@@ -10,6 +10,7 @@
  <section class="wl-card">
   <ul class="sc-list">{% for c in changes %}<li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{% if c.startswith('Remove') or c.startswith('Turn off') %}<path d="M5 12h14"/>{% else %}<path d="M12 5v14M5 12h14"/>{% endif %}</svg><span>{{ c }}</span></li>{% endfor %}</ul>
   {% if door == 'laid' %}<p class="wl-hint">Not set: the day you filed your claim. Add it on the work-search page once you've filed, and jobsearchPal works out the weeks left.</p>{% endif %}
+  {% if planner_checked %}<p class="wl-hint">The steps were compiled from official sources on {{ planner_checked }}. Laws change, so each one names its source.</p>{% endif %}
   <form method="post" action="/situation/confirm" class="wl-acts">
    <input type="hidden" name="code" value="{{ code }}"><input type="hidden" name="door" value="{{ door }}">
    <button class="btn primary">Confirm these changes</button>

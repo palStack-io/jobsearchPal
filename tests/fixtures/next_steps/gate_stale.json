@@ -19,7 +19,10 @@
   "noncompete": "unknown"
  },
  "expect": {
-  "state_note_ids": [],
+  "state_note_ids": [
+   "final-paycheck",
+   "separation-notice"
+  ],
   "state_url_ids": [
    "file-claim"
   ]

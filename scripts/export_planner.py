@@ -20,11 +20,16 @@ from autoapply import next_steps  # noqa: E402
 
 def facts_json() -> dict:
     f = next_steps.load_facts()
-    fields = {s["state_field"] for s in f["steps"] if s.get("state_field")}
+    fields = set()
+    for s in f["steps"]:
+        sf = s.get("state_field")
+        fields |= set(sf if isinstance(sf, list) else [sf] if sf else [])
     keep = {"name", "url", "source", "confidence", "checked"} | fields
-    states = {code: {k: v for k, v in entry.items() if k in keep} for code, entry in f["states"].items()}
+    def clean(v):  # a layoff fact's internal research note never goes to the website
+        return {k: x for k, x in v.items() if k != "note"} if isinstance(v, dict) else v
+    states = {code: {k: clean(v) for k, v in entry.items() if k in keep} for code, entry in f["states"].items()}
     steps = [{**s, "body": " ".join(str(s["body"]).split())} for s in f["steps"]]
-    return {"version": f["version"], "steps": steps, "states": states}
+    return {"version": f["version"], "checked": f.get("checked"), "steps": steps, "states": states}
 
 
 def export(website_root: Path) -> str:

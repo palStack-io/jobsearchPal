@@ -1,7 +1,9 @@
 # Your next step: the planner's steps, for the website (palstack.io/next-step) and the app's onboarding.
 #
 # Fact-checked by a reviewer against each source on 2026-11-24 (22 fixes). APPROVED by Harun, 2026-11-24 (facts
-# 2026-11-24.3). Any later change to a step's text or date is checked against its source by a reviewer and approved
+# 2026-11-24.3). Facts 2026-11-24.5 add layoff facts for every state and three state-only steps
+# (final-paycheck, severance-and-claim, separation-notice): fact-checked by two independent reviews, APPROVED by
+# Harun, 2026-11-24. Any later change to a step's text or date is checked against its source by a reviewer and approved
 # by Harun before it is public; record it here ("approved by Harun, <date>"). Every step is a reminder, not advice:
 # the person's own letters (COBRA election notice, state notices) and plan documents decide their own case.
 #
@@ -18,9 +20,10 @@
 #             (end_of_month = the last day of L's month), tax_day = April 15 and jan31 = January 31 of the
 #             year after L. An anchor that isn't known puts the step in "Find out first".
 #   general   true: a plain reminder with no rule behind it (no source); the page says so
-#   state_field  a work_search_states.yaml field whose line is added for the person's state, only when the
+#   state_only  true: the step shows only when its state line passes the gate (a state's own rule, nothing federal)
+#   state_field  a work_search_states.yaml field (or a list of them) whose line is added for the person's state, only when the
 #             state entry is official, high confidence and checked within 365 days.
-version: 2026-11-24.3
+version: 2026-11-24.5
 checked: '2026-11-24'
 steps:
 - id: file-claim
@@ -199,6 +202,48 @@ steps:
     name: 'U.S. Department of Labor: A worker''s guide to advance notice of closings and layoffs'
     url: https://www.dol.gov/sites/dolgov/files/ETA/layoff/pdfs/WorkerWARN2003.pdf
   checked: '2026-11-24'
+  state_field: state_warn
+- id: final-paycheck
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 6
+  state_field: final_pay
+  state_only: true
+  title: Check your last paycheck
+  body: It should include all the pay you're owed. When it's due depends on your state.
+  source:
+    name: 'U.S. Department of Labor: Last paycheck'
+    url: https://www.dol.gov/general/topic/wages/lastpaycheck
+  checked: '2026-11-24'
+- id: severance-and-claim
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 7
+  when:
+    has_all:
+    - severance
+  state_field: severance_effect
+  state_only: true
+  title: Severance and your claim
+  body: Report severance when you file. How it affects benefits is your state's rule, below.
+  checked: '2026-11-24'
+  general: true
+- id: separation-notice
+  path:
+  - laid_off
+  - told
+  section: week1
+  rank: 8
+  state_field: separation_notice
+  state_only: true
+  title: Keep the unemployment notice from your employer
+  body: It has details your claim may ask for. Your state's rule is below.
+  checked: '2026-11-24'
+  general: true
 - id: cobra-or-marketplace
   path:
   - laid_off
@@ -275,6 +320,7 @@ steps:
     name: 'U.S. Department of Labor: An Employee''s Guide to Health Benefits Under COBRA'
     url: https://www.dol.gov/sites/dolgov/files/ebsa/about-ebsa/our-activities/resource-center/publications/an-employees-guide-health-benefits-under-cobra-2022.pdf
   checked: '2026-11-23'
+  state_field: mini_cobra
 - id: medicare-window
   path:
   - laid_off
@@ -576,7 +622,8 @@ steps:
   section: ongoing
   rank: 1
   title: Once you've left
-  body: The health window, the COBRA letter and your 401(k) choices apply to you too. Come back after your last day for the dated list.
+  body: The health window, the COBRA letter and your 401(k) choices apply to you too. Come back after your last day for
+    the dated list.
   source:
     name: 'CFPB: What to do after an unexpected job loss'
     url: https://www.consumerfinance.gov/consumer-tools/unexpected-job-loss/

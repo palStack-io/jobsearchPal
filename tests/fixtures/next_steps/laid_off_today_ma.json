@@ -35,7 +35,9 @@
   "find_out_ids": [],
   "past_ids": [],
   "state_note_ids": [
-   "file-claim"
+   "file-claim",
+   "final-paycheck",
+   "separation-notice"
   ],
   "includes_ids": [
    "cobra-backdated",

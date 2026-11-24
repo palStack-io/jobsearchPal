@@ -112,3 +112,15 @@ def test_layoff_without_state_asks_for_it(env):
     with pytest.raises(ValueError, match="state you worked in"):
         next_steps.import_plan(s, db, _answers(state=None), TODAY)
     assert _tasks(db) == []
+
+
+def test_tag_survives_a_long_note_and_is_hidden_on_the_dashboard(env):
+    """A state line can make a note long; the [next_step:<id>] tag (used to avoid duplicates) must always fit, and the
+    dashboard never shows it (2026-11-24)."""
+    from datetime import datetime
+    from autoapply import benefits
+    s, db = env({"label": "Work search", "weekly_minimum": 0})
+    next_steps.import_plan(s, db, _answers(), TODAY)
+    assert all(t["note"].endswith("]") and len(t["note"]) <= 400 for t in _tasks(db))
+    items = benefits.todos(db, s, None, 0, 0, 0, datetime(2026, 11, 24, 9))
+    assert items and not any("[next_step:" in i["why"] for i in items)

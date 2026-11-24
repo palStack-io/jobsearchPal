@@ -40,7 +40,7 @@
   <div class="wl-acts"><button class="btn primary">{{ 'Make my plan' if mode == 'welcome' else 'See what changes' }}</button>
    <a class="btn ghost" href="{{ '/welcome?step=0' if mode == 'welcome' else '/situation' }}">Back</a>
    {% if mode == 'welcome' %}<a class="btn ghost" href="/welcome?step=1">Skip this step</a>{% endif %}</div>
-  <p class="wl-hint">Reminders, not advice: the letters from your state and your plan documents decide your own case.</p>
+  <p class="wl-hint">Reminders, not advice.{% if planner_checked %} Compiled from official sources on {{ planner_checked }}; laws change, so each step links to its source.{% endif %} The letters from your state and your plan documents decide your own case.</p>
  </form>
  </section>
 </div>

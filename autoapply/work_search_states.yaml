@@ -15,6 +15,8 @@
 #   waiting_week    true if the first week of a claim is unpaid; waiting_week_note explains quirks (DOL Comparison of State UI Laws 2023, Table 3-7)
 #   part_time_earnings_allowed  part-time pay you can earn in a week before benefits are reduced (DOL, Jan 2026)
 #   resea / resea_url  what a RESEA selection involves in that state, where researched (MA so far)
+#   final_pay, severance_effect, mini_cobra, separation_notice, state_warn  layoff facts for Your next step, each
+#                   {text, url, source, confidence, checked}; shown only when official, high and checked within 365 days
 #   source          official = the agency's own site; confidence: high / medium (agency gives no exact
 #                   number) / low (couldn't confirm on the agency site; check before relying on it)
 #   checked         when the entry was last compared with its source
@@ -77,6 +79,20 @@ states:
     max_weeks: 16-26
     waiting_week: true
     part_time_earnings_allowed: $50 plus 1/4 of wages over $50
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Alaska, a worker who is let go must be paid everything owed within three working days, not counting weekends and holidays. Unused vacation is paid only if your employer's policy or a promise says so.
+      url: https://dol.alaska.gov/lss/whfaq.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Alaska, severance must be reported at its gross amount in the week you get it, and a deduction may be taken from your weekly unemployment benefits.
+      url: https://dol.alaska.gov/unemployment/documents/uihandbook.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   AZ:
     name: Arizona
     agency: Arizona Department of Economic Security
@@ -93,6 +109,35 @@ states:
     max_weeks: 8-24
     waiting_week: true
     part_time_earnings_allowed: $160.49
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Arizona, a worker who is let go must be paid within seven working days or by the end of the next regular pay period, whichever comes first.
+      url: https://www.azleg.gov/ars/23/00353.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Statute says 'discharged'; no official page found on vacation payout, so vacation left out.
+    severance_effect:
+      text: In Arizona, you aren't counted as unemployed while severance or pay instead of notice covers you, so benefits wait for the weeks that pay would cover at your regular rate.
+      url: https://www.azleg.gov/ars/23/00621.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: 'In Arizona, employers with 1 to 19 workers are covered by state continuation (mini-COBRA): up to 18 months if you were on the plan at least 3 months. You pay the full cost plus up to 5%.'
+      url: https://www.azleg.gov/ars/20/02330.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Applies to plans issued or renewed after 2018 under the insurance code; self-funded plans likely excluded but the section does not say so in those words.
+    separation_notice:
+      text: In Arizona, your employer must give you a printed statement on how to file for unemployment when you lose your job. DES's pamphlet UIB-1241A meets this.
+      url: https://des.az.gov/sites/default/files/dl/UIT-1271A.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: des.az.gov blocked automated fetch (403/Cloudflare); taken from search snippets of the DES employer guide and employer requirements page.
   AR:
     name: Arkansas
     agency: Arkansas Division of Workforce Services
@@ -111,6 +156,28 @@ states:
     max_weeks: 9-12
     waiting_week: true
     part_time_earnings_allowed: 40% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Arkansas, a worker let go by the employer must be paid by the next regular payday. If pay is more than 7 days past that payday, the employer can owe double.
+      url: https://labor.arkansas.gov/resources/faqs/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Vacation payout not addressed on the official page.
+    severance_effect:
+      text: In Arkansas, severance, pay instead of notice, or staying on the payroll after you leave may affect your unemployment benefits. Report it when you file.
+      url: https://dws.arkansas.gov/wp-content/uploads/UI-Handbook-2026-Final.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Arkansas, state continuation lets a former employee keep an insured group health plan for up to 120 days.
+      url: https://portal.insurance.arkansas.gov/LegalPubsPublic/Documents/Bulletins/bulletin_5a-2009.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: Only official source is a 2009 Insurance Department bulletin (A.C.A. 23-86-114); employer-size scope not confirmed; statute not on a .gov site.
   CA:
     name: California
     agency: Employment Development Department (EDD)
@@ -130,6 +197,38 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week; you still certify for it. Can be waived in a declared disaster.
     part_time_earnings_allowed: $25 or 1/4 of wages, whichever is more
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In California, a laid-off worker is paid everything owed on the last day, including earned, unused vacation. Each day it's late can add a day's pay, up to 30.
+      url: https://www.dir.ca.gov/dlse/FAQ_WaitingTimePenalty.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In California, severance paid under an employer's plan doesn't affect your unemployment benefits, whether paid at once or in installments. Report it when you file.
+      url: https://edd.ca.gov/en/UIBDG/Total_and_Partial_Unemployment_TPU_46035
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In California, Cal-COBRA covers employers with 2 to 19 people, for up to 36 months.
+      url: https://www.dmhc.ca.gov/HealthCareinCalifornia/TypesofPlans/KeepYourHealthCoverage(COBRA).aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In California, your employer must give you written notice right away if you're fired or laid off, along with the pamphlet For Your Benefit (DE 2320).
+      url: https://edd.ca.gov/en/payroll_taxes/required_notices_and_pamphlets/
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+    state_warn:
+      text: 'California''s own WARN law covers sites with 75 or more people, part-time included, in the past year: 60 days'' notice before a closure, a move of 100+ miles, or laying off 50 or more within 30 days.'
+      url: https://edd.ca.gov/en/jobs_and_training/Layoff_Services_WARN/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   CO:
     name: Colorado
     agency: Colorado Department of Labor and Employment (CDLE)
@@ -151,6 +250,35 @@ states:
     waiting_week_note: One unpaid week. A 2022 law repeals it once the state's trust fund reaches $1 billion; still
       in effect as of Nov 2026.
     part_time_earnings_allowed: 1/2 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Colorado, a fired or laid-off worker is paid right away, or within 6 hours of payroll's next workday if it's closed (24 if off-site). Earned, unused vacation must be paid out.
+      url: https://cdle.colorado.gov/sites/cdle/files/info_%233a_timing_of_wage_payments%2C_%26_required_record-keeping_1.9.2026.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation rule from INFO #3E: https://cdle.colorado.gov/sites/cdle/files/info_%233e_payment_of_earned_vacation_upon_separation_of_employment_05.29.24.pdf'
+    severance_effect:
+      text: 'In Colorado, severance delays benefits: the total divided by your usual weekly wage is the number of weeks they''re put off, starting the week it''s paid. Your last paycheck isn''t severance.'
+      url: https://cdle.colorado.gov/sites/cdle/files/Copy%20of%20Formatted%202022%20CESA.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: C.R.S. 8-73-110(1)(a); last-paycheck point from https://cdle.colorado.gov/ui/claimants/claimant-guide/amount-of-benefits
+    mini_cobra:
+      text: In Colorado, if you were on an insured employer plan for at least 6 months, you can keep it for up to 18 months after your job ends, paying the full cost.
+      url: https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-10.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: C.R.S. 10-16-108 (2024 uncertified printout from the legislature). Statute applies to carrier-issued plans; it does not itself limit to under-20 employers.
+    separation_notice:
+      text: In Colorado, your employer must give you a Notice of Potential Availability of Unemployment Insurance Benefits, on paper or electronically, when your job ends.
+      url: https://cdle.colorado.gov/sites/cdle/files/documents/Employer-Separation-Form-22-234-fillable.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   CT:
     name: Connecticut
     agency: Connecticut Department of Labor
@@ -168,6 +296,35 @@ states:
     max_weeks: '26'
     waiting_week: false
     part_time_earnings_allowed: 1/3 of wages
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Connecticut, a laid-off worker is paid by the next regular payday; a fired worker by the next business day. Unused vacation is paid only if the employer's policy or union contract says so.
+      url: https://www.cga.ct.gov/current/pub/chap_558.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: C.G.S. 31-71c (layoff = next regular payday, discharge = next business day) and 31-76k (fringe benefits per policy).
+    severance_effect:
+      text: In Connecticut, since 2024, severance and pay instead of notice can stop benefits for the weeks they cover. Report any separation pay when you file.
+      url: https://www.cga.ct.gov/current/pub/chap_567.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: C.G.S. 31-236(a)(4)(B), effective Jan 1, 2024. Accrued vacation paid on separation is excluded.
+    mini_cobra:
+      text: In Connecticut, if you're on a Connecticut fully insured employer plan, you can keep it for up to 30 months after a layoff, whatever the employer's size. Self-funded plans aren't covered.
+      url: https://portal.ct.gov/cid/consumer-resource-library/health-insurance/cobra-connecticut-state-continuation-coverage
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Self-funded exclusion from CID Q&A on Public Act 10-13.
+    separation_notice:
+      text: In Connecticut, your employer must give you a separation packet with an Unemployment Notice (UC-21/UC-21A) when your job ends, whatever the reason, or mail it to you.
+      url: https://portal.ct.gov/dol/-/media/dol/2022-new-design-system/about/divisions/unemployment-insurance-tax/updated-employer-guide-april-23-2026.pdf?rev=e419292e6d0046d1b1dd5c9845a90bca
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   DE:
     name: Delaware
     agency: Delaware Department of Labor
@@ -185,6 +342,41 @@ states:
     max_weeks: 24-26
     waiting_week: false
     part_time_earnings_allowed: $10 or 50% of your weekly benefit, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Delaware, a worker who is laid off or fired is paid on the next regular payday, or three business days after the last day worked if that's later.
+      url: https://delcode.delaware.gov/title19/c011/index.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 19 Del. C. 1103(a). Vacation payout not addressed in the statute.
+    severance_effect:
+      text: In Delaware, severance counts as wages under unemployment law and may affect your benefits. File right away and report it.
+      url: https://labor.delaware.gov/divisions/unemployment-insurance/claimant-faqs/
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: 'Indirect: FAQ only says severance may or may not affect eligibility; 19 Del. C. 3302(27) lists dismissal payments as wages. No official page states the exact offset.'
+    mini_cobra:
+      text: 'In Delaware, employers with 1 to 19 workers are covered by state continuation (mini-COBRA): up to 9 months after a layoff, at up to 102% of the group rate. Only insured plans count.'
+      url: https://delcode.delaware.gov/title18/c035/sc03/index.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 18 Del. C. 3571F; must have been covered 3 months.
+    separation_notice:
+      text: In Delaware, your employer must tell you when your job ends that unemployment benefits may be available and how to apply, using Form UC-300.
+      url: https://laborfiles.delaware.gov/main/dui/forms/UC_300.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: Delaware's own WARN law covers employers with 100 or more full-time workers and asks for 60 days' notice of a plant closing, mass layoff or relocation.
+      url: https://delcode.delaware.gov/title19/c019/index.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   DC:
     name: District of Columbia
     agency: Department of Employment Services (DOES)
@@ -202,6 +394,29 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: 1/3 of wages plus $50
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In the District of Columbia, a worker who is let go must be paid by the next working day. Late pay can add 10% per working day, up to three times the unpaid wages.
+      url: https://code.dccouncil.gov/us/dc/council/code/sections/32-1303
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Vacation payout depends on the employer's policy (DOES FAQ), left out of text.
+    severance_effect:
+      text: In the District of Columbia, weekly benefits are reduced by severance or pay instead of notice that your employer wasn't legally required to pay.
+      url: https://code.dccouncil.gov/us/dc/council/code/sections/51-107
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'D.C. Code 51-107(c). DOES claimant book (undated) adds: installments = ineligible for the period covered.'
+    mini_cobra:
+      text: In the District of Columbia, workers who can't get federal COBRA can keep their employer's health plan for 3 months, at up to 102% of the group rate.
+      url: https://code.dccouncil.gov/us/dc/council/code/sections/32-732
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Employer must send notice within 15 days. Statute does not state an employer-size cutoff; it excludes people eligible for COBRA.
   FL:
     name: Florida
     agency: FloridaCommerce Reemployment Assistance
@@ -220,6 +435,21 @@ states:
     max_weeks: 9-12
     waiting_week: true
     part_time_earnings_allowed: 8 x the federal minimum hourly wage
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    severance_effect:
+      text: In Florida, severance blocks benefits for a number of weeks equal to the severance divided by your average weekly wage there, starting the week you're let go.
+      url: https://www.flsenate.gov/Laws/Statutes/2025/443.101
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 443.101(3)(b); if the weekly amount is less than the benefit, benefits are reduced instead.
+    mini_cobra:
+      text: 'In Florida, employers with fewer than 20 workers are covered by state continuation (mini-COBRA): up to 18 months after a layoff, at up to 115% of the premium.'
+      url: https://www.flsenate.gov/Laws/Statutes/2025/627.6692
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   GA:
     name: Georgia
     agency: Georgia Department of Labor
@@ -235,6 +465,27 @@ states:
     max_weeks: 6-26
     waiting_week: false
     part_time_earnings_allowed: $50
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    severance_effect:
+      text: In Georgia, if severance or pay instead of notice is more than your weekly benefit, you get no benefits for the weeks it covers. Lump sums are divided by your average weekly pay.
+      url: https://dol.georgia.gov/document/unemployment-benefits/ui-claimant-handbook/download
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Georgia, people on a small-group plan at an employer with fewer than 20 workers can use state continuation (mini-COBRA) after losing a job.
+      url: https://oci.georgia.gov/document/bulletin/bulletin-20-ex-5-loss-health-insurance-due-covid-19/download
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: oci.georgia.gov blocked fetch (Cloudflare 403); from search snippet of OCI Bulletin 20-EX-5 citing O.C.G.A. 33-24-21.1. Length of continuation not confirmed, so left out.
+    separation_notice:
+      text: In Georgia, your employer must give you a Separation Notice (DOL-800) on your last day of work, whatever the reason you left. It can be sent electronically.
+      url: https://dol.georgia.gov/faqs-employers/employers-faqs-unemployment-insurance
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   HI:
     name: Hawaii
     agency: Hawaii Department of Labor and Industrial Relations
@@ -254,6 +505,28 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: $150
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Hawaii, a worker who is let go must be paid in full at the time of discharge, or by the next working day if that isn't possible. State law doesn't require paid vacation, so payout depends on your employer's policy.
+      url: https://data.capitol.hawaii.gov/hrscurrent/Vol07_Ch0346-0398/HRS0388/HRS_0388-0003.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation part from labor.hawaii.gov/wsd/vacation-and-sick-leave (''employer''s policy determines''); HRS 388-3 annotation cites a 2005 case holding unused vacation is not ''wages''. Temporary layoffs: next regular payday (388-3(c)).'
+    severance_effect:
+      text: In Hawaii, a severance package, pay instead of notice, or continued pay after you leave could reduce or delay your unemployment benefits. Report any separation pay when you file your claim.
+      url: https://labor.hawaii.gov/ui/files/2026/01/DLIR-UI-Claimant-Handbook-Rev1.26-with-BABEL.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: Hawaii's own law covers businesses with 50 or more workers and asks for 60 days' written notice to each worker and the state before a closing, partial closing or move out of state.
+      url: https://data.capitol.hawaii.gov/hrscurrent/Vol07_Ch0346-0398/HRS0394B/HRS_0394B-0009.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Definitions in HRS 394B-2 (50+ persons in preceding 12 months; closing/partial closing/relocation).
   ID:
     name: Idaho
     agency: Idaho Department of Labor
@@ -271,6 +544,22 @@ states:
     max_weeks: 10-26
     waiting_week: true
     part_time_earnings_allowed: 1/2 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Idaho, final wages are due by the next regular payday or within 10 days (not counting weekends and holidays), whichever comes first, or within 48 hours if you ask in writing. State law doesn't require vacation pay.
+      url: https://legislature.idaho.gov/statutesrules/idstat/title45/t45ch6/sect45-606/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation line from IDOL Guide to Idaho labor laws (2026): ''Idaho law does not require vacation, holiday, severance or sick pay''.'
+    severance_effect:
+      text: 'In Idaho, severance counts as income: a lump sum is reported in the week it''s paid and installments in each week they cover, which can reduce your unemployment benefit for those weeks.'
+      url: https://www.labor.idaho.gov/wp-content/uploads/2024/07/UI-Benefits-rules_IDAPA_09.01.30.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: IDAPA 09.01.30 (non-periodic and severance pay rules); claimant guide Aug 2024 says the same.
   IL:
     name: Illinois
     agency: Illinois Department of Employment Security (IDES)
@@ -289,6 +578,41 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: 1/2 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Illinois, final pay is due at separation if possible and no later than the next regular payday. Earned vacation must be paid out, and a policy can't make you forfeit it when you leave.
+      url: https://labor.illinois.gov/faqs/wage-payment-faq.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Statute 820 ILCS 115/5 read via ilga.gov documents path. Paid Leave for All Workers Act leave generally isn't paid out unless it's in a general PTO bank.
+    severance_effect:
+      text: In Illinois, severance paid for past service, as a lump sum or in installments, doesn't make you ineligible for unemployment benefits. Report it when you certify.
+      url: https://ides.illinois.gov/content/dam/soi/en/web/ides/ides_forms_and_publications/ui-law-handbook/rules-of-ides.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 56 Ill. Adm. Code 2920.45. Pay in lieu of notice or pay for a period you're still on payroll is treated differently (not checked).
+    mini_cobra:
+      text: In Illinois, insured group health plans must let you keep coverage for up to 12 months after your job ends if you were covered for the 3 months before. Ask in writing within 30 days of the notice.
+      url: https://www.ilga.gov/Documents/legislation/ilcs/documents/021500050K367e.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 215 ILCS 5/367e; no employer-size limit in the statute; applies to insured policies (not self-funded). Election no later than 60 days after termination.
+    separation_notice:
+      text: In Illinois, your employer must give you the IDES pamphlet What Every Worker Should Know About Unemployment Insurance (CLI111L) when you leave, or mail it within 5 days.
+      url: https://ides.illinois.gov/unemployment/resources/what-every-worker-should-know-about-unemployment-insurance.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: Illinois's own WARN law covers employers with 75 or more full-time workers and asks for 60 days' notice of a plant closing or mass layoff.
+      url: https://labor.illinois.gov/laws-rules/conmed/warn.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   IN:
     name: Indiana
     agency: Indiana Department of Workforce Development
@@ -307,6 +631,22 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: $100
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Indiana, final wages are due by the next regular payday you'd have been paid if still employed. Earned vacation counts as pay, subject to any conditions in your employer's policy.
+      url: https://faqs.in.gov/hc/en-us/articles/115005044367-I-have-a-wage-issue-where-do-I-go
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation: https://faqs.in.gov/hc/en-us/articles/115005216848 (''Accrued vacation pay is considered a form of compensation'').'
+    severance_effect:
+      text: In Indiana, severance or dismissal pay is deducted from your unemployment benefits. Report it when you file your claim.
+      url: https://www.in.gov/dwd/files/Claimant_Handbook%20early%20July%202026.pdf?language_id=1
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Handbook also says people receiving severance must still apply right after becoming unemployed. Indiana's mini-COBRA statute (IC 27-8-15-31.1) only takes effect once a funding mechanism is enacted, so it is left out.
   IA:
     name: Iowa
     agency: Iowa Workforce Development
@@ -324,6 +664,35 @@ states:
     max_weeks: 9-16
     waiting_week: false
     part_time_earnings_allowed: 25% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Iowa, final wages are due by the next regular payday. Vacation is owed if your employer's agreement or policy provides it.
+      url: https://www.legis.iowa.gov/docs/code/91A.4.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Iowa Code 91A.4; 91A.2 defines wages to include vacation due under an agreement or policy.
+    severance_effect:
+      text: In Iowa, you can't get unemployment benefits for a week covered by severance, dismissal pay or pay in lieu of notice. If that pay is less than your weekly benefit, you get the difference.
+      url: https://www.legis.iowa.gov/docs/code/96.5.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Iowa Code 96.5(5).
+    mini_cobra:
+      text: In Iowa, insured group health plans must let you keep coverage for up to 9 months after your job ends if you were covered for the 3 months before.
+      url: https://www.legis.iowa.gov/docs/code/509B.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Iowa Code 509B.3; no employer-size limit in the statute; insured policies only.
+    state_warn:
+      text: Iowa's own WARN law covers employers with 25 or more full-time workers and asks for 30 days' notice of a closing or mass layoff affecting 25 or more of them.
+      url: https://www.legis.iowa.gov/docs/code/84C.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   KS:
     name: Kansas
     agency: Kansas Department of Labor
@@ -341,6 +710,29 @@ states:
     max_weeks: 10-16
     waiting_week: true
     part_time_earnings_allowed: 25% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Kansas, final wages are due by the next regular payday, whether you were let go or quit.
+      url: https://www.ksrevisor.gov/statutes/chapters/ch44/044_003_0015.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Vacation payout not confirmed from an official page; left out.
+    severance_effect:
+      text: In Kansas, severance or termination pay reduces your unemployment benefits by the amount paid. Report it when you apply or on your weekly certification.
+      url: https://ksrevisor.gov/statutes/chapters/ch44/044_007_0004.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: K.S.A. 44-704(i). KDOL FAQ page (dol.ks.gov) returned 403; reporting wording from its search snippet.
+    mini_cobra:
+      text: In Kansas, insured group health plans must let you keep coverage for 18 months after your job ends if you were covered for the 3 months before. It doesn't apply where federal COBRA does.
+      url: https://ksrevisor.gov/statutes/chapters/ch40/040_022_0009.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: K.S.A. 40-2209(i).
   KY:
     name: Kentucky
     agency: Kentucky Office of Unemployment Insurance
@@ -360,6 +752,29 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week, paid at the end if your claim balance runs down to it.
     part_time_earnings_allowed: 1/5 of wages
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Kentucky, final wages are due by the next normal payday or 14 days after you leave, whichever is later. Vested vacation pay counts as wages if agreed or set by policy.
+      url: https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=32050
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: KRS 337.055; vacation from KRS 337.010(1)(c).
+    severance_effect:
+      text: In Kentucky, severance pay isn't deducted from unemployment benefits, but pay in lieu of notice is, for up to four weeks. Report any separation pay when you file.
+      url: https://kcc.ky.gov/career/Documents/PAM400.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Claimant guide Rev. 07/26; employer guide 2026 also says severance isn't wages (KRS 341.030(4)(a)).
+    mini_cobra:
+      text: In Kentucky, insured group health plans must let you keep coverage for up to 18 months after your job ends if you were covered for the 3 months before.
+      url: https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=29444
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: KRS 304.18-110; no employer-size limit in the statute; elect within 31 days of the insurer's notice.
   LA:
     name: Louisiana
     agency: Louisiana Workforce Commission
@@ -377,6 +792,36 @@ states:
     max_weeks: 12-20
     waiting_week: true
     part_time_earnings_allowed: 1/2 of your weekly benefit or $50, whichever is less
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Louisiana, a laid-off or fired worker is paid by the next regular payday or within 15 days, whichever comes first. Earned vacation is paid if your employer's policy says you've earned it.
+      url: https://www.legis.la.gov/legis/Law.aspx?d=83945
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: R.S. 23:631(A)(1)(a) and (D).
+    severance_effect:
+      text: In Louisiana, you can't get unemployment benefits while you're receiving severance or vacation pay. Report any payment from your employer when you file.
+      url: https://www.laworks.net/Downloads/UI/UIBenefitRightsInformation.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: CI-9 Rev. 08/2026. R.S. 23:1592 may also cut total weeks of benefits; not reflected.
+    mini_cobra:
+      text: In Louisiana, insured group health plans must let you keep coverage for up to 12 months after your job ends if you were covered for the 3 months before and aren't eligible for federal COBRA.
+      url: https://legis.la.gov/legis/LawPrint.aspx?d=507886
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: R.S. 22:1046; elect in writing by end of the month after the event. LDI emergency rules have temporarily suspended it after disasters.
+    separation_notice:
+      text: In Louisiana, your employer must give you a copy of the Separation Notice (Form 77) within 10 days after your job ends.
+      url: https://www.laworks.net/FAQs/FAQ_UI_Form77s.asp
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Act 340, effective Aug 1, 2025, moved the deadline from 3 to 10 days.
   ME:
     name: Maine
     agency: Maine Department of Labor
@@ -395,6 +840,36 @@ states:
     max_weeks: 15-26
     waiting_week: true
     part_time_earnings_allowed: $123
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Maine, final wages are due by the next regular payday. Unused paid vacation must be paid out unless your employer has 10 or fewer workers or is a public employer.
+      url: https://legislature.maine.gov/statutes/26/title26sec626.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Payout rule covers vacation accrued on or after Jan 1, 2023.
+    severance_effect:
+      text: In Maine, severance (dismissal or terminal pay) or pay in lieu of notice stops or reduces your unemployment benefits for the weeks it covers. Report it when you file.
+      url: https://legislature.maine.gov/statutes/26/title26sec1193.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 26 MRSA 1193(5).
+    mini_cobra:
+      text: In Maine, if a temporary layoff or a work injury ends your group coverage, an insured plan not covered by federal COBRA must let you keep it for up to 1 year if you worked there 6 months.
+      url: https://legislature.maine.gov/statutes/24-A/title24-Asec2809-A.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 24-A MRSA 2809-A(11). Permanent layoffs qualify only with federal premium assistance (none now).
+    state_warn:
+      text: 'Maine''s own law covers sites with 100 or more workers: a closing needs 90 days'' written notice, and workers with 3 or more years get a week''s severance pay per year of service.'
+      url: https://legislature.maine.gov/statutes/26/title26sec625-B.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Also covers mass layoffs (severance; notice to the state within 7 days) and relocations 100+ miles.
   MD:
     name: Maryland
     agency: Maryland Department of Labor
@@ -411,6 +886,35 @@ states:
     max_weeks: '26'
     waiting_week: false
     part_time_earnings_allowed: $50
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Maryland, final wages are due by the payday you'd have been paid if still employed. Unused earned vacation is paid unless a written policy you got when hired says it's lost.
+      url: https://labor.maryland.gov/labor/wagepay/wppayonterm.shtml
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Vacation detail also on labor.maryland.gov/labor/wagepay/wpunusedvacpay.shtml.
+    severance_effect:
+      text: In Maryland, severance is deducted from unemployment benefits for the weeks of your regular pay it covers; you may qualify once it runs out. Report it when you file.
+      url: https://labor.maryland.gov/employment/clmtguide/uiclmtpamphlet.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Maryland, employers of any size with a Maryland-issued plan must offer state continuation for up to 18 months if you were covered for 3 months. Self-funded plans aren't covered.
+      url: https://insurance.maryland.gov/Consumer/Pages/continuationcoverage.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Must be a Maryland resident; written request within 45 days of leaving.
+    state_warn:
+      text: Maryland's own law covers employers with 50 or more workers laying off at least a quarter of their staff, and never fewer than 15 people, within 3 months, and asks for 60 days' notice.
+      url: https://labor.maryland.gov/employment/warn.shtml
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Economic Stabilization Act as amended by SB 780 (2020); revised regulations effective Oct 13, 2025. Threshold is 25% or 15+, whichever is greater.
   MA:
     name: Massachusetts
     agency: Department of Unemployment Assistance (DUA)
@@ -437,6 +941,32 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week; you still request benefits for it.
     part_time_earnings_allowed: 1/3 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In Massachusetts, a worker who is fired or laid off is usually paid in full on the last day, including earned, unused vacation if the job offered it.
+      url: https://www.mass.gov/info-details/massachusetts-law-about-vacation-leave
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Massachusetts, severance paid for signing a release of claims doesn't count against benefits; other severance can delay them for the weeks it covers. Report it either way.
+      url: https://www.mass.gov/files/documents/2018/01/17/Employer%20Handbook_01-11-18.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+    mini_cobra:
+      text: 'In Massachusetts, employers with 2 to 19 people are covered by state continuation (mini-COBRA): up to 18 months after a layoff. Self-funded plans aren''t.'
+      url: https://www.mass.gov/info-details/minicobra-continuation-of-coverage-benefits-guide
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In Massachusetts, your employer should hand you DUA's pamphlet How to Apply for Unemployment Insurance Benefits (Form 0590-A) within 30 days of your last day.
+      url: https://www.mass.gov/info-details/employer-responsibilities-during-the-unemployment-process
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   MI:
     name: Michigan
     agency: Unemployment Insurance Agency (UIA)
@@ -455,6 +985,29 @@ states:
     waiting_week: false
     part_time_earnings_allowed: Benefits drop 50 cents per $1 earned, and benefits plus earnings can't pass 1.5
       x your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Michigan, final wages are due on your next regular payday. Unused vacation is paid only if your employer's written policy or contract says it will be.
+      url: https://www.michigan.gov/leo/bureaus-agencies/ber/wage-and-hour/frequently-asked-questions/wage-and-hour/deductions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation rule from the LEO Wage and Hour FAQ ''Fringe Benefits'' page: https://www.michigan.gov/leo/bureaus-agencies/ber/wage-and-hour/frequently-asked-questions/wage-and-hour/fringe-benefits. Hand harvesters: within 1 working day.'
+    severance_effect:
+      text: 'In Michigan, severance counts as income and reduces your unemployment benefits: a lump sum in the week you get it (or the weeks it covers), and installments in each week paid. Report it when you file.'
+      url: https://www.michigan.gov/leo/bureaus-agencies/uia/tools/fact-sheets/severance-pay
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: UIA Fact Sheet 125, updated July 2026.
+    separation_notice:
+      text: In Michigan, your employer must give you a completed Unemployment Compensation Notice to Employee (UIA 1711), or an equivalent written notice, when your job ends.
+      url: https://www.michigan.gov/leo/-/media/Project/Websites/leo/Documents/UIA/Employer-Forms/UIA-1711.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Form rev. 11-26; Mich. Admin. Code R 421.204, $10 penalty. Also stated on UIA employer help center 'Manage Employee Claims'.
   MN:
     name: Minnesota
     agency: Unemployment Insurance Minnesota
@@ -472,6 +1025,29 @@ states:
     max_weeks: 9-26
     waiting_week: true
     part_time_earnings_allowed: 'None: benefits drop 50 cents per $1 earned'
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Minnesota, a fired or laid-off worker must be paid within 24 hours of a written request; without one, by the regular payday. Unused vacation depends on your employer's policy.
+      url: https://www.dli.mn.gov/final-wages
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Statute: Minn. Stat. 181.13 (24 hours after written demand). Vacation point from DLI''s 2020 COVID FAQ PDF (https://www.dli.mn.gov/sites/default/files/pdf/Employer_and_employee_questions_related_to_COVID_19.pdf) (''wage and hour laws do not directly address this''), which is older guidance.'
+    severance_effect:
+      text: In Minnesota, severance or pay in lieu of notice delays unemployment benefits for the number of weeks of regular pay it equals. Your total benefit amount isn't reduced.
+      url: https://www.uimn.org/applicants/affectsbenefits/other-income/index.jsp
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Statute: Minn. Stat. 268.085 subd. 3.'
+    mini_cobra:
+      text: In Minnesota, insured group health plans must let a laid-off worker keep coverage for up to 18 months, at no more than 102% of the cost.
+      url: https://www.revisor.mn.gov/statutes/cite/62A.17
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Applies to insured group policies (state law can't reach self-funded ERISA plans); ends earlier if covered by another group plan.
   MS:
     name: Mississippi
     agency: Mississippi Department of Employment Security
@@ -489,6 +1065,15 @@ states:
     max_weeks: 13-26
     waiting_week: true
     part_time_earnings_allowed: $40
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    mini_cobra:
+      text: In Mississippi, state continuation covers insured group plans of employers too small for federal COBRA, for up to 12 months.
+      url: https://apps.mid.ms.gov/healthcare/questionsanswers/TopicSix.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: Older Mississippi Insurance Department Q&A (now returns 404; read via search snippet only). Statute Miss. Code 83-9-51 not read on an official site; 3 months prior coverage may be required.
   MO:
     name: Missouri
     agency: Missouri Division of Employment Security
@@ -508,6 +1093,36 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week, paid at the end if your claim balance runs down to it.
     part_time_earnings_allowed: 20% of your weekly benefit or $20, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Missouri, a fired or laid-off worker's wages are due on the day the job ends. Vacation is paid out only if your employer's policy or contract provides it.
+      url: https://revisor.mo.gov/main/OneSection.aspx?section=290.110
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Labor dept FAQs: https://labor.mo.gov/faqs/knowledge-base/if-employee-terminated-when-are-his-or-her-final-wages-due and .../my-employer-required-pay-me-unused-vacation-if-i-lose-my-job-or-quit. Late-pay penalty after a written request: up to 60 days'' wages.'
+    severance_effect:
+      text: In Missouri, severance or termination pay doesn't reduce your weekly unemployment benefit, and you can file while receiving it.
+      url: https://labor.mo.gov/faqs/knowledge-base/will-other-income-reduce-my-benefits
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: 'Second FAQ: am-i-eligible-unemployment-benefits-while-i-am-receiving-severance-pay. Medium because RSMo 288.036 on revisor.mo.gov shows severance/termination pay treated as wages for the week it is payable (2015 version, prorated for eligibility; that version was declared unconstitutional in Pestka v. State, 2016). The statute history is unclear, so the FAQ can''t be confirmed against it.'
+    mini_cobra:
+      text: In Missouri, insured group health plans not covered by federal COBRA, such as at employers with under 20 people, must offer continuation on the same terms federal COBRA requires.
+      url: https://revisor.mo.gov/main/OneSection.aspx?section=376.428
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: RSMo 376.428; statute does not state months itself, it mirrors federal COBRA (usually 18 months).
+    separation_notice:
+      text: In Missouri, your employer must give you the state's unemployment information booklet for workers when your job ends.
+      url: https://s1.sos.mo.gov/cmsimages/adrules/csr/current/8csr/8c10-3.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: '8 CSR 10-3.070(4): booklet ''Information for Workers''; current booklet is MODES-INF-170 ''What You Need to Know About Unemployment Insurance'' (https://labor.mo.gov/media/22111/download).'
   MT:
     name: Montana
     agency: Montana Department of Labor & Industry
@@ -526,6 +1141,22 @@ states:
     max_weeks: 8-24
     waiting_week: true
     part_time_earnings_allowed: 1/4 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Montana, a laid-off worker is paid right away, unless a written policy allows the next payday or 15 days, whichever is first. Earned vacation counts as wages and must be paid.
+      url: https://leg.mt.gov/bills/mca/title_0390/chapter_0030/part_0020/section_0050/0390-0030-0020-0050.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation: DLI Wage and Hour FAQ (https://erd.dli.mt.gov/labor-standards/wage-and-hour-payment-act/wage-and-hour-faq), based on AG Opinion 56 vol. 23; use-it-or-lose-it policies not allowed. Employers need not offer vacation at all.'
+    severance_effect:
+      text: In Montana, severance or other termination pay may reduce your unemployment payment. Report it when you open your claim and for the week you were let go.
+      url: https://uid.dli.mt.gov/Portals/55/Documents/Claims-Processing/dli-uid-cl001.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Claimant Handbook revised April 2021; does not give the calculation.
   NE:
     name: Nebraska
     agency: Nebraska Department of Labor
@@ -543,6 +1174,29 @@ states:
     max_weeks: 10-26
     waiting_week: true
     part_time_earnings_allowed: 1/4 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Nebraska, final wages are due by the next regular payday or within two weeks, whichever comes first. Earned, unused vacation counts as wages and must be paid.
+      url: https://nebraskalegislature.gov/laws/statutes.php?statute=48-1230
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Vacation: Neb. Rev. Stat. 48-1229, https://nebraskalegislature.gov/laws/statutes.php?statute=48-1229 (earned but unused vacation is wages due at separation; other paid leave only if agreed).'
+    severance_effect:
+      text: In Nebraska, severance or pay in lieu of notice stops or reduces unemployment benefits for the weeks it covers. A lump sum is spread over those weeks.
+      url: https://nebraskalegislature.gov/laws/statutes.php?statute=48-628.02
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: If the prorated amount is less than the weekly benefit, the benefit is reduced by that amount.
+    mini_cobra:
+      text: In Nebraska, insured group plans of employers too small for federal COBRA must let a worker who loses a job (not for misconduct) keep coverage for up to 6 months.
+      url: https://nebraskalegislature.gov/laws/statutes.php?statute=44-1640
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Premium up to 102%; ends earlier if eligible for other group coverage or Medicare.
   NV:
     name: Nevada
     agency: Nevada DETR Employment Security Division
@@ -561,6 +1215,29 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week (or until any issue holding up payment is resolved).
     part_time_earnings_allowed: 1/3 of wages
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Nevada, a fired or laid-off worker's wages are due right away. If they're more than 3 days late, a day's pay can be added for each day, up to 30 days.
+      url: https://www.leg.state.nv.us/nrs/nrs-608.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: NRS 608.020 and 608.040. Vacation payout not addressed in what I could read; Labor Commissioner site (labor.nv.gov) blocks automated reads.
+    severance_effect:
+      text: In Nevada, you can't get unemployment benefits for a week covered by severance or pay in lieu of notice.
+      url: https://www.leg.state.nv.us/nrs/NRS-612.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: NRS 612.420; the Administrator may waive or modify this by regulation. DETR claimant handbook (2026) says report severance as gross wages; DETR PDFs block automated reads.
+    separation_notice:
+      text: In Nevada, your employer must give you the state's printed information on claiming unemployment when your job ends.
+      url: https://www.leg.state.nv.us/nrs/NRS-612.html
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: NRS 612.455(3) requires it as the Administrator prescribes; DETR 2023 Employer Handbook names the leaflet 'Information for the Unemployed Worker' but its PDF returned 403, so read via search snippet only.
   NH:
     name: New Hampshire
     agency: New Hampshire Employment Security (NHES)
@@ -578,6 +1255,36 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: 30% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In New Hampshire, a laid-off worker is paid in full by the next regular payday (within 72 hours if fired). Vacation pay counts as wages when your employer's policy or practice provides it.
+      url: https://gc.nh.gov/rsa/html/XXIII/275/275-44.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'RSA 275:44 (I discharge 72 hours, III layoff next regular payday); vacation: RSA 275:43, V, https://gc.nh.gov/rsa/html/XXIII/275/275-43.htm'
+    severance_effect:
+      text: In New Hampshire, severance and pay in lieu of notice count as wages, which can reduce or stop unemployment benefits for the weeks they cover. Payments from a vested, pre-existing severance plan don't.
+      url: https://gc.nh.gov/rsa/html/XXIII/282-A/282-A-mrg.htm
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: 'RSA 282-A:14, III(a). Medium: statute only, no NHES claimant guidance found (nhes.nh.gov blocks automated reads); how payments are spread over weeks is not stated plainly.'
+    mini_cobra:
+      text: In New Hampshire, insured group health plans must offer continuation for 18 months after a job loss, unless you were fired for gross misconduct.
+      url: https://gc.nh.gov/rsa/html/XXXVII/415/415-18.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: RSA 415:18, XVI; 39 weeks if the whole group plan ends; 29 months if disabled.
+    state_warn:
+      text: New Hampshire's own WARN law covers employers with 100 or more full-time workers in the state and asks for 60 days' notice.
+      url: https://gc.nh.gov/rsa/html/xxiii/275-f/275-f-mrg.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: RSA 275-F:2-3 (plant closing 50+, mass layoff 250+ or 25+ if 33%). A 2022-2023 NH DOL biennial report says 75+ employees, conflicting with the statute text; statute used.
   NJ:
     name: New Jersey
     agency: New Jersey Department of Labor
@@ -595,6 +1302,43 @@ states:
     max_weeks: 20-26
     waiting_week: false
     part_time_earnings_allowed: 20% of your weekly benefit or $5, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In New Jersey, final wages are due by the next regular payday, whether you quit or were let go. Unused vacation is paid according to your employer's policy or agreement.
+      url: https://www.nj.gov/labor/wageandhour/support/faqs/wageandhourworkerfaqs.shtml
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: N.J.S.A. 34:11-4.3.
+    severance_effect:
+      text: 'In New Jersey, severance based on years of service doesn''t delay unemployment benefits. Pay in lieu of notice or salary continuation does: those weeks count as still employed.'
+      url: https://myunemployment.nj.gov/help/faqs/general.shtml
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Report any separation pay when filing; may trigger a fact-finding interview.
+    mini_cobra:
+      text: In New Jersey, employers with 50 or fewer people and an insured health plan must offer state continuation (mini-COBRA) for up to 18 months. Self-funded plans aren't covered.
+      url: https://www.nj.gov/dobi/division_consumers/insurance/cobra.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 29 months if disabled; dependents up to 36 months.
+    separation_notice:
+      text: In New Jersey, your employer must give you Form BC-10, Instructions for Claiming Unemployment Benefits, when you're separated from your job.
+      url: https://www.nj.gov/labor/ea/help/employer_handbook/ui.shtml
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'BC-10 form text: required for separations of 7 days or more, at the time of separation.'
+    state_warn:
+      text: New Jersey's own WARN law covers employers with 100 or more workers and asks for 90 days' notice when 50 or more lose jobs. It also requires severance of one week's pay per year worked.
+      url: https://www.nj.gov/labor/assets/PDFs/WARN/NJ_WARN_ACT_2023law.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Amended effective April 10, 2023; 4 extra weeks' pay if notice is short.
   NM:
     name: New Mexico
     agency: New Mexico Department of Workforce Solutions
@@ -612,6 +1356,22 @@ states:
     max_weeks: 14-26
     waiting_week: true
     part_time_earnings_allowed: 1/5 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In New Mexico, a fired or laid-off worker must be paid within 5 days (10 days for piece or commission pay). Vacation earned under your employer's policy must be paid out.
+      url: https://www.dws.nm.gov/Portals/0/DM/LaborRelations/LRD_Investigations_Manual_2025.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: NMSA 50-4-4; DWS Labor Relations Division Investigations Manual, July 2025.
+    mini_cobra:
+      text: In New Mexico, insured group health plans must let a worker who leaves keep coverage for 6 months, then offer a conversion policy.
+      url: https://www.nmlegis.gov/Sessions/19%20Regular/bills/house/HB0436.html
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: Text of NMSA 59A-18-16 as shown in 2019 HB 436 (bill text, not the codified statute; nmonesource not opened). Not tied to employer size.
   NY:
     name: New York
     agency: New York State Department of Labor
@@ -629,6 +1389,38 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: Work up to 10 hours a week with earnings at or below the maximum weekly benefit
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In New York, final wages are due by the next regular payday. Earned vacation is paid unless your employer told you in writing that it's lost when you leave.
+      url: https://dol.ny.gov/wages-and-hours-frequently-asked-questions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In New York, severance that starts within 30 days of your last day and is more than the maximum weekly benefit delays benefits until it stops or drops below that amount. Lump sums count too.
+      url: https://dol.ny.gov/system/files/documents/2026/01/ui-claimant-handbook_1-26.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In New York, state continuation covers employers with fewer than 20 people, for up to 36 months, and can add months after federal COBRA, up to 36 in all.
+      url: https://www.dfs.ny.gov/consumers/health_insurance/cobra_and_premium_assistance
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In New York, your employer must give you a Record of Employment (IA 12.3) when your job ends.
+      url: https://dol.ny.gov/notice-eligibility-ui-benefits
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: New York's own WARN law covers employers with 50 or more full-time workers and asks for 90 days' notice.
+      url: https://dol.ny.gov/warn-jobseekers-frequently-asked-questions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   NC:
     name: North Carolina
     agency: NC Division of Employment Security
@@ -648,6 +1440,28 @@ states:
     max_weeks: 12-20
     waiting_week: true
     part_time_earnings_allowed: 20% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In North Carolina, final wages are due by the next regular payday. Earned vacation is paid unless your employer told you in advance about a policy under which it's lost.
+      url: https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/BySection/Chapter_95/GS_95-25.7.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: G.S. 95-25.7 (timing, forfeiture needs notice under 95-25.13) and 95-25.12 (vacation).
+    severance_effect:
+      text: In North Carolina, you can't get unemployment benefits for the weeks your severance pay covers. You may become eligible once those weeks are over.
+      url: https://www.des.nc.gov/need-help/faqs/ui
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In North Carolina, state continuation lets you keep a fully insured group health plan for up to 18 months if you were covered for the 3 months before leaving. Self-funded plans aren't covered.
+      url: https://www.ncdoi.gov/consumers/health-insurance/health-insurance-continuation-rights
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Applies to insured plans of any size, not only under-20 employers; G.S. 58-53.
   ND:
     name: North Dakota
     agency: Job Service North Dakota
@@ -664,6 +1478,22 @@ states:
     max_weeks: 12-26
     waiting_week: true
     part_time_earnings_allowed: 60% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In North Dakota, final wages are due on the next regular payday. Earned paid time off is owed too; the law's limits on paying it apply mainly to people who quit.
+      url: https://ndlegis.gov/cencode/t34c14.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: NDCC 34-14-03 (timing; mailed by certified mail to a discharged worker) and 34-14-09.2 (PTO limits only for voluntary quits under 1 year/short notice, or awarded-but-unearned PTO).
+    mini_cobra:
+      text: 'In North Dakota, you can keep an insured group health plan for up to 39 weeks after leaving if you were covered for the 3 months before. The written request window is short: 10 days.'
+      url: https://ndlegis.gov/cencode/t26-1c36.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'NDCC 26.1-36-23: request within 10 days of the later of termination or notice, never more than 31 days after termination.'
   OH:
     name: Ohio
     agency: Ohio Department of Job and Family Services
@@ -682,6 +1512,27 @@ states:
     max_weeks: 20-26
     waiting_week: true
     part_time_earnings_allowed: 1/5 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: 'In Ohio, there''s no special deadline for a final paycheck: wages are owed on the regular twice-monthly schedule, and an absent worker can ask for them any time after payday.'
+      url: https://codes.ohio.gov/ohio-revised-code/section-4113.15
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: ORC 4113.15 sets the general pay schedule; no Ohio official page found stating a separate final-pay rule or vacation payout rule.
+    severance_effect:
+      text: In Ohio, severance reduces your unemployment benefits for the weeks it covers. If it isn't assigned to weeks, it's counted at your normal weekly wage from your last day until used up.
+      url: https://codes.ohio.gov/ohio-revised-code/section-4141.31
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Ohio, if you lose your job involuntarily (not for gross misconduct), you can keep your group health coverage for up to 12 months if you were covered for the 3 months before.
+      url: https://codes.ohio.gov/ohio-revised-code/section-3923.38
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   OK:
     name: Oklahoma
     agency: Oklahoma Employment Security Commission
@@ -697,6 +1548,28 @@ states:
     max_weeks: '16'
     waiting_week: true
     part_time_earnings_allowed: $100
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Oklahoma, final wages are due by the next regular payday. Vacation or sick-leave payout is owed if a written policy, like a handbook, promises it.
+      url: https://oklahoma.gov/labor/workplace-rights/protect-your-pay.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Oklahoma, report severance when you file. If the state decides it's deductible, the amount minus $100 is taken from your benefit in each week you receive it. Payments wait until that's decided.
+      url: https://oklahoma.gov/content/dam/ok/en/workforce/documents/rapid-response/Severance-FAQ-Handout.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Handout says severance is deducted only if 'deemed deductible' after OESC questions about policy/contract; payments held until decided.
+    mini_cobra:
+      text: In Oklahoma, if your employer's plan isn't under federal COBRA, you can keep your group health coverage for at least 63 days after it ends, unless you were fired for gross misconduct.
+      url: https://www.oklegislature.gov/OK_Statutes/CompleteTitles/os36.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 36 O.S. 4509(B), as amended 2012. The older four-month rule in OID bulletin LH 2009-02 is no longer in the statute text.
   OR:
     name: Oregon
     agency: Oregon Employment Department
@@ -713,6 +1586,27 @@ states:
     max_weeks: 1-26
     waiting_week: true
     part_time_earnings_allowed: 1/3 of your weekly benefit or $163, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Oregon, a worker who is let go or fired must be paid by the end of the next business day. Unused vacation is paid only if your employer's policy or agreement says so.
+      url: https://www.oregon.gov/boli/workers/pages/paychecks.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Oregon, severance pay isn't reported as earnings on your weekly unemployment claim.
+      url: https://unemployment.oregon.gov/questions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: FAQ lists severance under non-reportable pay; does not separately say it never affects benefits.
+    mini_cobra:
+      text: In Oregon, people who work for employers with fewer than 20 employees can keep their health plan for up to 9 months after losing the job, if they had coverage for the 3 months before.
+      url: https://dfr.oregon.gov/insure/health/understand/coverage/pages/state-continuation.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   PA:
     name: Pennsylvania
     agency: Pennsylvania Office of Unemployment Compensation
@@ -733,6 +1627,33 @@ states:
     max_weeks: 18-26
     waiting_week: true
     part_time_earnings_allowed: $21 or 30% of your weekly benefit, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Pennsylvania, final wages are due by the next regular payday. Vacation is paid out only if your employer's policy or a contract says so.
+      url: https://www.pa.gov/agencies/dli/resources/compliance-laws-and-regulations/labor-management-relations/pennsylvania-s-minimum-wage-act/wage-faqs
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Pennsylvania, only severance above 40% of the state's average annual wage ($28,153.63 for 2026) is deducted from benefits, spread over the weeks after your job ends.
+      url: https://www.pa.gov/agencies/dli/resources/for-claimants-workers/benefits-information/using-the-uc-system/claimant-faqs/severance-pension-pay-deductions-faqs
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Threshold changes every year.
+    mini_cobra:
+      text: 'In Pennsylvania, employers with 2 to 19 people are covered by state continuation (mini-COBRA): up to 9 months of medical coverage after you leave. Dental and vision aren''t included.'
+      url: https://www.pa.gov/agencies/insurance/consumer-help-center/learn-about-insurance/health-insurance/cobra
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In Pennsylvania, your employer must give you form UC-1609, with the details you need to file for unemployment, when your job ends or your hours are cut.
+      url: https://www.pa.gov/agencies/dli/programs-services/unemployment/for-employers/uc-benefits
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   PR:
     name: Puerto Rico
     agency: Departamento del Trabajo y Recursos Humanos
@@ -749,6 +1670,15 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: Up to your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Puerto Rico, if the vacation law covers you (not executives, administrators or professionals), your employer must pay all the vacation you've built up when your job ends, even if it's less than a year's worth.
+      url: https://trabajo.pr.gov/docs/Libreria_Laboral/Leyes/Ley%20180-1998,%20Ley%20de%20Vacaciones%20y%20Licencia%20por%20Enfermedad%20de%20Puerto%20Rico.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Law 180-1998 Art. 6(j). No official source found for the final-paycheck deadline itself.
   RI:
     name: Rhode Island
     agency: Rhode Island Department of Labor and Training
@@ -767,6 +1697,34 @@ states:
     max_weeks: 17-26
     waiting_week: true
     part_time_earnings_allowed: 1/2 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Rhode Island, final wages are due on the next regular payday. Earned vacation is paid once you've worked there a year; if the business closes or moves away, it's all due in 24 hours.
+      url: https://webserver.rilegislature.gov/Statutes/TITLE28/28-14/28-14-4.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Rhode Island, severance or dismissal pay can reduce your unemployment benefits or how long you can get them. Tell the state about it when you file.
+      url: https://dlt.ri.gov/sites/g/files/xkgbur571/files/2025-11/FINAL%20UI%20Benefit%20Rights%20-%20Nov.%202025.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Rhode Island, after an involuntary layoff you can keep your group health plan for up to 18 months, but no longer than you worked there or until a new job's plan covers you.
+      url: https://webserver.rilegislature.gov/Statutes/TITLE27/27-19.1/27-19.1-1.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Also covers job loss when the workplace closes or the workforce is permanently reduced; applies regardless of employer size.
+    separation_notice:
+      text: In Rhode Island, your employer must tell you, individually, that unemployment benefits are available when your job ends. It can be a flyer, email, text or letter.
+      url: https://dlt.ri.gov/sites/g/files/xkgbur571/files/emergencyui/Employer-Notice-Requirement-Memo.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: DLT policy memo dated June 2020 ('in effect until revoked'), filed under emergency UI; couldn't confirm it's still current. No form number.
   SC:
     name: South Carolina
     agency: SC Department of Employment and Workforce
@@ -785,6 +1743,34 @@ states:
     max_weeks: 13-20
     waiting_week: true
     part_time_earnings_allowed: 1/4 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In South Carolina, final wages are due within 48 hours or by the next regular payday, no more than 30 days later. Vacation counts if your employer's policy or contract promises it.
+      url: https://www.scstatehouse.gov/code/t41c010.php
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: SC Code 41-10-50 (timing) and 41-10-10(2) (wages include vacation due under policy or contract).
+    severance_effect:
+      text: In South Carolina, report any separation pay when you file; the state then decides whether it's deducted from your benefits.
+      url: https://dew.sc.gov/sites/dew/files/Documents/Claimant%20Handbook_As%20of%201.31.2025.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In South Carolina, if you were on an insured group plan for at least 6 months, you can keep it for the rest of that month plus 6 more months.
+      url: https://www.scstatehouse.gov/code/t38c071.php
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: SC Code 38-71-770; not available if federal COBRA gives longer coverage or if eligible for other group coverage or Medicare.
+    separation_notice:
+      text: In South Carolina, your employer must give you a Notification of the Availability of Unemployment Insurance Benefits when your job ends.
+      url: https://dew.sc.gov/employers/employer-filed-claims
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   SD:
     name: South Dakota
     agency: South Dakota Department of Labor & Regulation
@@ -802,6 +1788,28 @@ states:
     max_weeks: 15-26
     waiting_week: true
     part_time_earnings_allowed: 1/4 of wages over $25
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In South Dakota, final wages are due by the next regular payday, or once you return the employer's property if that comes later.
+      url: https://dlr.sd.gov/employment_laws/termination.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: SDCL 60-11-10. No official statement found on vacation payout.
+    severance_effect:
+      text: In South Dakota, severance is deducted dollar for dollar from benefits for the weeks it covers, counted from your last day of work. A smaller weekly amount can leave a partial payment.
+      url: https://dlr.sd.gov/ra/individuals/deductions.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In South Dakota, you can keep your group health coverage for up to 18 months after leaving your job, or 29 months if you're found disabled early in that time.
+      url: https://sdlegislature.gov/Statutes/Codified_Laws/DisplayStatute.aspx?Type=Statute&Statute=58-18-7.5
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: SDCL 58-18-7.5; includes self-insured plans. Disability must be determined within the first 60 days.
   TN:
     name: Tennessee
     agency: Tennessee Department of Labor and Workforce Development
@@ -819,6 +1827,35 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week, paid back after 3 more consecutive weeks of benefits.
     part_time_earnings_allowed: $50 or 25% of your weekly benefit, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Tennessee, a fired or laid-off worker is paid by the next regular payday or within 21 days, whichever is later. Unused vacation is paid only if the employer's policy says so.
+      url: https://www.tn.gov/workforce/employees/labor-laws/labor-laws-redirect/wages-breaks.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Tennessee, unemployment benefits are denied for any week covered by wages in lieu of notice or by severance equal to what you'd have earned that week. You can still file in your first week out of work.
+      url: https://www.tn.gov/content/dam/tn/workforce/documents/Forms/LB-0489.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: LB-0489 Rev. 08-2020; rule from the 2012 UI Accountability Act.
+    separation_notice:
+      text: In Tennessee, your employer must give you a Separation Notice (LB-0489) within 24 hours of your job ending.
+      url: https://www.tn.gov/content/dam/tn/workforce/documents/Forms/LB-0489.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Not required if employed under a week or recalled within seven days (Rule 0800-09-01-.02).
+    state_warn:
+      text: Tennessee's own law covers employers with 50 to 99 full-time workers in the state. When 50 or more lose jobs within three months, the state must be told when workers are.
+      url: https://www.tn.gov/content/dam/tn/workforce/documents/employers/WARN_Technical_Assistance_Guide.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: T.C.A. 50-1-601 et seq. read via search excerpts and the state WARN guide, not opened directly; the law sets no fixed advance-notice period. tn.gov WARN pages returned 403.
   TX:
     name: Texas
     agency: Texas Workforce Commission
@@ -837,6 +1874,29 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week, paid back once you've received benefits equal to 3 weeks.
     part_time_earnings_allowed: $5 or 1/4 of your weekly benefit, whichever is more
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Texas, a fired or laid-off worker is paid within six calendar days. Unused vacation is paid only if a written policy or agreement promises it.
+      url: https://efte.twc.texas.gov/final_pay.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Vacation rule from TWC Payday Rules ch. 821 (written policy/agreement).
+    severance_effect:
+      text: In Texas, you can't get unemployment benefits for the weeks covered by severance paid under an employer policy or by wages in lieu of notice. Severance under a negotiated agreement doesn't count.
+      url: https://efte.twc.texas.gov/ui_law_eligibility_issues.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Texas Labor Code 207.049; TWC Texas Guidebook for Employers.
+    mini_cobra:
+      text: In Texas, if you can't get COBRA, state continuation can keep your insured group plan for nine months after your job ends. You need three months of prior coverage; self-funded plans aren't covered.
+      url: https://www.tdi.texas.gov/pubs/consumer/cb005.html
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: TDI also says you usually can't get it if you were fired. Insurance Code 1251.251-.255.
   UT:
     name: Utah
     agency: Utah Department of Workforce Services
@@ -854,6 +1914,29 @@ states:
     max_weeks: 10-26
     waiting_week: true
     part_time_earnings_allowed: 30% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Utah, when the employer ends your job, all wages are due within 24 hours. Vacation payout follows the employer's own policy or practice.
+      url: https://laborcommission.utah.gov/divisions/utah-antidiscrimination-and-labor-uald/wage-claim/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Utah Code 34-28-5. State of Utah employees are exempt from the 24-hour rule.
+    severance_effect:
+      text: In Utah, severance and vacation pay count as earnings for the weeks after your last day. No benefits are paid for weeks where they equal or exceed your weekly benefit. Report them when you apply.
+      url: https://jobs.utah.gov/ui/UIShared/PDFs/ClaimantGuide.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Claimant guide dated 08/2026; form DWS-UI 615CV says all severance is attributed to the period after the last day worked.
+    mini_cobra:
+      text: In Utah, group plans not covered by federal COBRA must let you keep coverage for 12 months after a layoff, if you were covered for the three months before. Not if fired for gross misconduct.
+      url: https://le.utah.gov/xcode/Title31A/Chapter22/C31A-22-S722_2019051420190514.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Utah Code 31A-22-722, version effective 5/14/2019 (current, not marked superseded). Also ends if you move out of state.
   VT:
     name: Vermont
     agency: Vermont Department of Labor
@@ -871,6 +1954,36 @@ states:
     max_weeks: 23-26
     waiting_week: true
     part_time_earnings_allowed: 50% of gross wages
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Vermont, a worker who is let go must be paid all wages owed within 72 hours.
+      url: https://legislature.vermont.gov/statutes/section/21/005/00342
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: '21 V.S.A. 342(b)(2) says ''discharged''. Vacation payout left out: only official source is a 2019 DOL summary (payout owed if a written agreement or handbook provides it).'
+    severance_effect:
+      text: In Vermont, you can't receive severance and unemployment benefits at the same time. Severance is spread over the weeks after your last day, which can delay your first payment. Report it.
+      url: https://labor.vermont.gov/sites/labor/files/documents/Unemployment%20Insurance%20Claimant%20Handbook.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Claimant Handbook B-11 (02/2026).
+    mini_cobra:
+      text: In Vermont, group plans not covered by federal COBRA must offer state continuation for up to 18 months after a layoff. It doesn't apply if the job ended for misconduct.
+      url: https://legislature.vermont.gov/statutes/section/08/107/04047c
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Recodified 2025 as 8 V.S.A. 4047a-4047c (eff. 9/1/2025). DFR handbook says it applies to private employers with fewer than 20 employees.
+    state_warn:
+      text: Vermont's own layoff notice law covers employers with 50 or more workers. Before a closing or layoff of 50 or more, workers get 30 days' notice and the state 45 days'.
+      url: https://legislature.vermont.gov/statutes/section/21/005/00413
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 21 V.S.A. 411-413; part-timers count if they work 1,040+ hours a year. A 2025 bill (S.117) to lower the threshold to 20 had that section deleted before enactment (Act 40).
   VA:
     name: Virginia
     agency: Virginia Employment Commission
@@ -889,6 +2002,35 @@ states:
     max_weeks: 12-26
     waiting_week: true
     part_time_earnings_allowed: $100
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Virginia, final wages are due on the payday you would have been paid if your job hadn't ended.
+      url: https://law.lis.virginia.gov/vacode/title40.1/chapter3/section40.1-29/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Statute and DOLI pages do not address vacation payout.
+    severance_effect:
+      text: In Virginia, severance, pay in lieu of notice or continued pay may reduce your unemployment benefits; the agency decides case by case. Report it on your weekly claim.
+      url: https://www.vec.virginia.gov/sites/default/files/documents/VEC%20Claimant%20Handbook%20updated%2012.11.23.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: VEC Claimant Handbook (updated 12/2023).
+    mini_cobra:
+      text: In Virginia, group plans not covered by federal COBRA must let you keep coverage for 12 months after it ends, if you were insured for the three months before. Not if fired for gross misconduct.
+      url: https://law.lis.virginia.gov/vacode/title38.2/chapter35/section38.2-3541/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In Virginia, your employer must give you a copy of the Notice to Workers (VEC-B-29) about unemployment benefits when your job ends.
+      url: https://www.vec.virginia.gov/required-posters-virginia-employers
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Also 16VAC5-32-20: in person, electronically, or mailed to last known address. Requirement appears effective March 2024.'
   VI:
     name: US Virgin Islands
     agency: Virgin Islands Department of Labor
@@ -904,6 +2046,22 @@ states:
     max_weeks: 13-16
     waiting_week: true
     part_time_earnings_allowed: 25% of wages over $15
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    severance_effect:
+      text: In the US Virgin Islands, severance or pay in lieu of notice can disqualify you from unemployment benefits for a period of weeks. Report it on your weekly claim.
+      url: https://www.vidol.gov/wp-content/doluploads/CLAIMANT%20HANDBOOK.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: Claimant handbook UIB-6 is a 2017 revision.
+    state_warn:
+      text: In the US Virgin Islands, a closing that lets go at least half of a facility's staff needs 90 days' notice to workers.
+      url: https://www.vidol.gov/employee-rights/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 24 V.I.C. 471-478; 50% of the facility within six months. Severance of one week per year of service, within one pay period, per VIDOL Compliance Overview (2024).
   WA:
     name: Washington
     agency: Employment Security Department
@@ -920,6 +2078,34 @@ states:
     max_weeks: 1-26
     waiting_week: true
     part_time_earnings_allowed: 1/4 of wages over $5
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Washington, a fired or laid-off worker's final paycheck is due by the next regular payday. Vacation payout is voluntary unless your employer promised it.
+      url: https://www.lni.wa.gov/workers-rights/wages/getting-paid/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Washington, severance usually doesn't affect your unemployment benefits, but pay in lieu of notice can. Report any separation pay on your weekly claim.
+      url: https://esd.wa.gov/get-financial-help/unemployment-benefits/weekly-unemployment-claims/how-file-your-weekly-claims
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Severance counts only if not assigned to a period after separation and you aren't on call for the employer.
+    mini_cobra:
+      text: In Washington, small employers don't have to offer state continuation. Insurers must offer small groups the option, and the employer and insurer decide how long it lasts.
+      url: https://www.insurance.wa.gov/insurance-resources/health-insurance/health-insurance-coverage/continuation-plans
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: Washington's own WARN law covers employers with 50 or more full-time workers in the state and asks for 60 days' notice before a closing or a layoff of 50 or more full-time workers within 30 days.
+      url: https://esd.wa.gov/employer-requirements/layoffs-and-employee-notifications/warn-requirements
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Chapter 49.45 RCW (ESSB 5525, 2025; amended by SB 6106 in 2026). Also covers cutting hours of 50+ workers by half for six months.
   WV:
     name: West Virginia
     agency: WorkForce West Virginia
@@ -938,6 +2124,29 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: $609
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In West Virginia, a fired or laid-off worker is paid by the next regular payday. Vacation and other benefits are included if a written company policy makes them payable when you leave.
+      url: https://labor.wv.gov/media/164/download?inline=
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: W. Va. Code 21-5-4(b)-(c) as published by WV Division of Labor (2022 copy); code.wvlegislature.gov could not be reached.
+    severance_effect:
+      text: In West Virginia, severance based on how long you worked there isn't deducted and doesn't affect your weekly unemployment benefit. Report all separation pay when you file.
+      url: https://workforcewv.org/wp-content/uploads/2026/04/WorkForce-West-Virginia-Claimant-Handbook-Rev.-03.26.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: Claimant Handbook Rev. 03.26. Wages in lieu of notice are called deductible, but the handbook wording is contradictory, so left out.
+    mini_cobra:
+      text: In West Virginia, group plans must let members who are involuntarily laid off keep the same coverage at the group rate for up to 18 months.
+      url: https://code.wvlegislature.gov/33-16-3/
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+      note: W. Va. Code 33-16-3(e) seen only in search excerpts; code.wvlegislature.gov could not be opened. Scope (all groups vs small employers) not confirmed.
   WI:
     name: Wisconsin
     agency: Wisconsin Department of Workforce Development
@@ -957,6 +2166,35 @@ states:
     max_weeks: 14-26
     waiting_week: true
     part_time_earnings_allowed: $30 plus 33% of wages over $30
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Wisconsin, final pay is due on the employer's regular payday. Earned, unused vacation is paid if there's a written vacation policy without a written rule that it's lost.
+      url: https://dwd.wisconsin.gov/er/laborstandards/wages.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: 'Closures and relocations: 24 hours (Wis. Stat. 109.03(4)).'
+    severance_effect:
+      text: In Wisconsin, severance, dismissal pay or pay in lieu of notice may reduce your unemployment benefits. Report it on your weekly claim.
+      url: https://dwd.wisconsin.gov/uiben/handbook/maintaining.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In Wisconsin, insured group plans of any size must offer state continuation for 18 months if you had three months of coverage, unless fired for misconduct. Self-funded plans aren't covered.
+      url: https://oci.wi.gov/Pages/Consumers/PI-023.aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Wis. Stat. 632.897; OCI fact sheet updated 3/5/2026.
+    state_warn:
+      text: Wisconsin's own WARN law covers employers with 50 or more workers in the state and asks for 60 days' notice before a closing affecting 25 or more or a mass layoff.
+      url: https://dwd.wisconsin.gov/eworkboard/closing/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: Wis. Stat. 109.07. Mass layoff = 25% of workforce or 25 workers (whichever greater), or 500+.
   WY:
     name: Wyoming
     agency: Wyoming Department of Workforce Services
@@ -974,3 +2212,26 @@ states:
     max_weeks: 11-26
     waiting_week: false
     part_time_earnings_allowed: 50% of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24), each from the state's own site; shown only when official,
+    # high confidence and checked within 365 days.
+    final_pay:
+      text: In Wyoming, a fired or laid-off worker is paid by the next regular payday. Earned vacation counts as wages unless a written policy you signed says it's lost when you leave.
+      url: https://wyoleg.gov/statutes/compress/title27.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: W.S. 27-4-104(a) and 27-4-501(a)(iii) (2026 compilation).
+    severance_effect:
+      text: In Wyoming, you can't get unemployment benefits for a week you receive severance or earned vacation pay; if the payment is less than your weekly benefit, it's deducted instead.
+      url: https://wyoleg.gov/statutes/compress/title27.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: W.S. 27-3-313(c) (2026 compilation).
+    mini_cobra:
+      text: In Wyoming, group plans not covered by federal COBRA must let you keep coverage for 12 months after your job ends, if you were insured for the three months before.
+      url: https://wyoleg.gov/statutes/compress/title26.pdf
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+      note: W.S. 26-19-113. Election and first payment due within 31 days; premium up to 102%.

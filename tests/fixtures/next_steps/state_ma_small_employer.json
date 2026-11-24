@@ -1,0 +1,32 @@
+{
+ "today": "2026-11-24",
+ "answers": {
+  "v": 1,
+  "last_day": "2026-11-24",
+  "coverage_end": "end_of_month",
+  "age": "40_54",
+  "noncompete": "unknown",
+  "path": "laid_off",
+  "state": "MA",
+  "size": "u20",
+  "has": [
+   "severance"
+  ]
+ },
+ "expect": {
+  "includes_ids": [
+   "final-paycheck",
+   "separation-notice",
+   "mini-cobra"
+  ],
+  "excludes_ids": [
+   "severance-and-claim"
+  ],
+  "state_note_ids": [
+   "file-claim",
+   "final-paycheck",
+   "separation-notice",
+   "mini-cobra"
+  ]
+ }
+}

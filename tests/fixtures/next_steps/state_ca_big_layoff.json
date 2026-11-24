@@ -17,14 +17,15 @@
   "includes_ids": [
    "final-paycheck",
    "severance-and-claim",
-   "separation-notice",
    "warn-notice"
   ],
   "state_note_ids": [
    "file-claim",
    "warn-notice",
    "final-paycheck",
-   "severance-and-claim",
+   "severance-and-claim"
+  ],
+  "excludes_ids": [
    "separation-notice"
   ]
  }

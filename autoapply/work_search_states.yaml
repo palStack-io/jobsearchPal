@@ -141,7 +141,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In California, severance doesn't affect your unemployment benefits, whether it's paid at once or in installments.
+      text: In California, severance paid under an employer's plan doesn't affect your unemployment benefits, whether paid at once or in installments. Report it when you file.
       url: https://edd.ca.gov/en/UIBDG/Total_and_Partial_Unemployment_TPU_46035
       source: official
       confidence: high
@@ -153,13 +153,13 @@ states:
       confidence: high
       checked: '2026-11-24'
     separation_notice:
-      text: In California, your employer must give you the pamphlet For Your Benefit (DE 2320) when you're laid off.
+      text: In California, your employer must give you written notice right away if you're fired or laid off, along with the pamphlet For Your Benefit (DE 2320).
       url: https://edd.ca.gov/en/payroll_taxes/required_notices_and_pamphlets/
       source: official
-      confidence: high
+      confidence: medium
       checked: '2026-11-24'
     state_warn:
-      text: 'California''s own WARN law covers sites with 75 or more people: 60 days'' notice before laying off 50 or more at one site.'
+      text: 'California''s own WARN law covers sites with 75 or more people, part-time included, in the past year: 60 days'' notice before a closure, a move of 100+ miles, or laying off 50 or more within 30 days.'
       url: https://edd.ca.gov/en/jobs_and_training/Layoff_Services_WARN/
       source: official
       confidence: high
@@ -474,8 +474,8 @@ states:
     # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
     # planner shows a line only when it is official, high confidence and checked within 365 days.
     final_pay:
-      text: In Massachusetts, a worker who is fired or laid off is paid in full on the last day, including earned, unused vacation.
-      url: https://www.mass.gov/info-details/massachusetts-law-about-employment-termination
+      text: In Massachusetts, a worker who is fired or laid off is usually paid in full on the last day, including earned, unused vacation if the job offered it.
+      url: https://www.mass.gov/info-details/massachusetts-law-about-vacation-leave
       source: official
       confidence: high
       checked: '2026-11-24'
@@ -698,10 +698,10 @@ states:
       confidence: high
       checked: '2026-11-24'
     severance_effect:
-      text: In New York, weekly severance above the maximum weekly benefit delays unemployment benefits until it stops or drops below that amount.
-      url: https://dol.ny.gov/unemployment/dismissalseverance-pay-and-pensions
+      text: In New York, severance that starts within 30 days of your last day and is more than the maximum weekly benefit delays benefits until it stops or drops below that amount. Lump sums count too.
+      url: https://dol.ny.gov/system/files/documents/2026/01/ui-claimant-handbook_1-26.pdf
       source: official
-      confidence: high
+      confidence: medium
       checked: '2026-11-24'
     mini_cobra:
       text: In New York, state continuation covers employers with fewer than 20 people, for up to 36 months, and can add months after federal COBRA, up to 36 in all.
@@ -716,7 +716,7 @@ states:
       confidence: high
       checked: '2026-11-24'
     state_warn:
-      text: New York's own WARN law covers employers with 50 or more people and asks for 90 days' notice.
+      text: New York's own WARN law covers employers with 50 or more full-time workers and asks for 90 days' notice.
       url: https://dol.ny.gov/warn-jobseekers-frequently-asked-questions
       source: official
       confidence: high

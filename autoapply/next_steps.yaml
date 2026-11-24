@@ -22,7 +22,7 @@
 #   state_only  true: the step shows only when its state line passes the gate (a state's own rule, nothing federal)
 #   state_field  a work_search_states.yaml field (or a list of them) whose line is added for the person's state, only when the
 #             state entry is official, high confidence and checked within 365 days.
-version: 2026-11-24.4
+version: 2026-11-24.5
 checked: '2026-11-24'
 steps:
 - id: file-claim
@@ -211,7 +211,7 @@ steps:
   state_field: final_pay
   state_only: true
   title: Check your last paycheck
-  body: It should include all the pay you're owed. When it's due, and whether unused vacation is paid, depends on your state.
+  body: It should include all the pay you're owed. When it's due depends on your state.
   source:
     name: 'U.S. Department of Labor: Last paycheck'
     url: https://www.dol.gov/general/topic/wages/lastpaycheck
@@ -228,11 +228,9 @@ steps:
   state_field: severance_effect
   state_only: true
   title: Severance and your claim
-  body: Report severance when you file. Whether it changes your benefits depends on your state.
-  source: &id002
-    name: 'U.S. Department of Labor: Unemployment insurance'
-    url: https://www.dol.gov/general/topic/unemployment-insurance
+  body: Report severance when you file. How it affects benefits is your state's rule, below.
   checked: '2026-11-24'
+  general: true
 - id: separation-notice
   path:
   - laid_off
@@ -242,9 +240,9 @@ steps:
   state_field: separation_notice
   state_only: true
   title: Keep the unemployment notice from your employer
-  body: It has details your claim may ask for.
-  source: *id002
+  body: It has details your claim may ask for. Your state's rule is below.
   checked: '2026-11-24'
+  general: true
 - id: cobra-or-marketplace
   path:
   - laid_off

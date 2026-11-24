@@ -1,8 +1,9 @@
 # Your next step: the planner's steps, for the website (palstack.io/next-step) and the app's onboarding.
 #
-# DRAFT 2026-11-24, fact-checked by a reviewer against each source on 2026-11-24 (22 fixes), not yet approved. Before any step is public it is checked against its source by a reviewer and
-# approved by Harun; record that here ("approved by Harun, <date>"). Every step is a reminder, not advice: the
-# person's own letters (COBRA election notice, state notices) and plan documents decide their own case.
+# Fact-checked by a reviewer against each source on 2026-11-24 (22 fixes). APPROVED by Harun, 2026-11-24 (facts
+# 2026-11-24.3). Any later change to a step's text or date is checked against its source by a reviewer and approved
+# by Harun before it is public; record it here ("approved by Harun, <date>"). Every step is a reminder, not advice:
+# the person's own letters (COBRA election notice, state notices) and plan documents decide their own case.
 #
 # Fields (both engines read them the same way; tests/fixtures/next_steps/*.json hold them to it):
 #   id        unique, kebab-case; the app tags its to-do rows [next_step:<id>]

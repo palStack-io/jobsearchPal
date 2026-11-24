@@ -100,7 +100,7 @@
   {% else %}<p class="wl-lead">Every weekday at 6:30 in the morning, jobsearchPal finds new roles, prepares the best fits and leaves them for you to send. Nothing is ever submitted without you. Want to see it work now?</p>{% endif %}
   <div class="wl-acts">
    <form method="post" action="/run"><button class="btn {{ 'primary' if not left }}" {{ 'disabled' if left }}>Run it now</button></form>
-   <a class="btn ghost" href="/">Go to the dashboard</a></div>
+   <a class="btn {{ 'primary' if left else 'ghost' }}" href="/">Go to the dashboard</a></div>
   <p class="wl-hint">Everything you set here, and much more (job sources, how your letters sound, resume looks), is under Settings.</p>
  </section>
  {% endif %}

@@ -102,3 +102,14 @@ def test_when_values_are_known_words():
         assert set(w.get("size_in") or []) <= set(next_steps.SIZES), s["id"]
         assert set(w.get("has_all") or []) <= set(next_steps.HAS), s["id"]
         assert set(s["path"]) <= set(next_steps.PATHS), s["id"]
+
+
+def test_every_step_carries_its_checked_date_and_the_plan_its_compiled_date():
+    """Laws change (Harun, 2026-11-24): the plan says when the rules were compiled, each step when it was checked, and
+    a state line its own checked date."""
+    a = json.loads((FIX / "state_ma_small_employer.json").read_text())["answers"]
+    out = next_steps.plan(a, next_steps.load_facts(), date(2026, 11, 24))
+    every = out["today"] + out["find_out"] + [s for g in out["groups"] for s in g["steps"]]
+    assert out["facts_checked"] == "2026-11-24"
+    assert all(s["checked"] for s in every)
+    assert all(s["state_checked"] for s in every if s["state_note"])

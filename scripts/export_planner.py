@@ -29,7 +29,7 @@ def facts_json() -> dict:
         return {k: x for k, x in v.items() if k != "note"} if isinstance(v, dict) else v
     states = {code: {k: clean(v) for k, v in entry.items() if k in keep} for code, entry in f["states"].items()}
     steps = [{**s, "body": " ".join(str(s["body"]).split())} for s in f["steps"]]
-    return {"version": f["version"], "steps": steps, "states": states}
+    return {"version": f["version"], "checked": f.get("checked"), "steps": steps, "states": states}
 
 
 def export(website_root: Path) -> str:

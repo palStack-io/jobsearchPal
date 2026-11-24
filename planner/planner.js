@@ -81,6 +81,11 @@ function gateOk(entry, today) {
   try { checked = parseDay(String(entry.checked)); } catch { return false; }
   return entry.source === 'official' && entry.confidence === 'high' && checked !== null && today - checked <= GATE_DAYS;
 }
+export function fieldChecked(facts, state, field) {
+  const entry = (facts.states || {})[state || ''] || {};
+  const val = entry[field];
+  return String(((val && typeof val === 'object') ? val : entry).checked || '') || null;
+}
 export function stateLine(facts, state, field, today) {
   const entry = (facts.states || {})[state || ''];
   if (!entry) return [null, null];
@@ -141,16 +146,18 @@ export function plan(answers, facts, todayIn) {
       if (base === null || base === undefined) unknown = true;
       else due = base + Number(step.due.days || 0);
     }
-    let note = null; let url = null;
+    let note = null; let url = null; let noteChecked = null;
     if (step.state_field && a.state) {
       const fields = Array.isArray(step.state_field) ? step.state_field : [step.state_field];
       const got = fields.map((f) => stateLine(facts, a.state, f, today));
+      noteChecked = fields.filter((f, i) => got[i][0]).map((f) => fieldChecked(facts, a.state, f) || '').sort().pop() || null;
       note = got.filter(([n]) => n).map(([n]) => n).join(' ') || null;
       url = (got.find(([n, u]) => n && u) || got.find(([, u]) => u) || [null, null])[1];
     }
     if (step.state_only && !note) continue; // a step that is only its state's rule
     const s = { id: step.id, title: step.title, body: String(step.body).split(/\s+/).join(' '), due: due === null ? null : isoDay(due),
       past: due !== null && due < today, source: step.source || null, state_note: note, state_url: url,
+      checked: step.checked ? String(step.checked) : null, state_checked: noteChecked,
       _section: step.section, _rank: Number(step.rank ?? 99) };
     (unknown && step.section !== 'today_pool' ? findOut : made).push(s);
   }
@@ -166,5 +173,6 @@ export function plan(answers, facts, todayIn) {
     const steps = rest.filter((s) => s._section === sec).sort(byDueRank);
     if (steps.length) groups.push({ section: sec, steps: steps.map(pub) });
   }
-  return { today: todayList.map(pub), next: dated.length ? pub(dated[0]) : null, groups, find_out: findOut.map(pub), facts_version: facts.version };
+  return { today: todayList.map(pub), next: dated.length ? pub(dated[0]) : null, groups, find_out: findOut.map(pub),
+    facts_version: facts.version, facts_checked: facts.checked || null };
 }

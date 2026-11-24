@@ -24,6 +24,19 @@ from .fillers import fill, submit
 
 env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"), autoescape=True)
 env.globals["ws_label"] = "Work search"
+
+
+def _planner_checked() -> str:
+    """When the Your next step rules were compiled, for the "laws change" line on the planner pages (2026-11-24)."""
+    try:
+        from . import next_steps
+        d = next_steps.load_facts().get("checked") or ""
+        return datetime.strptime(d, "%Y-%m-%d").strftime("%B %-d, %Y") if d else ""
+    except Exception:  # a broken rules file must not take the whole app down
+        return ""
+
+
+env.globals["planner_checked"] = _planner_checked()
 env.globals["strptime"] = lambda s: datetime.strptime(str(s)[:10], "%Y-%m-%d").date()
 env.filters["hue"] = lambda s: sum(ord(c) * (i + 7) for i, c in enumerate((s or "?").lower())) % 360  # a steady colour per company
 # "confirmed" (the stored kind) read as a confirmed interview; it only means the application was received.

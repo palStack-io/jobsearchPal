@@ -143,3 +143,14 @@ def test_public_demo_leaves_the_shared_claim_alone(existing, monkeypatch):
     assert _cfg(s) == before and _tasks(db)
     c.post("/situation/confirm", data={"door": "working"})
     assert _cfg(s) == before and _tasks(db) == []
+
+
+def test_planner_pages_say_when_the_rules_were_compiled(fresh):
+    """Laws change (Harun, 2026-11-24): the situation, questions and Stats pages say when the rules were compiled."""
+    s, db, c = fresh
+    assert "Compiled from official sources on November" in c.get("/welcome?step=0").text
+    assert "Compiled from official sources on November" in c.post("/situation/start", data={"mode": "welcome", "door": "laid"}).text
+    c.post("/situation/answers", data=LAID)
+    assert "compiled from official sources on November" in c.get("/stats").text
+    t = db.conn.execute("select note from ui_tasks where note like '%[next_step:file-claim]%'").fetchone()[0]
+    assert "(checked Nov" in t

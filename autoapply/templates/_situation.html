@@ -20,10 +20,13 @@
    <p class="wl-hint">It fills in the questions on the next screen. You check them before anything is saved.</p>
   </div>
  </details>
+ {{ compiled() }}
  <div class="wl-acts"><button class="btn primary">Continue</button>
   {% if mode == 'settings' %}<a class="btn ghost" href="/settings">Cancel</a>{% else %}<a class="btn ghost" href="/welcome?step=1">Skip this step</a>{% endif %}</div>
 </form>
 {% endmacro %}
+
+{% macro compiled() %}{% if planner_checked %}<p class="wl-hint sit-compiled">Compiled from official sources on {{ planner_checked }}. Laws change, so each step links to its source, and the letters from your state and your employer's plans decide your own case.</p>{% endif %}{% endmacro %}
 
 {% macro styles() %}
 <style>

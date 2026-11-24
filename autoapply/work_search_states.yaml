@@ -15,6 +15,8 @@
 #   waiting_week    true if the first week of a claim is unpaid; waiting_week_note explains quirks (DOL Comparison of State UI Laws 2023, Table 3-7)
 #   part_time_earnings_allowed  part-time pay you can earn in a week before benefits are reduced (DOL, Jan 2026)
 #   resea / resea_url  what a RESEA selection involves in that state, where researched (MA so far)
+#   final_pay, severance_effect, mini_cobra, separation_notice, state_warn  layoff facts for Your next step, each
+#                   {text, url, source, confidence, checked}; shown only when official, high and checked within 365 days
 #   source          official = the agency's own site; confidence: high / medium (agency gives no exact
 #                   number) / low (couldn't confirm on the agency site; check before relying on it)
 #   checked         when the entry was last compared with its source
@@ -130,6 +132,38 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week; you still certify for it. Can be waived in a declared disaster.
     part_time_earnings_allowed: $25 or 1/4 of wages, whichever is more
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In California, a laid-off worker is paid everything owed on the last day, including earned, unused vacation. Each day it's late can add a day's pay, up to 30.
+      url: https://www.dir.ca.gov/dlse/FAQ_WaitingTimePenalty.htm
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In California, severance doesn't affect your unemployment benefits, whether it's paid at once or in installments.
+      url: https://edd.ca.gov/en/UIBDG/Total_and_Partial_Unemployment_TPU_46035
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In California, Cal-COBRA covers employers with 2 to 19 people, for up to 36 months.
+      url: https://www.dmhc.ca.gov/HealthCareinCalifornia/TypesofPlans/KeepYourHealthCoverage(COBRA).aspx
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In California, your employer must give you the pamphlet For Your Benefit (DE 2320) when you're laid off.
+      url: https://edd.ca.gov/en/payroll_taxes/required_notices_and_pamphlets/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: 'California''s own WARN law covers sites with 75 or more people: 60 days'' notice before laying off 50 or more at one site.'
+      url: https://edd.ca.gov/en/jobs_and_training/Layoff_Services_WARN/
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   CO:
     name: Colorado
     agency: Colorado Department of Labor and Employment (CDLE)
@@ -437,6 +471,32 @@ states:
     waiting_week: true
     waiting_week_note: One unpaid week; you still request benefits for it.
     part_time_earnings_allowed: 1/3 of your weekly benefit
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In Massachusetts, a worker who is fired or laid off is paid in full on the last day, including earned, unused vacation.
+      url: https://www.mass.gov/info-details/massachusetts-law-about-employment-termination
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In Massachusetts, severance paid for signing a release of claims doesn't count against benefits; other severance can delay them for the weeks it covers. Report it either way.
+      url: https://www.mass.gov/files/documents/2018/01/17/Employer%20Handbook_01-11-18.pdf
+      source: official
+      confidence: medium
+      checked: '2026-11-24'
+    mini_cobra:
+      text: 'In Massachusetts, employers with 2 to 19 people are covered by state continuation (mini-COBRA): up to 18 months after a layoff. Self-funded plans aren''t.'
+      url: https://www.mass.gov/info-details/minicobra-continuation-of-coverage-benefits-guide
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In Massachusetts, your employer should hand you DUA's pamphlet How to Apply for Unemployment Insurance Benefits (Form 0590-A) within 30 days of your last day.
+      url: https://www.mass.gov/info-details/employer-responsibilities-during-the-unemployment-process
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   MI:
     name: Michigan
     agency: Unemployment Insurance Agency (UIA)
@@ -629,6 +689,38 @@ states:
     max_weeks: '26'
     waiting_week: true
     part_time_earnings_allowed: Work up to 10 hours a week with earnings at or below the maximum weekly benefit
+    # Layoff facts for Your next step (2026-11-24): each with its own source, confidence and checked date; the
+    # planner shows a line only when it is official, high confidence and checked within 365 days.
+    final_pay:
+      text: In New York, final wages are due by the next regular payday. Earned vacation is paid unless your employer told you in writing that it's lost when you leave.
+      url: https://dol.ny.gov/wages-and-hours-frequently-asked-questions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    severance_effect:
+      text: In New York, weekly severance above the maximum weekly benefit delays unemployment benefits until it stops or drops below that amount.
+      url: https://dol.ny.gov/unemployment/dismissalseverance-pay-and-pensions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    mini_cobra:
+      text: In New York, state continuation covers employers with fewer than 20 people, for up to 36 months, and can add months after federal COBRA, up to 36 in all.
+      url: https://www.dfs.ny.gov/consumers/health_insurance/cobra_and_premium_assistance
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    separation_notice:
+      text: In New York, your employer must give you a Record of Employment (IA 12.3) when your job ends.
+      url: https://dol.ny.gov/notice-eligibility-ui-benefits
+      source: official
+      confidence: high
+      checked: '2026-11-24'
+    state_warn:
+      text: New York's own WARN law covers employers with 50 or more people and asks for 90 days' notice.
+      url: https://dol.ny.gov/warn-jobseekers-frequently-asked-questions
+      source: official
+      confidence: high
+      checked: '2026-11-24'
   NC:
     name: North Carolina
     agency: NC Division of Employment Security

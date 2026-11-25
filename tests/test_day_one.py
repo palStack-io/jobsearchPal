@@ -1,4 +1,4 @@
-"""Day one for a stranger (install walk 2026-11-22, Docmost "Install walk as a stranger"): what a new install says
+"""Day one for a stranger (install walk 2026-11-22): what a new install says
 must be true before anything has run, before the AI is signed in and before email is connected."""
 import json
 from pathlib import Path

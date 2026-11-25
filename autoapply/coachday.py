@@ -2,7 +2,7 @@
 
 Python gathers the facts (the digest), one model call with no tools coaches and judges, and Python checks every id,
 person, number and name in the reply against the digest before anything is saved. The person sends every message
-themselves. Design: docs/superpowers/specs/2026-11-21-coach-design.md.
+themselves.
 """
 from __future__ import annotations
 

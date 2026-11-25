@@ -170,8 +170,11 @@ rough edges. Known limits today:
 
 ## Contributing
 
-Issues and pull requests are welcome, especially: corrections to a state's rules (with the agency link), new ATS
-form fillers, other email providers, and reply-sorting mistakes (share the subject and sender, never the body).
+We have paused code contributions while we work out how to review AI-assisted changes well. Issues are very welcome,
+especially: corrections to a state's rules (with the agency link), ATS forms that fail to fill, other email
+providers, and reply-sorting mistakes (share the subject and sender, never the body). Questions: join us on
+[Discord](https://discord.gg/mcgcp7RdYs). Security problems: report privately, see
+[SECURITY.md](https://github.com/palStack-io/.github/blob/main/SECURITY.md).
 Please keep personal data out of issues, tests and screenshots; use `scripts/demo-data.py`. See
 [Development](docs/development.md) to get started.
 
@@ -179,6 +182,8 @@ Please keep personal data out of issues, tests and screenshots; use `scripts/dem
 
 **AGPL-3.0** (version 3 or later), from version 1.0. Use it, change it, run it for yourself. If you run a modified
 version as a service for other people, share your changes under the same license. See [LICENSE](LICENSE).
+jobsearchPal is built for people running their own search; for commercial use without the AGPL's obligations, contact
+support@palstack.io.
 
 Copyright (C) 2026 Harun Gunasekaran. Releases before 1.0 (v0.1.0 and earlier) were published under the MIT license
 and stay available under it.

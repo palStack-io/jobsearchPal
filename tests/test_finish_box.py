@@ -71,7 +71,7 @@ def test_public_site_loads(page):
     assert page.goto("https://example.com", wait_until="domcontentloaded").status == 200
 
 
-@pytest.mark.parametrize("url", ["http://192.168.10.247:8123/", "http://100.122.220.35:8787/", "http://10.0.0.1/",
+@pytest.mark.parametrize("url", ["http://192.168.1.20:8123/", "http://100.100.12.34:8787/", "http://10.0.0.1/",
                                  "http://127.0.0.1:8787/", "http://169.254.169.254/",
                                  # the box's own debug port: Chromium bypasses a proxy for loopback unless told not to
                                  "http://127.0.0.1:9223/json/version", "http://localhost:9223/json/version"])
